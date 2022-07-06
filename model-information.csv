@@ -1,0 +1,4 @@
+model-name,use-case,owner,version,training-epochs,batch-size,gpu-model,model-accuracy,model-f1,small-test-set-accuracy,memory-footprint,input-data,thresholds,nlp.hash-file,nlp.max_length,nlp.stride,nlp.do_lower,nlp.do_truncate,version.cuda,version.pytorch,version.python,version.ubuntu,version.transformers
+dga-appshield-cnn-binary.pb,DGA detection,Haim Elisha,0.1.0,30,1000,V100,,,,139KB,appshield_plugins,,,,,,,,,,,
+dga-appshield-cnn-family.pb,DGA detection,Haim Elisha,0.1.0,120,500,V100,,,,139KB,appshield_plugins,,,,,,,,,,,
+phishurl-appshield-combined-lstm-dnn-onnx,Phishing URL detection,Haim Elisha,0.1.0,150,2000,V100,,,,774KB,appshield_plugins,,,,,,,,,,,
