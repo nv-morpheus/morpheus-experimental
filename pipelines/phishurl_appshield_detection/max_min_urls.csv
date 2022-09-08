@@ -1,3 +1,0 @@
-domain_in_alexa,domain_len,domain_numbers,domain_isalnum,subdomain_len,subdomain_numbers_count,subdomain_parts_count,tld_len,tld_parts_count,queries_amount,fragments_amount,path_len,path_slash_counts,path_double_slash_counts,brand_in_subdomain,brand_in_path,path_max_len
-0,1,0,0,0,0,1,0,1,0,0,0,0,0,0,0,0
-2,121,47,1,220,116,25,24,3,38,1,2610,23,2,1,1,409
