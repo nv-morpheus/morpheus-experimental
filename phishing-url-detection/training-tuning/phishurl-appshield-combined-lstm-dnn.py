@@ -323,10 +323,10 @@ def model_eval(model, X_test_nlp, X_test_features, Y_test):
 def save_model(df_max_min, tokenizer_df, model):
     df_max_min.to_csv('max_min_urls.csv', index=False)
     tokenizer_df.to_csv('tokenizer_urls.csv', index=False)
-    model.save('/raid0/haim/haim/url_model_keras')
+    model.save('url_model_keras')
 
 # Read Alexa rank domain dataframe
-alexa_rank = pd.read_csv('/raid0/haim/haim/data/alexa-top-500k.csv',header=None)
+alexa_rank = pd.read_csv('../datasets/alexa-top-500k.csv',header=None)
 alexa_rank.columns = ['index','url']
 alexa_rank_domain = alexa_rank['url'].apply(get_domain)
 alexa_rank_1k = alexa_rank_domain.iloc[0:1000]
@@ -335,7 +335,7 @@ alexa_rank_100k = alexa_rank_domain.iloc[1000:100000]
 alexa_rank_1k_domain_unique = pd.unique(alexa_rank_1k)
 alexa_rank_100k_domain_unique = pd.unique(alexa_rank_100k)
 
-url_df = pd.read_csv("url_dataset.csv")
+url_df = pd.read_csv("../datasets/url_dataset.csv")
 
 print("Processing data for url model...")
 X_train, Y_train, X_test, Y_test = data_preprocessing(url_df)

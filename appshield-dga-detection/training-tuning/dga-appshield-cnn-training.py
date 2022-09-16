@@ -377,7 +377,7 @@ max_features = len(tokenizer.word_index) + 1
 print("Reading tokenizer...")
 # Read tokenizer
 print("Reading data for training")
-df_binary = pd.read_csv("/raid0/haim/haim/dga_training_dataset.csv")
+df_binary = pd.read_csv("../datasets/dga_training_dataset.csv")
 df_families = df_binary.copy()
 
 print("Processing data for binary model...")
@@ -385,6 +385,10 @@ X_train, y_train, X_test, y_test, domain_test, type_test = data_preprocessing_bi
 
 print("Training binary model...")
 model_binary = train_model_binary(X_train, y_train, X_test, y_test)
+
+print("Saving binary model...")
+model_binary.save('../dga_binary_keras_model')
+
 print("Evaluating binary model...")
 model_eval_binary(model_binary, X_test, y_test, domain_test, type_test)
 
@@ -392,6 +396,9 @@ print("Processing data for families model...")
 train_generator, validation_generator, X_data, encoded_labels, steps_per_epoch, domains, labels_type, train_indices_same, train_indices_diff, test_indices_same, test_indices_diff = data_preprocessing_families(df_families)
 print("Training families model...")
 model_families = train_model_families(train_generator, steps_per_epoch)
+
+print("Saving family model...")
+model_families.save('../dga_family_keras_model')
 
 print("Evaluating families model...")
 model_eval_families(model_families, train_indices_same, train_indices_diff, test_indices_same, test_indices_diff)
