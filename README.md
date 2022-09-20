@@ -1,34 +1,36 @@
 # Morpheus-Experimental
 
-Morpheus-Experimental is a staging/collaboration/experimental area for development. This directory contains use-cases and pipelines which are still being developed and are in the alpha testing stage. Please be advised that the pipelines in Morpheus-Experimental are subject to change and we do not guarantee any compatibility between releases.
+Morpheus-Experimental is a staging/collaboration/experimental area for development. This directory contains prototypes and pipelines which are still being developed and are in the alpha testing stage. Please be advised that the pipelines in Morpheus-Experimental are subject to change and we do not guarantee any compatibility between releases.
 
-Use-case contributions should include at minimum a tutorial-style notebook, model file, sample data, inference script, and documentation. 
+Prototype contributions should include at minimum a tutorial-style notebook, model file, sample data, inference script, and documentation. 
 
 ## Repo Structure
-Every Morpheus use case has a subfolder, **`<use-case>-models`**, that contains the model files for the use case. Training and validation datasets and scripts are also provided in [datasets](./datasets/), [training-tuning-scripts](./training-tuning-scripts/), and [validation-inference-scripts](./validation-inference-scripts/). Jupyter notebook (`.ipynb`) version of the training and fine-tuning scripts are also provided.
+Every prototype has its own directory that contains everything belonging to the specific prototype. Directories can include the following subfolders:
 
-## models
-
+### models
 Model files for public release (ONNX preferred to pytorch/tensorflow)
 
-## datasets
+### datasets
 
 Sample of training data and validation dataset(input and output files) to be used to test pipeline
 
-## training-tuning-scirpts
+### training-tuning
 
 A script showing how to train or fine-tune the model. It takes sample training data file as an input and creates a model file. It is reliable and repeatable (set seed values). If variables are used in script (epochs, learning_rate) set defaults to those used to achieve metrics reported in model card/documentation. It includes a `requirements.txt` file with dependencies and versions used for training. 
 
-## inference-validation-scripts
+### inference
 
 A non-morpheus pipeline script that contains data loading, preprocessing, model loading, inference, postprocessing, and serialized output file. It uses desired morpheus pipeline variables as input variables to the script (ie. threshold=0.6, hash_vocab_file=bert-base-cased). It produces a reliable and repeatable output file from the validation input dataset. It includes `requirements.txt` file with dependencies and versions used for non-morpheus inference.
 
-## model documentation
+### pipeline (optional)
+All the necessary files for a full Morpheus pipeline of the prototype.
 
-In the root directory, the file `model-information.csv` contains the following information for each model:
+### model documentation
 
- - **Model name** - Name of the model
- - **Use case** - Specific Morpheus use case the model targets
+A readme.md that contains the following information for each model:
+
+ - **Model/prototype name** - Name of the model
+ - **Use case** - Specific use case the model targets
  - **Owner** - Name of the individual who owns the model
  - **Version** - Version of the model (major.minor.patch)
  - **Model overview** - General description
@@ -45,18 +47,8 @@ In the root directory, the file `model-information.csv` contains the following i
  - **GPU model** - Family of GPU used during training
  - **Model accuracy** - Accuracy of the model when tested
  - **Model F1** - F1 score of the model when tested
- - **Small test set accuracy** - Accuracy of model on validation data in datasets directory
  - **Memory footprint** - Memory required by the model
- - **Thresholds** - Values of thresholds used for validation
- - **NLP hash file** - Hash file for tokenizer vocabulary
- - **NLP max length** - Max_length value for tokenizer
- - **NLP stride** - stride value for tokenizer
- - **NLP do lower** - do_lower value for tokenizer
- - **NLP do truncate** - do_truncate value for tokenizer
- - **Version CUDA** - CUDA version used during training
- - **Version Python** - Python version used during training
- - **Version Ubuntu** - Ubuntu version used during training
- - **Version Transformers** - Transformers version used during training
+
 
 
 # Model Card Info

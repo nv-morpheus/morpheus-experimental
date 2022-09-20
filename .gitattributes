@@ -1,2 +1,6 @@
-datasets/** filter=lfs diff=lfs merge=lfs -text
-models/** filter=lfs diff=lfs merge=lfs -text
+appshield-dga-detection/datasets/** filter=lfs diff=lfs merge=lfs -text
+phishing-url-detection/datasets/** filter=lfs diff=lfs merge=lfs -text
+appshield-dga-detection/datasets/pipeline/data/** filter=lfs diff=lfs merge=lfs -text
+phishing-url-detection/datasets/pipeline/data/** filter=lfs diff=lfs merge=lfs -text
+phishing-url-detection/datasets/pipeline/models/** filter=lfs diff=lfs merge=lfs -text
+appshield-dga-detection/datasets/pipeline/models/** filter=lfs diff=lfs merge=lfs -text
