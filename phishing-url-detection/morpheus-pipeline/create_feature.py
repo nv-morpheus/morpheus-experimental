@@ -17,19 +17,17 @@ import re
 import typing
 from urllib.parse import urlparse
 
-import neo
+import srf
 import numpy as np
 import pandas as pd
-import swifter
 import tldextract
-from from_appshield import SourceMessageMeta
+from morpheus.stages.input.appshield_source_stage import AppShieldMessageMeta
+from srf.core import operators as ops
 from neo.core import operators as ops
 from tensorflow.keras.preprocessing.sequence import pad_sequences
 from tensorflow.keras.preprocessing.text import Tokenizer
 
-from dask import delayed
 from dask.distributed import Client
-from dask.distributed import get_client
 
 from morpheus.config import Config
 from morpheus.pipeline.messages import MultiMessage
@@ -386,7 +384,7 @@ class CreateFeatureURLStage(MultiMessageStage):
         # Read tokenizer
         self.tokenizer = Tokenizer()
         self.tokenizer.word_index = pd.read_csv(tokenizer_path
-                                                ).set_index('keys')['values'].to_dict() # tokenizer_path = '/dockershare/phishurl_appshield_detection/tokenizer_urls.csv'
+                                                ).set_index('keys')['values'].to_dict() # tokenizer_path = '~/phishurl_appshield_detection/tokenizer_urls.csv'
         alexa_rank = pd.read_csv('/dockershare/phishurl_appshield_detection/alexa-top-500k.csv', header=None)
         alexa_rank.columns = ['index', 'url']
         alexa_rank_domain = alexa_rank['url'].apply(get_domain)
@@ -394,7 +392,7 @@ class CreateFeatureURLStage(MultiMessageStage):
         self.alexa_rank_100k = alexa_rank_domain.iloc[1000:100000]
         self.alexa_rank_1k_domain_unique = pd.unique(self.alexa_rank_1k)
         self.alexa_rank_100k_domain_unique = pd.unique(self.alexa_rank_100k)
-        self.df_max_min = pd.read_csv(max_min_norm_path) # max_min_norm_path = '/dockershare/phishurl_appshield_detection/max_min_urls.csv'
+        self.df_max_min = pd.read_csv(max_min_norm_path) # max_min_norm_path = '~/phishurl_appshield_detection/max_min_urls.csv'
 
         self._feature_config = FeatureConfig(required_plugins=self._required_plugins,
                                              full_memory_address=0,
@@ -415,14 +413,14 @@ class CreateFeatureURLStage(MultiMessageStage):
         Returns accepted input types for this stage.
 
         """
-        return (SourceMessageMeta, )
+        return (AppShieldMessageMeta, )
 
-    def _build_single(self, seg: neo.Segment, input_stream: StreamPair) -> StreamPair:
+    def _build_single(self, seg: srf.Segment, input_stream: StreamPair) -> StreamPair:
         stream = input_stream[0]
 
-        def node_fn(input: neo.Observable, output: neo.Subscriber):
+        def node_fn(input: srf.Observable, output: srf.Subscriber):
 
-            def on_next(x: SourceMessageMeta):
+            def on_next(x: AppShieldMessageMeta):
                 to_send = []
                 snapshot_fea_dfs = []
 
@@ -451,8 +449,8 @@ class CreateFeatureURLStage(MultiMessageStage):
                 features_df['pid_process'] = df['PID_Process']
                 features_df['snapshot_id'] = df['snapshot_id']
                 features_df = features_df.sort_values(by=["pid_process", "snapshot_id"]).reset_index(drop=True)
-                #features_df['ID'] = 1
-                x = SourceMessageMeta(features_df, x.source)
+                
+                x = AppShieldMessageMeta(features_df, x.source)
 
                 unique_pid_processes = features_df.pid_process.unique()
 

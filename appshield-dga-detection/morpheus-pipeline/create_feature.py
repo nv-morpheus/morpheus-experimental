@@ -13,22 +13,17 @@
 # limitations under the License.
 
 import dataclasses
-import re
 import typing
 
-import neo
-import numpy as np
+import srf
 import pandas as pd
-import swifter
 import tldextract
-from from_appshield import SourceMessageMeta
-from neo.core import operators as ops
+from morpheus.stages.input.appshield_source_stage import AppShieldMessageMeta
+from srf.core import operators as ops
 from tensorflow.keras.preprocessing.sequence import pad_sequences
 from tensorflow.keras.preprocessing.text import Tokenizer
 
-from dask import delayed
 from dask.distributed import Client
-from dask.distributed import get_client
 
 from morpheus.config import Config
 from morpheus.pipeline.messages import MultiMessage
@@ -114,14 +109,14 @@ class CreateFeatureDGAStage(MultiMessageStage):
         Returns accepted input types for this stage.
 
         """
-        return (SourceMessageMeta, )
+        return (AppShieldMessageMeta, )
 
-    def _build_single(self, seg: neo.Segment, input_stream: StreamPair) -> StreamPair:
+    def _build_single(self, seg: srf.Segment, input_stream: StreamPair) -> StreamPair:
         stream = input_stream[0]
 
-        def node_fn(input: neo.Observable, output: neo.Subscriber):
+        def node_fn(input: srf.Observable, output: srf.Subscriber):
 
-            def on_next(x: SourceMessageMeta):
+            def on_next(x: AppShieldMessageMeta):
                 to_send = []
                 snapshot_fea_dfs = []
 
@@ -144,7 +139,7 @@ class CreateFeatureDGAStage(MultiMessageStage):
                 features_df['pid_process'] = df['PID_Process']
                 features_df['snapshot_id'] = df['snapshot_id']
                 features_df = features_df.sort_values(by=["pid_process", "snapshot_id"]).reset_index(drop=True)
-                x = SourceMessageMeta(features_df, x.source)
+                x = AppShieldMessageMeta(features_df, x.source)
 
                 unique_pid_processes = features_df.pid_process.unique()
 

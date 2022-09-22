@@ -13,12 +13,29 @@
 # limitations under the License.
 
 import logging
-import os
 
 import click
 import psutil
 
+from morpheus.config import CppConfig
+from morpheus.config import Config
+from morpheus.config import PipelineModes
+from morpheus.utils.logger import configure_logging
+
+from create_feature import CreateFeatureDGAStage
+from inference_triton import TritonInferenceStage
+from preprocessing import PreprocessingDGAStage
+
+from morpheus.pipeline.general_stages import AddScoresStage
+from morpheus.pipeline.general_stages import MonitorStage
+from morpheus.pipeline.output.serialize import SerializeStage
+from morpheus.pipeline.output.to_file import WriteToFileStage
+from morpheus.stages.input.appshield_source_stage import AppShieldSourceStage
+
+from morpheus.pipeline.pipeline import LinearPipeline
+
 @click.command()
+@click.option('--use_cpp', default=False,  help="Default value is False")
 @click.option(
     "--num_threads",
     default=psutil.cpu_count(),
@@ -49,13 +66,6 @@ import psutil
     default="dga-appshield-cnn-onnx",
     help="The name of the model that is deployed on Tritonserver",
 )
-@click.option(
-    "--model_second_name",
-    default="",
-    type=click.STRING,
-    required=False,
-    help="The name of the second model that is deployed on Tritonserver",
-)
 @click.option("--server_url", required=True, help="Tritonserver url")
 @click.option(
     "--input_glob",
@@ -75,50 +85,44 @@ import psutil
     default="ransomware_detection_output.jsonlines",
     help="The path to the file where the inference output will be saved.",
 )
-def run_pipeline(num_threads,
+@click.option('--watch_directory',
+              type=bool,
+              default=False,
+              help=("The watch directory option instructs this stage to not close down once all files have been read. "
+                    "Instead it will read all files that match the 'input_glob' pattern, and then continue to watch "
+                    "the directory for additional files. Any new files that are added that match the glob will then "
+                    "be processed."))
+def run_pipeline(use_cpp,
+                 num_threads,
                  pipeline_batch_size,
                  model_max_batch_size,
                  model_fea_length,
                  model_name,
-                 model_second_name,
                  server_url,
                  input_glob,
                  tokenizer_path,
-                 output_file):
+                 output_file,
+                 watch_directory):
 
-    from morpheus.config import Config
-    from morpheus.config import PipelineModes
-    from morpheus.utils.logging import configure_logging
+    
 
     # Enable the default logger
     configure_logging(log_level=logging.INFO)
 
-    # Its necessary to get the global config object and configure it for FIL mode
-    config = Config.get()
-    config.use_cpp = False
+    # Its necessary to get the global config object and configure it for Pipeline mode
+    CppConfig.set_should_use_cpp(use_cpp)
+    config = Config()
     config.mode = PipelineModes.OTHER
 
     # Below properties are specified by the command line
-    config.num_threads = 1  #num_threads
+    config.num_threads = num_threads
     config.pipeline_batch_size = pipeline_batch_size
     config.model_max_batch_size = model_max_batch_size
     config.feature_length = model_fea_length
     config.class_labels = ["probs"]
     config.edge_buffer_size = 4
 
-    from create_feature import CreateFeatureDGAStage
-    from from_appshield import AppShieldSourceStage
-    from inference_triton import TritonInferenceStage
-    from preprocessing import PreprocessingDGAStage
-
-    from morpheus.pipeline.general_stages import AddScoresStage
-    from morpheus.pipeline.general_stages import MonitorStage
-    from morpheus.pipeline.output.serialize import SerializeStage
-    from morpheus.pipeline.output.to_file import WriteToFileStage
-
     kwargs = {}
-
-    from morpheus.pipeline.pipeline import LinearPipeline
 
     # Create a linear pipeline object
     pipeline = LinearPipeline(config)
@@ -135,7 +139,7 @@ def run_pipeline(num_threads,
     pipeline.set_source(
         AppShieldSourceStage(config,
                              input_glob,
-                             watch_directory=False,
+                             watch_directory=watch_directory,
                              raw_feature_columns=raw_feature_columns,
                              required_plugins=required_plugins))
     # Add a monitor stage
