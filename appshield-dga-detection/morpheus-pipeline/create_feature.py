@@ -172,7 +172,11 @@ class CreateFeatureDGAStage(MultiMessageStage):
                     to_send.append(multi_message)
                 return to_send
 
-            input.pipe(ops.map(on_next), ops.flatten()).subscribe(output)
+            def on_completed():
+                # Close dask client when pipeline initiates shutdown
+                self._client.close()
+
+            input.pipe(ops.map(on_next), ops.on_completed(on_completed), ops.flatten()).subscribe(output)
 
         node = seg.make_node_full(self.unique_name, node_fn)
         seg.make_edge(stream, node)

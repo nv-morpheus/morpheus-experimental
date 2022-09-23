@@ -68,7 +68,7 @@ Example:
 DOCKER_EXTRA_ARGS="-v ${MORPHEUS_EXPERIMENTAL_ROOT}:/workspace/morpheus_experimental" ./docker/run_container_release.sh
 ```
 
-Build the dev container as instructed in the [Build Morpheus Container] section of [Getting Started with Morpheus] document.
+Build the release container as instructed in the [Build Morpheus Container] section of [Getting Started with Morpheus] document.
 
 ## Requirements
 **Note**: Make sure below dependency is installed in your environment before running the DGA detection pipeline. Run the installation command specified below if not.

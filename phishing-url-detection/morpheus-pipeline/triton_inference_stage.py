@@ -1,4 +1,4 @@
-# Copyright (c) 2021, NVIDIA CORPORATION.
+# Copyright (c) 2021-2022, NVIDIA CORPORATION.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -24,20 +24,21 @@ from functools import lru_cache
 from functools import partial
 
 import cupy as cp
-import neo
 import numpy as np
+import srf
 import tritonclient.grpc as tritonclient
 from tritonclient.utils import InferenceServerException
 from tritonclient.utils import triton_to_np_dtype
 
-import morpheus._lib.stages as neos
+import morpheus._lib.stages as _stages
+from morpheus.cli.register_stage import register_stage
 from morpheus.config import Config
 from morpheus.config import PipelineModes
-from morpheus.pipeline.inference.inference_stage import InferenceStage
-from morpheus.pipeline.inference.inference_stage import InferenceWorker
-from morpheus.pipeline.messages import MultiInferenceMessage
-from morpheus.pipeline.messages import ResponseMemory
-from morpheus.pipeline.messages import ResponseMemoryProbs
+from morpheus.messages import MultiInferenceMessage
+from morpheus.messages import ResponseMemory
+from morpheus.messages import ResponseMemoryProbs
+from morpheus.stages.inference.inference_stage import InferenceStage
+from morpheus.stages.inference.inference_stage import InferenceWorker
 from morpheus.utils.producer_consumer_queue import ProducerConsumerQueue
 
 logger = logging.getLogger(__name__)
@@ -67,24 +68,24 @@ def _notify_dtype_once(model_name: str, input_name: str, triton_dtype: cp.dtype,
 @dataclasses.dataclass()
 class TritonInOut:
     """
-    Data class for model input and output configuration
+    Data class for model input and output configuration.
 
     Parameters
     ----------
     name : str
-        Name of the input/output in the model
+        Name of the input/output in the model.
     bytes : int
-        Total bytes
+        Total bytes.
     datatype : str
-        Triton string for datatype
+        Triton string for datatype.
     shape : typing.List[int]
-        Shape of input/output
+        Shape of input/output.
     mapped_name : str
-        Name of the input/output in the pipeline
+        Name of the input/output in the pipeline.
     offset : int
-        Offset, default value is 0
+        Offset, default value is 0.
     ptr : cp.cuda.MemoryPointer
-        Cupy cuda memory pointer for the input/output
+        Cupy cuda memory pointer for the input/output.
 
     """
     name: str  # Name of the input/output in the model
@@ -159,13 +160,13 @@ class InputWrapper:
     Parameters
     ----------
     client : tritonclient.InferenceServerClient
-        Triton inference server client instance
+        Triton inference server client instance.
     model_name : str
         Name of the model. Specifies which model can handle the inference requests that are sent to Triton
         inference server.
-    config : typing.Dict[str, TritonInOut]
+    config : typing.Dict[str, `TritonInOut`]
         Model input and output configuration. Keys represent the input/output names. Values will be a
-        `TritonInOut` object
+        `TritonInOut` object.
 
     """
 
@@ -195,7 +196,7 @@ class InputWrapper:
         Returns
         -------
         bytes
-            Configuration as bytes
+            Configuration as bytes.
 
         """
         return self._config[name].bytes
@@ -212,7 +213,7 @@ class InputWrapper:
         Returns
         -------
         int
-            Configuration offset
+            Configuration offset.
 
         """
         return self._config[name].offset
@@ -232,7 +233,7 @@ class InputWrapper:
         Returns
         -------
             cp.cuda.MemoryPointer :
-                Returns the shared memory pointer for this input/output
+                Returns the shared memory pointer for this input/output.
 
         """
         return self._config[name].ptr
@@ -246,12 +247,12 @@ class InputWrapper:
         ----------
         name : str
             Inference input name.
-        data : cp.ndarray
+        data : cupy.ndarray
             Inference input data.
         force_convert_inputs: bool
             Whether or not to convert the inputs to the type specified by Triton. This will happen automatically if no
-            data would be lost in the conversion (i.e. float -> double). Set this to True to convert the input even if
-            data would be lost (i.e. double -> float)
+            data would be lost in the conversion (i.e., float -> double). Set this to True to convert the input even if
+            data would be lost (i.e., double -> float).
 
         """
 
@@ -280,8 +281,8 @@ class InputWrapper:
             Inference input data.
         force_convert_inputs: bool
             Whether or not to convert the inputs to the type specified by Triton. This will happen automatically if no
-            data would be lost in the conversion (i.e. float -> double). Set this to True to convert the input even if
-            data would be lost (i.e. double -> float)
+            data would be lost in the conversion (i.e., float -> double). Set this to True to convert the input even if
+            data would be lost (i.e., double -> float).
 
         """
 
@@ -305,13 +306,13 @@ class ShmInputWrapper(InputWrapper):
     Parameters
     ----------
     client : tritonclient.InferenceServerClient
-        Triton inference server client instance
+        Triton inference server client instance.
     model_name : str
         Name of the model. Specifies which model can handle the inference requests that are sent to Triton
         inference server.
-    config : typing.Dict[str, TritonInOut]
+    config : typing.Dict[str, `TritonInOut`]
         Model input and output configuration. Keys represent the input/output names. Values will be a
-        `TritonInOut` object
+        `TritonInOut` object.
 
     """
     total_count = 0
@@ -348,12 +349,12 @@ class ShmInputWrapper(InputWrapper):
         ----------
         name : str
             Inference input name.
-        data : cp.ndarray
+        data : cupy.ndarray
             Inference input data.
         force_convert_inputs: bool
             Whether or not to convert the inputs to the type specified by Triton. This will happen automatically if no
-            data would be lost in the conversion (i.e. float -> double). Set this to True to convert the input even if
-            data would be lost (i.e. double -> float)
+            data would be lost in the conversion (i.e., float -> double). Set this to True to convert the input even if
+            data would be lost (i.e., double -> float).
 
         """
 
@@ -371,25 +372,31 @@ class ShmInputWrapper(InputWrapper):
 
 
 # This class is exclusively run in the worker thread. Separating the classes helps keeps the threads separate
-class TritonInferenceWorker(InferenceWorker):
+class _TritonInferenceWorker(InferenceWorker):
     """
     This is a base class for all Triton inference server requests.
 
     Parameters
     ----------
-    c : morpheus.config.Config
-        Pipeline configuration instance
+    inf_queue : `morpheus.utils.producer_consumer_queue.ProducerConsumerQueue`
+        Inference queue.
+    c : `morpheus.config.Config`
+        Pipeline configuration instance.
     model_name : str
         Name of the model specifies which model can handle the inference requests that are sent to Triton
         inference server.
     server_url : str
         Triton server gRPC URL including the port.
+    force_convert_inputs: bool
+        Whether or not to convert the inputs to the type specified by Triton. This will happen automatically if no
+        data would be lost in the conversion (i.e., float -> double). Set this to True to convert the input even if
+        data would be lost (i.e., double -> float).
     inout_mapping : typing.Dict[str, str]
         Dictionary used to map pipeline input/output names to Triton input/output names. Use this if the
-        Morpheus names do not match the model
-    use_shared_memory: bool, default = True
+        Morpheus names do not match the model.
+    use_shared_memory: bool, default = False
         Whether or not to use CUDA Shared IPC Memory for transferring data to Triton. Using CUDA IPC reduces network
-        transfer time but requires that Morpheus and Triton are located on the same machine
+        transfer time but requires that Morpheus and Triton are located on the same machine.
     """
 
     def __init__(self,
@@ -443,11 +450,6 @@ class TritonInferenceWorker(InferenceWorker):
     def init(self):
         """
         This function instantiate triton client and memory allocation for inference input and output.
-
-        Parameters
-        ----------
-        loop : IOLoop
-            Loop to send the response generated by future requests
 
         """
 
@@ -574,10 +576,10 @@ class TritonInferenceWorker(InferenceWorker):
 
         Parameters
         ----------
-        batch : MultiInferenceMessage
-            Batch of inference messages
-        fut : asyncio.Future
-            Future to capture responses
+        batch : `morpheus.pipeline.messages.MultiInferenceMessage`
+            Mini-batch of inference messages.
+        cb : typing.Callable[[`morpheus.pipeline.messages.ResponseMemory`], None]
+            Callback to set the values for the inference response.
 
         """
         mem: InputWrapper = self._mem_pool.borrow()
@@ -597,26 +599,32 @@ class TritonInferenceWorker(InferenceWorker):
                                         outputs=outputs)
 
 
-class TritonInferenceNLP(TritonInferenceWorker):
+class TritonInferenceNLP(_TritonInferenceWorker):
     """
     This class extends TritonInference to deal with scenario-specific NLP models inference requests like building
     response.
 
     Parameters
     ----------
-    c : morpheus.config.Config
-        Pipeline configuration instance
+    inf_queue : `morpheus.utils.producer_consumer_queue.ProducerConsumerQueue`
+        Inference queue.
+    c : `morpheus.config.Config`
+        Pipeline configuration instance.
     model_name : str
         Name of the model specifies which model can handle the inference requests that are sent to Triton
         inference server.
     server_url : str
         Triton server gRPC URL including the port.
+    force_convert_inputs : bool, default = False
+        Whether or not to convert the inputs to the type specified by Triton. This will happen automatically if no
+        data would be lost in the conversion (i.e., float -> double). Set this to True to convert the input even if
+        data would be lost (i.e., double -> float).
+    use_shared_memory : bool, default = False
+        Whether or not to use CUDA Shared IPC Memory for transferring data to Triton. Using CUDA IPC reduces network
+        transfer time but requires that Morpheus and Triton are located on the same machine.
     inout_mapping : typing.Dict[str, str]
         Dictionary used to map pipeline input/output names to Triton input/output names. Use this if the
-        Morpheus names do not match the model
-    use_shared_memory: bool, default = True
-        Whether or not to use CUDA Shared IPC Memory for transferring data to Triton. Using CUDA IPC reduces network
-        transfer time but requires that Morpheus and Triton are located on the same machine
+        Morpheus names do not match the model.
 
     """
 
@@ -625,8 +633,8 @@ class TritonInferenceNLP(TritonInferenceWorker):
                  c: Config,
                  model_name: str,
                  server_url: str,
-                 force_convert_inputs: bool,
-                 use_shared_memory: bool,
+                 force_convert_inputs: bool = False,
+                 use_shared_memory: bool = False,
                  inout_mapping: typing.Dict[str, str] = None):
         super().__init__(inf_queue,
                          c,
@@ -638,7 +646,7 @@ class TritonInferenceNLP(TritonInferenceWorker):
 
     @classmethod
     def needs_logits(cls):
-        return False
+        return True
 
     @classmethod
     def default_inout_mapping(cls) -> typing.Dict[str, str]:
@@ -655,8 +663,6 @@ class TritonInferenceNLP(TritonInferenceWorker):
         if (self._needs_logits):
             output = {key: 1.0 / (1.0 + np.exp(-val)) for key, val in output.items()}
 
-        print('Inside build response')
-
         mem = ResponseMemoryProbs(
             count=output["probs"].shape[0],
             probs=cp.array(output["probs"]),  # For now, only support one output
@@ -665,23 +671,32 @@ class TritonInferenceNLP(TritonInferenceWorker):
         return mem
 
 
-class TritonInferenceFIL(TritonInferenceWorker):
+class TritonInferenceFIL(_TritonInferenceWorker):
     """
     This class extends `TritonInference` to deal with scenario-specific FIL models inference requests like
     building response.
 
     Parameters
     ----------
-    c : morpheus.config.Config
-        Pipeline configuration instance
+    inf_queue : `morpheus.utils.producer_consumer_queue.ProducerConsumerQueue`
+        Inference queue.
+    c : `morpheus.config.Config`
+        Pipeline configuration instance.
     model_name : str
         Name of the model specifies which model can handle the inference requests that are sent to Triton
         inference server.
     server_url : str
         Triton server gRPC URL including the port.
+    force_convert_inputs : bool, default = False
+        Whether or not to convert the inputs to the type specified by Triton. This will happen automatically if no
+        data would be lost in the conversion (i.e., float -> double). Set this to True to convert the input even if
+        data would be lost (i.e., double -> float).
+    use_shared_memory: bool, default = False
+        Whether or not to use CUDA Shared IPC Memory for transferring data to Triton. Using CUDA IPC reduces network
+        transfer time but requires that Morpheus and Triton are located on the same machine.
     inout_mapping : typing.Dict[str, str]
         Dictionary used to map pipeline input/output names to Triton input/output names. Use this if the
-        Morpheus names do not match the model
+        Morpheus names do not match the model.
 
     """
 
@@ -690,8 +705,8 @@ class TritonInferenceFIL(TritonInferenceWorker):
                  c: Config,
                  model_name: str,
                  server_url: str,
-                 force_convert_inputs: bool,
-                 use_shared_memory: bool,
+                 force_convert_inputs: bool = False,
+                 use_shared_memory: bool = False,
                  inout_mapping: typing.Dict[str, str] = None):
         super().__init__(inf_queue,
                          c,
@@ -724,23 +739,31 @@ class TritonInferenceFIL(TritonInferenceWorker):
         return mem
 
 
-class TritonInferenceAE(TritonInferenceWorker):
+class TritonInferenceAE(_TritonInferenceWorker):
     """
-    This class extends `TritonInference` to deal with scenario-specific FIL models inference requests like
-    building response.
+    This class extends `TritonInference` to deal with inference processing specific to the AutoEncoder.
 
     Parameters
     ----------
-    c : morpheus.config.Config
-        Pipeline configuration instance
+    inf_queue : `morpheus.utils.producer_consumer_queue.ProducerConsumerQueue`
+        Inference queue.
+    c : `morpheus.config.Config`
+        Pipeline configuration instance.
     model_name : str
         Name of the model specifies which model can handle the inference requests that are sent to Triton
         inference server.
     server_url : str
         Triton server gRPC URL including the port.
+    force_convert_inputs : bool, default = False
+        Whether or not to convert the inputs to the type specified by Triton. This will happen automatically if no
+        data would be lost in the conversion (i.e., float -> double). Set this to True to convert the input even if
+        data would be lost (i.e., double -> float).
+    use_shared_memory: bool, default = False
+        Whether or not to use CUDA Shared IPC Memory for transferring data to Triton. Using CUDA IPC reduces network
+        transfer time but requires that Morpheus and Triton are located on the same machine.
     inout_mapping : typing.Dict[str, str]
         Dictionary used to map pipeline input/output names to Triton input/output names. Use this if the
-        Morpheus names do not match the model
+        Morpheus names do not match the model.
 
     """
 
@@ -749,8 +772,8 @@ class TritonInferenceAE(TritonInferenceWorker):
                  c: Config,
                  model_name: str,
                  server_url: str,
-                 force_convert_inputs: bool,
-                 use_shared_memory: bool,
+                 force_convert_inputs: bool = False,
+                 use_shared_memory: bool = False,
                  inout_mapping: typing.Dict[str, str] = None):
         super().__init__(inf_queue,
                          c,
@@ -807,34 +830,39 @@ class TritonInferenceAE(TritonInferenceWorker):
         return mem
 
 
+@register_stage("inf-triton")
 class TritonInferenceStage(InferenceStage):
     """
+    Perform inference with Triton Inference Server.
+
     This class specifies which inference implementation category (Ex: NLP/FIL) is needed for inferencing.
 
     Parameters
     ----------
-    c : morpheus.config.Config
-        Pipeline configuration instance
+    c : `morpheus.config.Config`
+        Pipeline configuration instance.
     model_name : str
         Name of the model specifies which model can handle the inference requests that are sent to Triton inference
         server.
     server_url : str
-        Triton server URL
-    force_convert_inputs : bool
+        Triton server URL.
+    force_convert_inputs : bool, default = False
         Instructs the stage to convert the incoming data to the same format that Triton is expecting. If set to False,
         data will only be converted if it would not result in the loss of data.
-    use_shared_memory: bool, default = False
+    use_shared_memory : bool, default = False, is_flag = True
         Whether or not to use CUDA Shared IPC Memory for transferring data to Triton. Using CUDA IPC reduces network
-        transfer time but requires that Morpheus and Triton are located on the same machine
+        transfer time but requires that Morpheus and Triton are located on the same machine.
     """
 
     def __init__(self,
                  c: Config,
                  model_name: str,
                  server_url: str,
-                 force_convert_inputs: bool,
+                 force_convert_inputs: bool = False,
                  use_shared_memory: bool = False):
         super().__init__(c)
+
+        self._config = c
 
         self._kwargs = {
             "model_name": model_name,
@@ -850,11 +878,11 @@ class TritonInferenceStage(InferenceStage):
         return self._get_worker_class().supports_cpp_node()
 
     def _get_worker_class(self):
-        if (Config.get().mode == PipelineModes.NLP):
+        if (self._config.mode == PipelineModes.NLP):
             return TritonInferenceNLP
-        elif (Config.get().mode == PipelineModes.FIL):
+        elif (self._config.mode == PipelineModes.FIL):
             return TritonInferenceFIL
-        elif (Config.get().mode == PipelineModes.AE):
+        elif (self._config.mode == PipelineModes.AE):
             return TritonInferenceAE
         else:
             raise NotImplementedError("Unknown config mode")
@@ -863,12 +891,12 @@ class TritonInferenceStage(InferenceStage):
 
         worker_cls = self._get_worker_class()
 
-        return worker_cls(inf_queue=inf_queue, c=Config.get(), **self._kwargs)
+        return worker_cls(inf_queue=inf_queue, c=self._config, **self._kwargs)
 
-    def _get_cpp_inference_node(self, seg: neo.Segment):
+    def _get_cpp_inference_node(self, builder: srf.Builder):
 
-        return neos.InferenceClientStage(seg,
-                                         name=self.unique_name,
-                                         needs_logits=self._get_worker_class().needs_logits(),
-                                         inout_mapping=self._get_worker_class().default_inout_mapping(),
-                                         **self._kwargs)
+        return _stages.InferenceClientStage(builder,
+                                            name=self.unique_name,
+                                            needs_logits=self._get_worker_class().needs_logits(),
+                                            inout_mapping=self._get_worker_class().default_inout_mapping(),
+                                            **self._kwargs)

@@ -27,8 +27,7 @@ from morpheus.messages.multi_inference_message import (
     InferenceMemory, MultiInferenceMessage, MultiInferenceNLPMessage,
     get_input, set_input)
 from morpheus.messages.multi_message import MultiMessage
-from morpheus.stages.preprocess.preprocess_base_stage import \
-    PreprocessBaseStage
+from morpheus.stages.preprocess.preprocess_base_stage import PreprocessBaseStage
 
 logger = logging.getLogger(__name__)
 

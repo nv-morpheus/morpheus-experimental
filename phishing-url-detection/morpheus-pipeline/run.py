@@ -17,8 +17,26 @@ import logging
 import click
 import psutil
 
+import logging
+
+import click
+import psutil
+from morpheus.config import Config, CppConfig, PipelineModes
+from morpheus.pipeline.linear_pipeline import LinearPipeline
+from morpheus.stages.general.monitor_stage import MonitorStage
+from triton_inference_stage import TritonInferenceStage
+from morpheus.stages.input.appshield_source_stage import AppShieldSourceStage
+from morpheus.stages.output.write_to_file_stage import WriteToFileStage
+from morpheus.stages.postprocess.add_scores_stage import AddScoresStage
+from morpheus.stages.postprocess.serialize_stage import SerializeStage
+from morpheus.utils.logger import configure_logging
+
+from create_feature import CreateFeatureURLStage
+from preprocessing import PreprocessingURLStage
+
 
 @click.command()
+@click.option("--use_cpp", default=False, help="Default value is False")
 @click.option(
     "--num_threads",
     default=psutil.cpu_count(),
@@ -40,7 +58,7 @@ import psutil
 )
 @click.option(
     "--model_fea_length",
-    default=500,  #297,
+    default=500,
     type=click.IntRange(min=1),
     help="Features length to use for the model",
 )
@@ -71,10 +89,27 @@ import psutil
     help="Max min normalization path",
 )
 @click.option(
+    "--alexa_data_path",
+    type=click.STRING,
+    required=True,
+    help="Alexa data path",
+)
+@click.option(
     "--output_file",
     type=click.STRING,
     default="ransomware_detection_output.jsonlines",
     help="The path to the file where the inference output will be saved.",
+)
+@click.option(
+    "--watch_directory",
+    type=bool,
+    default=False,
+    help=(
+        "The watch directory option instructs this stage to not close down once all files have been read. "
+        "Instead it will read all files that match the 'input_glob' pattern, and then continue to watch "
+        "the directory for additional files. Any new files that are added that match the glob will then "
+        "be processed."
+    ),
 )
 def run_pipeline(num_threads,
                  pipeline_batch_size,
@@ -85,48 +120,33 @@ def run_pipeline(num_threads,
                  input_glob,
                  tokenizer_path,
                  max_min_norm_path,
-                 output_file):
+                 output_file,
+                 use_cpp,
+                 alexa_data_path,
+                 watch_directory):
 
-    from morpheus.config import Config
-    from morpheus.config import PipelineModes
-    from morpheus.utils.logging import configure_logging
-
-    # Enable the default logger
+    # Enable the default logger=
     configure_logging(log_level=logging.INFO)
 
-    # Its necessary to get the global config object and configure it for FIL mode
-    config = Config.get()
-    config.use_cpp = False
+    # Its necessary to get the global config object and configure it for Pipeline mode
+    CppConfig.set_should_use_cpp(use_cpp)
+    config = Config()
     config.mode = PipelineModes.NLP
 
     # Below properties are specified by the command line
-    # Setting number of threads to 1 adding
-    num_threads = 1
+    num_threads = num_threads
     config.num_threads = num_threads
     config.pipeline_batch_size = pipeline_batch_size
     config.model_max_batch_size = model_max_batch_size
     config.feature_length = model_fea_length
     config.class_labels = ["probs"]
 
-    from create_feature import CreateFeatureURLStage
-    from from_appshield import AppShieldSourceStage
-    from inference_triton import TritonInferenceStage
-    from preprocessing import PreprocessingURLStage
-
-    from morpheus.pipeline.general_stages import AddScoresStage
-    from morpheus.pipeline.general_stages import AddClassificationsStage
-    from morpheus.pipeline.general_stages import MonitorStage
-    from morpheus.pipeline.output.serialize import SerializeStage
-    from morpheus.pipeline.output.to_file import WriteToFileStage
-
     kwargs = {}
-
-    from morpheus.pipeline.pipeline import LinearPipeline
 
     # Create a linear pipeline object
     pipeline = LinearPipeline(config)
 
-    raw_feature_columns = ['PID', 'Process', 'Heap', 'Virtual-address', 'URL', 'plugin', 'snapshot_id', 'timestamp']
+    cols_interested_plugins = ['PID', 'Process', 'Heap', 'Virtual-address', 'URL', 'plugin', 'snapshot_id', 'timestamp']
 
     feature_columns = [
         'domain_in_alexa',
@@ -147,24 +167,30 @@ def run_pipeline(num_threads,
         'brand_in_path',
         'path_max_len'
     ]
+
     MAX_LEN = 500
     feature_columns.extend(['word_' + str(i) for i in range(MAX_LEN)])
-    required_plugins = ['urls']
+    interested_plugins = ['urls']
 
     # Set source stage
     pipeline.set_source(
-        AppShieldSourceStage(config,
-                             input_glob,
-                             watch_directory=False,
-                             raw_feature_columns=raw_feature_columns,
-                             required_plugins=required_plugins))
+        AppShieldSourceStage(
+            config,
+            input_glob,
+            interested_plugins,
+            cols_interested_plugins,
+            watch_directory=watch_directory,
+        )
+    )
     # Add a monitor stage
-    # pipeline.add_stage(MonitorStage(config, description="from-file rate", unit="inf"))
+    pipeline.add_stage(MonitorStage(config, description="from-file rate", unit="inf"))
 
     # Add processing stage
     pipeline.add_stage(CreateFeatureURLStage(config, feature_columns=feature_columns,
-                                             required_plugins=required_plugins, tokenizer_path=tokenizer_path, max_min_norm_path=max_min_norm_path))
-    #pipeline.add_stage(URLPreprocessingStage(config))
+                                             required_plugins=interested_plugins, 
+                                             tokenizer_path=tokenizer_path, 
+                                             max_min_norm_path=max_min_norm_path,
+                                             alexa_path=alexa_data_path))
 
     # # Add a monitor stage
     pipeline.add_stage(MonitorStage(config, description="Create features rate"))

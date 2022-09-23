@@ -146,8 +146,6 @@ def run_pipeline(
     feature_columns = ["char_" + str(i) for i in range(DOMAIN_LEN)]
     interested_plugins = ["urls"]
 
-    # input_glob = os.path.join(input_dir, "snapshot-*", "*.json")
-
     # Set source stage
     pipeline.set_source(
         AppShieldSourceStage(
