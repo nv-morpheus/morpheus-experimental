@@ -16,26 +16,23 @@ import logging
 
 import click
 import psutil
-
-from morpheus.config import CppConfig
-from morpheus.config import Config
-from morpheus.config import PipelineModes
+from morpheus.config import Config, CppConfig, PipelineModes
+from morpheus.pipeline.linear_pipeline import LinearPipeline
+from morpheus.stages.general.monitor_stage import MonitorStage
+from morpheus.stages.inference.triton_inference_stage import \
+    TritonInferenceStage
+from morpheus.stages.input.appshield_source_stage import AppShieldSourceStage
+from morpheus.stages.output.write_to_file_stage import WriteToFileStage
+from morpheus.stages.postprocess.add_scores_stage import AddScoresStage
+from morpheus.stages.postprocess.serialize_stage import SerializeStage
 from morpheus.utils.logger import configure_logging
 
 from create_feature import CreateFeatureDGAStage
-from inference_triton import TritonInferenceStage
 from preprocessing import PreprocessingDGAStage
 
-from morpheus.pipeline.general_stages import AddScoresStage
-from morpheus.pipeline.general_stages import MonitorStage
-from morpheus.pipeline.output.serialize import SerializeStage
-from morpheus.pipeline.output.to_file import WriteToFileStage
-from morpheus.stages.input.appshield_source_stage import AppShieldSourceStage
-
-from morpheus.pipeline.pipeline import LinearPipeline
 
 @click.command()
-@click.option('--use_cpp', default=False,  help="Default value is False")
+@click.option("--use_cpp", default=False, help="Default value is False")
 @click.option(
     "--num_threads",
     default=psutil.cpu_count(),
@@ -46,8 +43,10 @@ from morpheus.pipeline.pipeline import LinearPipeline
     "--pipeline_batch_size",
     default=100000,
     type=click.IntRange(min=1),
-    help=("Internal batch size for the pipeline. Can be much larger than the model batch size. "
-          "Also used for Kafka consumers"),
+    help=(
+        "Internal batch size for the pipeline. Can be much larger than the model batch size. "
+        "Also used for Kafka consumers"
+    ),
 )
 @click.option(
     "--model_max_batch_size",
@@ -85,26 +84,30 @@ from morpheus.pipeline.pipeline import LinearPipeline
     default="ransomware_detection_output.jsonlines",
     help="The path to the file where the inference output will be saved.",
 )
-@click.option('--watch_directory',
-              type=bool,
-              default=False,
-              help=("The watch directory option instructs this stage to not close down once all files have been read. "
-                    "Instead it will read all files that match the 'input_glob' pattern, and then continue to watch "
-                    "the directory for additional files. Any new files that are added that match the glob will then "
-                    "be processed."))
-def run_pipeline(use_cpp,
-                 num_threads,
-                 pipeline_batch_size,
-                 model_max_batch_size,
-                 model_fea_length,
-                 model_name,
-                 server_url,
-                 input_glob,
-                 tokenizer_path,
-                 output_file,
-                 watch_directory):
-
-    
+@click.option(
+    "--watch_directory",
+    type=bool,
+    default=False,
+    help=(
+        "The watch directory option instructs this stage to not close down once all files have been read. "
+        "Instead it will read all files that match the 'input_glob' pattern, and then continue to watch "
+        "the directory for additional files. Any new files that are added that match the glob will then "
+        "be processed."
+    ),
+)
+def run_pipeline(
+    use_cpp,
+    num_threads,
+    pipeline_batch_size,
+    model_max_batch_size,
+    model_fea_length,
+    model_name,
+    server_url,
+    input_glob,
+    tokenizer_path,
+    output_file,
+    watch_directory,
+):
 
     # Enable the default logger
     configure_logging(log_level=logging.INFO)
@@ -112,7 +115,7 @@ def run_pipeline(use_cpp,
     # Its necessary to get the global config object and configure it for Pipeline mode
     CppConfig.set_should_use_cpp(use_cpp)
     config = Config()
-    config.mode = PipelineModes.OTHER
+    config.mode = PipelineModes.NLP
 
     # Below properties are specified by the command line
     config.num_threads = num_threads
@@ -127,27 +130,46 @@ def run_pipeline(use_cpp,
     # Create a linear pipeline object
     pipeline = LinearPipeline(config)
 
-    raw_feature_columns = ['PID', 'Process', 'Heap', 'Virtual-address', 'URL', 'plugin', 'snapshot_id', 'timestamp']
+    cols_interested_plugins = [
+        "PID",
+        "Process",
+        "Heap",
+        "Virtual-address",
+        "URL",
+        "plugin",
+        "snapshot_id",
+        "timestamp",
+        "Domain",
+    ]
 
     DOMAIN_LEN = 75
-    feature_columns = ['char_' + str(i) for i in range(DOMAIN_LEN)]
-    required_plugins = ['urls']
+    feature_columns = ["char_" + str(i) for i in range(DOMAIN_LEN)]
+    interested_plugins = ["urls"]
 
-    #input_glob = os.path.join(input_dir, "snapshot-*", "*.json")
+    # input_glob = os.path.join(input_dir, "snapshot-*", "*.json")
 
     # Set source stage
     pipeline.set_source(
-        AppShieldSourceStage(config,
-                             input_glob,
-                             watch_directory=watch_directory,
-                             raw_feature_columns=raw_feature_columns,
-                             required_plugins=required_plugins))
+        AppShieldSourceStage(
+            config,
+            input_glob,
+            interested_plugins,
+            cols_interested_plugins,
+            watch_directory=watch_directory,
+        )
+    )
     # Add a monitor stage
     # pipeline.add_stage(MonitorStage(config, description="from-file rate", unit="inf"))
 
     # Add processing stage
-    pipeline.add_stage(CreateFeatureDGAStage(config, feature_columns=feature_columns,
-                                             required_plugins=required_plugins, tokenizer_path=tokenizer_path))
+    pipeline.add_stage(
+        CreateFeatureDGAStage(
+            config,
+            feature_columns=feature_columns,
+            required_plugins=interested_plugins,
+            tokenizer_path=tokenizer_path,
+        )
+    )
 
     # # Add a monitor stage
     pipeline.add_stage(MonitorStage(config, description="Create features rate"))
@@ -159,11 +181,13 @@ def run_pipeline(use_cpp,
 
     # Add a inference stage
     pipeline.add_stage(
-        TritonInferenceStage(config,
-                             model_name=model_name,
-                             server_url=server_url,
-                             force_convert_inputs=True,
-                             inout_mapping={"output": "probs"}))
+        TritonInferenceStage(
+            config,
+            model_name=model_name,
+            server_url=server_url,
+            force_convert_inputs=True,
+        )
+    )
     # # Add a monitor stage
     pipeline.add_stage(MonitorStage(config, description="Inference rate", unit="inf"))
 
@@ -171,7 +195,9 @@ def run_pipeline(use_cpp,
     pipeline.add_stage(AddScoresStage(config, labels=["probs"]))
 
     # Add a monitor stage
-    pipeline.add_stage(MonitorStage(config, description="Add classification rate", unit="add-class"))
+    pipeline.add_stage(
+        MonitorStage(config, description="Add classification rate", unit="add-class")
+    )
 
     # Convert the probabilities to serialized JSON strings using the custom serialization stage
     pipeline.add_stage(SerializeStage(config, **kwargs))
@@ -183,13 +209,16 @@ def run_pipeline(use_cpp,
     pipeline.add_stage(WriteToFileStage(config, filename=output_file, overwrite=True))
 
     # Add a monitor stage
-    pipeline.add_stage(MonitorStage(config, description="Write to file rate", unit="to-file"))
+    pipeline.add_stage(
+        MonitorStage(config, description="Write to file rate", unit="to-file")
+    )
 
     # Build pipeline
     pipeline.build()
 
     # Run the pipeline
     pipeline.run()
+
 
 if __name__ == "__main__":
     run_pipeline()

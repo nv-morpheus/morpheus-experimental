@@ -71,10 +71,10 @@ DOCKER_EXTRA_ARGS="-v ${MORPHEUS_EXPERIMENTAL_ROOT}:/workspace/morpheus_experime
 Build the dev container as instructed in the [Build Morpheus Container] section of [Getting Started with Morpheus] document.
 
 ## Requirements
-**Note**: Make sure below dependencies are installed in your environment before running the DGA detection pipeline. Run the installation command specified below if not.
+**Note**: Make sure below dependency is installed in your environment before running the DGA detection pipeline. Run the installation command specified below if not.
 
 ```bash
-pip install dask==2022.9.0 distributed==2022.9.0 tensorflow==2.10.0 tldextract==3.3.1
+pip install tldextract==3.3.1
 ```
 
 Install 
@@ -87,7 +87,7 @@ cd ${MORPHEUS_ROOT}/morpheus_experimental/appshield-dga-detection/morpheus-pipel
 
 python run.py --server_url=localhost:8001 \
               --model_name=dga-appshield-cnn \
-              --input_glob=${MORPHEUS_ROOT}/morpheus_experimental/data/URLS_Snapshots/snapshot-*/*.json \
+              --input_glob=${MORPHEUS_ROOT}/appshield-dga-detection/morpheus-pipeline/data/URLS_Snapshots/snapshot-*/*.json \
               --tokenizer_path=./tokenizer.csv \
               --output_file=./dga_detection_output.jsonlines
 ```
@@ -102,7 +102,7 @@ python run.py --help
 Usage: run.py [OPTIONS]
 
 Options:
-  --use_cpp BOOLEAN
+  --use_cpp BOOLEAN               Default value is False
   --num_threads INTEGER RANGE     Number of internal pipeline threads to use
                                   [x>=1]
   --pipeline_batch_size INTEGER RANGE
@@ -120,6 +120,14 @@ Options:
   --tokenizer_path TEXT           Tokenizer path  [required]
   --output_file TEXT              The path to the file where the inference
                                   output will be saved.
+  --watch_directory BOOLEAN       The watch directory option instructs this
+                                  stage to not close down once all files have
+                                  been read. Instead it will read all files
+                                  that match the 'input_glob' pattern, and
+                                  then continue to watch the directory for
+                                  additional files. Any new files that are
+                                  added that match the glob will then be
+                                  processed.
   --help                          Show this message and exit.
   ```
 
