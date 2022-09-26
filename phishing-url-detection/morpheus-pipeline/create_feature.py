@@ -31,7 +31,6 @@ from morpheus.pipeline.multi_message_stage import MultiMessageStage
 from morpheus.pipeline.stream_pair import StreamPair
 from morpheus.stages.input.appshield_source_stage import AppShieldMessageMeta
 from srf.core import operators as ops
-from transformers import AutoTokenizer
 
 MAX_LEN = 500
 STRUCTURAL_FEATURES = [
@@ -335,7 +334,7 @@ class FeatureConfig:
 
 
 def _build_features(full_df: pd.DataFrame,
-                    tokenizer,
+                    word_index,
                     df_max_min,
                     alexa_rank_1k_domain_unique,
                     alexa_rank_100k_domain_unique) -> pd.DataFrame:
@@ -354,11 +353,21 @@ def _build_features(full_df: pd.DataFrame,
         url_stractural_feature = snapshot_df[feature].copy()
         url_stractural_features[feature] = (url_stractural_feature - min_feature) / (max_feature - min_feature)
     
-    tokens = tokenizer(snapshot_df.URL_clean.tolist(), max_length=MAX_LEN, padding='max_length', return_tensors='pt', )
+    words_df = snapshot_df.URL_clean.str.split(" ", expand=True)
+
+    for col in words_df.columns:
+        words_df[col] = words_df[col].map(word_index)
+
+    words_df = words_df.fillna(0)
+    
+    pad_width = MAX_LEN - words_df.shape[1]
+
+    padded_np_array = np.pad(
+        words_df.to_numpy(), ((0, 0), (0, pad_width)), mode="constant"
+    )
 
     df_features = pd.concat([url_stractural_features, pd.DataFrame(
-        columns=["word_" + str(i) for i in range(MAX_LEN)], data=tokens.input_ids.numpy()
-    )], axis=1)
+        columns=["word_" + str(i) for i in range(MAX_LEN)], data=padded_np_array)], axis=1)
     
     df_features["URL_clean"] = snapshot_df["URL_clean"]
     df_features["URL"] = snapshot_df["URL"]
@@ -377,7 +386,6 @@ class CreateFeatureURLStage(MultiMessageStage):
         self._required_plugins = required_plugins
         self._feature_columns = feature_columns
         self._features_dummy_data = dict.fromkeys(self._feature_columns, 0)
-        self._tokenizer = AutoTokenizer.from_pretrained('distilbert-base-uncased-finetuned-sst-2-english')
         alexa_rank = pd.read_csv(alexa_path, header=None)
         alexa_rank.columns = ['index', 'url']
         alexa_rank_domain = alexa_rank['url'].apply(get_domain)
@@ -386,7 +394,7 @@ class CreateFeatureURLStage(MultiMessageStage):
         self.alexa_rank_1k_domain_unique = pd.unique(self.alexa_rank_1k)
         self.alexa_rank_100k_domain_unique = pd.unique(self.alexa_rank_100k)
         self.df_max_min = pd.read_csv(max_min_norm_path)
-
+        self._word_index = pd.read_csv(tokenizer_path).set_index('keys')['values'].to_dict()
         self._feature_config = FeatureConfig(required_plugins=self._required_plugins,
                                              full_memory_address=0,
                                              file_extn_list=[],
@@ -429,7 +437,7 @@ class CreateFeatureURLStage(MultiMessageStage):
 
                 snapshot_fea_dfs = self._client.map(_build_features,
                                                     all_dfs,
-                                                    tokenizer=self._tokenizer,
+                                                    word_index=self._word_index,
                                                     df_max_min=self.df_max_min,
                                                     alexa_rank_1k_domain_unique=self.alexa_rank_1k_domain_unique,
                                                     alexa_rank_100k_domain_unique=self.alexa_rank_100k_domain_unique,)

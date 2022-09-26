@@ -73,7 +73,7 @@ DOCKER_EXTRA_ARGS="-v ${MORPHEUS_EXPERIMENTAL_ROOT}:/workspace/morpheus_experime
 **Note**: Make sure below dependencies are installed in your environment before running the DGA detection pipeline. Run the installation command specified below if not.
 
 ```bash
-pip install tldextract==3.3.1 transformers==4.22.1
+pip install tldextract==3.3.1
 ```
 
 

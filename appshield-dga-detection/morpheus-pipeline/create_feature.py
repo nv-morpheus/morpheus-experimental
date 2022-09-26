@@ -65,7 +65,7 @@ def _build_features(snapshot_df: pd.DataFrame, word_index) -> pd.DataFrame:
 
     chars_df = data_chars.str.split(" ", expand=True)
     for col in chars_df.columns:
-        chars_df = chars_df.replace({col: word_index})
+        chars_df[col] = chars_df[col].map(word_index)
 
     chars_df = chars_df.fillna(0)
     pad_width = MAX_DOMAIN - chars_df.shape[1]
