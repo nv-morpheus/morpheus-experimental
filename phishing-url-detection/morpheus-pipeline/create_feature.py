@@ -426,7 +426,6 @@ class CreateFeatureURLStage(MultiMessageStage):
                 snapshot_ids = x.df.snapshot_id.unique()
 
                 all_dfs = [df[df.snapshot_id == snapshot_id] for snapshot_id in snapshot_ids]
-                # df_remote = self._client.scatter(df, broadcast=True, hash=False)
 
                 snapshot_fea_dfs = self._client.map(_build_features,
                                                     all_dfs,

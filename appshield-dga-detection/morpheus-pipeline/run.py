@@ -32,7 +32,7 @@ from preprocessing import PreprocessingDGAStage
 
 
 @click.command()
-@click.option("--use_cpp", default=False, help="Default value is False")
+@click.option("--use_cpp", default=False, help="Use C++ implementation. Default value is False")
 @click.option(
     "--num_threads",
     default=psutil.cpu_count(),

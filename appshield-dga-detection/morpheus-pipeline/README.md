@@ -61,14 +61,14 @@ I0922 16:01:56.339664 1 server.cc:626]
 
 Now that the model has been deployed successfully. For the experimental pipeline to execute, let's build a Morpheus container if one does not already exist.
 
-**Note**: Before running the Morpheus container, we would need to supply an additional docker parameter to bind the Morpheus experimental pipeline repo to the container as a volume.
+**Note**: Before running the Morpheus container, we would need to supply an additional docker parameter to bind the Morpheus experimental pipeline repo to the container as a volume as shown in the example.
+
+Build the release container as instructed in the [Build Morpheus Container] section of [Getting Started with Morpheus] document.
 
 Example:
 ```bash
 DOCKER_EXTRA_ARGS="-v ${MORPHEUS_EXPERIMENTAL_ROOT}:/workspace/morpheus_experimental" ./docker/run_container_release.sh
 ```
-
-Build the release container as instructed in the [Build Morpheus Container] section of [Getting Started with Morpheus] document.
 
 ## Requirements
 **Note**: Make sure below dependency is installed in your environment before running the DGA detection pipeline. Run the installation command specified below if not.
@@ -83,26 +83,26 @@ Install
 Launch the example using the following
 
 ```bash
-cd ${MORPHEUS_ROOT}/morpheus_experimental/appshield-dga-detection/morpheus-pipeline
+cd ${MORPHEUS_ROOT}/morpheus_experimental/appshield-dga-detection
 
-python run.py --server_url=localhost:8001 \
+python morpheus-pipeline/run.py --server_url=localhost:8001 \
               --model_name=dga-appshield-cnn \
-              --input_glob=${MORPHEUS_ROOT}/appshield-dga-detection/morpheus-pipeline/data/URLS_Snapshots/snapshot-*/*.json \
-              --tokenizer_path=./tokenizer.csv \
-              --output_file=./dga_detection_output.jsonlines
+              --input_glob=./morpheus-pipeline/data/URLS_Snapshots/snapshot-*/*.json \
+              --tokenizer_path=./morpheus-pipeline/tokenizer.csv \
+              --output_file=./morpheus-pipeline/dga_detection_output.jsonlines
 ```
 
 The configuration options for this example can be queried with:
 
 ```bash
-python run.py --help
+python morpheus-pipeline/run.py --help
 ```
 
 ```
 Usage: run.py [OPTIONS]
 
 Options:
-  --use_cpp BOOLEAN               Default value is False
+  --use_cpp BOOLEAN               Use C++ implementation. Default value is False
   --num_threads INTEGER RANGE     Number of internal pipeline threads to use
                                   [x>=1]
   --pipeline_batch_size INTEGER RANGE

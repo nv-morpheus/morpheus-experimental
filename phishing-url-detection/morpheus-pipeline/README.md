@@ -60,50 +60,50 @@ Once Triton server finishes starting up, it will display the status of all loade
 
 Now that the model has been deployed successfully. For the experimental pipeline to execute, let's build a Morpheus container if one does not already exist.
 
-**Note**: Before running the Morpheus container, we would need to supply an additional docker parameter to bind the Morpheus experimental pipeline repo to the container as a volume.
+**Note**: Before running the Morpheus container, we would need to supply an additional docker parameter to bind the Morpheus experimental pipeline repo to the container as a volume as shown in the exammple.
+
+Build the release container as instructed in the [Build Morpheus Container] section of [Getting Started with Morpheus] document.
 
 Example:
 ```bash
 DOCKER_EXTRA_ARGS="-v ${MORPHEUS_EXPERIMENTAL_ROOT}:/workspace/morpheus_experimental" ./docker/run_container_release.sh
 ```
 
-Build the release container as instructed in the [Build Morpheus Container] section of [Getting Started with Morpheus] document.
-
 ## Requirements
 **Note**: Make sure below dependencies are installed in your environment before running the DGA detection pipeline. Run the installation command specified below if not.
 
 ```bash
-pip install dask==2022.9.0 distributed==2022.9.0 tensorflow==2.10.0 tldextract==3.3.1
+pip install tldextract==3.3.1 transformers==4.22.1
 ```
 
-Install 
 
 ## Run Pipeline
 Launch the example using the following
 
 ```bash
-cd ${MORPHEUS_ROOT}/morpheus_experimental/phishing-url-detection/morpheus-pipeline
+cd ${MORPHEUS_ROOT}/morpheus_experimental/phishing-url-detection
 
-python run.py --server_url=localhost:8001 \
+python morpheus-pipeline/run.py --num_threads=1 \
+              --server_url=localhost:8001 \
               --model_name=phishurl-appshield-combined-lstm-dnn-onnx \
-              --input_glob=$PWD/data/URLS_Snapshots/snapshot-*/*.json \
-              --tokenizer_path=./tokenizer_urls.csv \
-              --max_min_norm_path=./max_min_urls.csv \
-              --alexa_data_path=/workspace/morpheus_experimental/phishing-url-detection/datasets/alexa-top-500k.csv \
+              --input_glob=./morpheus-pipeline/data/URLS_Snapshots/snapshot-*/*.json \
+              --tokenizer_path=./morpheus-pipeline/tokenizer_urls.csv \
+              --max_min_norm_path=./morpheus-pipeline/max_min_urls.csv \
+              --alexa_data_path=./datasets/alexa-top-500k.csv \
               --output_file=./phishing_url_detection_output.jsonlines
 ```
 
 The configuration options for this example can be queried with:
 
 ```bash
-python run.py --help
+python morpheus-pipeline/run.py --help
 ```
 
 ```
 Usage: run.py [OPTIONS]
 
 Options:
-  --use_cpp BOOLEAN               Default value is False
+  --use_cpp BOOLEAN               Use C++ implementation. Default value is False
   --num_threads INTEGER RANGE     Number of internal pipeline threads to use
                                   [x>=1]
   --pipeline_batch_size INTEGER RANGE
