@@ -133,7 +133,7 @@ def get_path(url):
 
 def get_len(s):
     return len(s)
-# Get count of nubers in input
+# Get count of numbers in input
 
 
 def get_count_numbers(s):

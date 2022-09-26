@@ -39,7 +39,7 @@ from tensorflow.keras.preprocessing.text import Tokenizer
 from tensorflow.keras.preprocessing.sequence import pad_sequences
 
 # Parameters
-EPOCHS = 1 #30
+EPOCHS = 30
 BATCH_SIZE = 1000
 MALICIOUS_RATIO = 0.01
 LEARNING_RATE = 0.001
@@ -401,16 +401,16 @@ df_binary = pd.read_csv("../datasets/dga_training_dataset.csv")
 df_families = df_binary.copy()
 
 # print("Processing data for binary model...")
-# X_train, y_train, X_test, y_test, domain_test, type_test = data_preprocessing_binary(df_binary)
+X_train, y_train, X_test, y_test, domain_test, type_test = data_preprocessing_binary(df_binary)
 
 # print("Training binary model...")
-# model_binary = train_model_binary(X_train, y_train, X_test, y_test)
+model_binary = train_model_binary(X_train, y_train, X_test, y_test)
 
 # print("Saving binary model...")
-# model_binary.save('../models/dga_binary_keras_model')
+model_binary.save('../models/dga_binary_keras_model')
 
-# print("Evaluating binary model...")
-# model_eval_binary(model_binary, X_test, y_test, domain_test, type_test)
+# print("Evaluating binary model...") 
+model_eval_binary(model_binary, X_test, y_test, domain_test, type_test)
 
 print("Processing data for families model...")
 train_generator, validation_generator, X_data, encoded_labels, steps_per_epoch, domains, labels_type, train_indices_same, train_indices_diff, test_indices_same, test_indices_diff = data_preprocessing_families(df_families)
