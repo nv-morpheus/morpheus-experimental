@@ -59,8 +59,7 @@ DOCKER_EXTRA_ARGS="-v ${MORPHEUS_EXPERIMENTAL_ROOT}:/workspace/morpheus_experime
 ```bash
 pip install tldextract==3.3.1
 ```
-
-Install 
+ 
 
 ## Run Pipeline
 Launch the example using the following
