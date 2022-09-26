@@ -17,24 +17,17 @@ import re
 import typing
 from urllib.parse import urlparse
 
-import neo
 import numpy as np
 import pandas as pd
-import swifter
+import srf
 import tldextract
-from from_appshield import SourceMessageMeta
-from neo.core import operators as ops
-from tensorflow.keras.preprocessing.sequence import pad_sequences
-from tensorflow.keras.preprocessing.text import Tokenizer
-
-from dask import delayed
 from dask.distributed import Client
-from dask.distributed import get_client
-
 from morpheus.config import Config
-from morpheus.pipeline.messages import MultiMessage
-from morpheus.pipeline.pipeline import MultiMessageStage
-from morpheus.pipeline.pipeline import StreamPair
+from morpheus.messages import MultiMessage
+from morpheus.pipeline.multi_message_stage import MultiMessageStage
+from morpheus.pipeline.stream_pair import StreamPair
+from morpheus.stages.input.appshield_source_stage import AppShieldMessageMeta
+from srf.core import operators as ops
 
 MAX_LEN = 500
 STRUCTURAL_FEATURES = [
@@ -286,26 +279,26 @@ def get_max_len_path(path_clean):
 
 # Calculating the features
 def create_features(df, alexa_rank_1k_domain_unique, alexa_rank_100k_domain_unique):
-    df['domain_in_alexa'] = df['Domain'].swifter.apply(
-        lambda x: get_domain_alexa(x, alexa_rank_1k_domain_unique, alexa_rank_100k_domain_unique), axis=1)
-    df['domain_len'] = df['Domain'].swifter.apply(get_len)
-    df['domain_numbers'] = df['Domain'].swifter.apply(get_count_numbers)
-    df['domain_isalnum'] = df['Domain'].swifter.apply(get_not_alphanumeric)
-    df['subdomain_len'] = df['Subdomain'].swifter.apply(get_len)
-    df['subdomain_numbers_count'] = df['Subdomain'].swifter.apply(get_count_numbers)
-    df['subdomain_parts_count'] = df['Subdomain'].swifter.apply(get_count_parts)
-    df['tld_len'] = df['Tld'].swifter.apply(get_len)
-    df['tld_parts_count'] = df['Tld'].swifter.apply(get_count_parts)
-    df['url_len'] = df['URL'].swifter.apply(get_len)
-    df['queries_amount'] = df['URL'].swifter.apply(get_count_queries)
-    df['fragments_amount'] = df['URL'].swifter.apply(get_count_fragments)
-    df['path_len'] = df['Path'].swifter.apply(get_len)
-    df['path_slash_counts'] = df['Path'].swifter.apply(get_count_slash)
-    df['path_double_slash_counts'] = df['Path'].swifter.apply(get_double_slash)
-    df['brand_in_subdomain'] = df['Subdomain'].swifter.apply(get_brand_in_subdomain)
-    df['brand_in_path'] = df['Path'].swifter.apply(get_brand_in_path)
-    df['Path_clean'] = df['Path'].swifter.apply(lambda x: clean(x))
-    df['path_max_len'] = df['Path_clean'].swifter.apply(get_max_len_path)
+    df['domain_in_alexa'] = df['Domain'].apply(
+        lambda x: get_domain_alexa(x, alexa_rank_1k_domain_unique, alexa_rank_100k_domain_unique))
+    df['domain_len'] = df['Domain'].apply(get_len)
+    df['domain_numbers'] = df['Domain'].apply(get_count_numbers)
+    df['domain_isalnum'] = df['Domain'].apply(get_not_alphanumeric)
+    df['subdomain_len'] = df['Subdomain'].apply(get_len)
+    df['subdomain_numbers_count'] = df['Subdomain'].apply(get_count_numbers)
+    df['subdomain_parts_count'] = df['Subdomain'].apply(get_count_parts)
+    df['tld_len'] = df['Tld'].apply(get_len)
+    df['tld_parts_count'] = df['Tld'].apply(get_count_parts)
+    df['url_len'] = df['URL'].apply(get_len)
+    df['queries_amount'] = df['URL'].apply(get_count_queries)
+    df['fragments_amount'] = df['URL'].apply(get_count_fragments)
+    df['path_len'] = df['Path'].apply(get_len)
+    df['path_slash_counts'] = df['Path'].apply(get_count_slash)
+    df['path_double_slash_counts'] = df['Path'].apply(get_double_slash)
+    df['brand_in_subdomain'] = df['Subdomain'].apply(get_brand_in_subdomain)
+    df['brand_in_path'] = df['Path'].apply(get_brand_in_path)
+    df['Path_clean'] = df['Path'].apply(lambda x: clean(x))
+    df['path_max_len'] = df['Path_clean'].apply(get_max_len_path)
     return df
 
 
@@ -338,11 +331,10 @@ class FeatureConfig:
 
 
 def _build_features(full_df: pd.DataFrame,
-                    tokenizer,
+                    word_index,
                     df_max_min,
                     alexa_rank_1k_domain_unique,
-                    alexa_rank_100k_domain_unique,
-                    config: FeatureConfig) -> pd.DataFrame:
+                    alexa_rank_100k_domain_unique) -> pd.DataFrame:
 
     snapshot_df = full_df
     snapshot_df = processing(snapshot_df, alexa_rank_1k_domain_unique, alexa_rank_100k_domain_unique)
@@ -350,23 +342,32 @@ def _build_features(full_df: pd.DataFrame,
     snapshot_df['URL_clean'] = snapshot_df['URL'].copy().apply(remove_prefix)
     snapshot_df['URL_clean'] = snapshot_df['URL_clean'].apply(lambda x: clean_nlp(x))
 
-    url_stractural_features = snapshot_df[STRUCTURAL_FEATURES]
+    url_stractural_features = pd.DataFrame()
 
     for feature in STRUCTURAL_FEATURES:
         max_feature = df_max_min[feature].iloc[1]
         min_feature = df_max_min[feature].iloc[0]
-        url_stractural_feature = url_stractural_features[feature].copy()
+        url_stractural_feature = snapshot_df[feature].copy()
         url_stractural_features[feature] = (url_stractural_feature - min_feature) / (max_feature - min_feature)
+    
+    words_df = snapshot_df.URL_clean.str.split(" ", expand=True)
 
-    url_df_clean = snapshot_df['URL_clean']
-    url_clean_tokens = tokenizer.texts_to_sequences(url_df_clean)
-    url_clean_tokens = pad_sequences(url_clean_tokens, maxlen=MAX_LEN, padding='post')
+    for col in words_df.columns:
+        words_df[col] = words_df[col].map(word_index)
 
-    df_features = pd.concat([
-        url_stractural_features,
-        pd.DataFrame(columns=['word_' + str(i) for i in range(MAX_LEN)], data=url_clean_tokens)
-    ],
-                            axis=1)
+    words_df = words_df.fillna(0)
+    
+    pad_width = MAX_LEN - words_df.shape[1]
+
+    padded_np_array = np.pad(
+        words_df.to_numpy(), ((0, 0), (0, pad_width)), mode="constant"
+    )
+
+    df_features = pd.concat([url_stractural_features, pd.DataFrame(
+        columns=["word_" + str(i) for i in range(MAX_LEN)], data=padded_np_array)], axis=1)
+    
+    df_features["URL_clean"] = snapshot_df["URL_clean"]
+    df_features["URL"] = snapshot_df["URL"]
 
     return df_features
 
@@ -378,24 +379,19 @@ def _combined_features(x: typing.List[pd.DataFrame]) -> pd.DataFrame:
 
 class CreateFeatureURLStage(MultiMessageStage):
 
-    def __init__(self, c: Config, required_plugins: typing.List[str], feature_columns: typing.List[str], tokenizer_path, max_min_norm_path):
+    def __init__(self, c: Config, required_plugins: typing.List[str], feature_columns: typing.List[str], tokenizer_path, max_min_norm_path, alexa_path):
         self._required_plugins = required_plugins
         self._feature_columns = feature_columns
         self._features_dummy_data = dict.fromkeys(self._feature_columns, 0)
-
-        # Read tokenizer
-        self.tokenizer = Tokenizer()
-        self.tokenizer.word_index = pd.read_csv(tokenizer_path
-                                                ).set_index('keys')['values'].to_dict() # tokenizer_path = '/dockershare/phishurl_appshield_detection/tokenizer_urls.csv'
-        alexa_rank = pd.read_csv('/dockershare/phishurl_appshield_detection/alexa-top-500k.csv', header=None)
+        alexa_rank = pd.read_csv(alexa_path, header=None)
         alexa_rank.columns = ['index', 'url']
         alexa_rank_domain = alexa_rank['url'].apply(get_domain)
         self.alexa_rank_1k = alexa_rank_domain.iloc[0:1000]
         self.alexa_rank_100k = alexa_rank_domain.iloc[1000:100000]
         self.alexa_rank_1k_domain_unique = pd.unique(self.alexa_rank_1k)
         self.alexa_rank_100k_domain_unique = pd.unique(self.alexa_rank_100k)
-        self.df_max_min = pd.read_csv(max_min_norm_path) # max_min_norm_path = '/dockershare/phishurl_appshield_detection/max_min_urls.csv'
-
+        self.df_max_min = pd.read_csv(max_min_norm_path)
+        self._word_index = pd.read_csv(tokenizer_path).set_index('keys')['values'].to_dict()
         self._feature_config = FeatureConfig(required_plugins=self._required_plugins,
                                              full_memory_address=0,
                                              file_extn_list=[],
@@ -415,14 +411,17 @@ class CreateFeatureURLStage(MultiMessageStage):
         Returns accepted input types for this stage.
 
         """
-        return (SourceMessageMeta, )
+        return (AppShieldMessageMeta, )
+    
+    def supports_cpp_node(self):
+        return False
 
-    def _build_single(self, seg: neo.Segment, input_stream: StreamPair) -> StreamPair:
+    def _build_single(self, seg: srf.Builder, input_stream: StreamPair) -> StreamPair:
         stream = input_stream[0]
 
-        def node_fn(input: neo.Observable, output: neo.Subscriber):
+        def node_fn(input: srf.Observable, output: srf.Subscriber):
 
-            def on_next(x: SourceMessageMeta):
+            def on_next(x: AppShieldMessageMeta):
                 to_send = []
                 snapshot_fea_dfs = []
 
@@ -432,18 +431,15 @@ class CreateFeatureURLStage(MultiMessageStage):
                 snapshot_ids = x.df.snapshot_id.unique()
 
                 all_dfs = [df[df.snapshot_id == snapshot_id] for snapshot_id in snapshot_ids]
-                # df_remote = self._client.scatter(df, broadcast=True, hash=False)
 
                 snapshot_fea_dfs = self._client.map(_build_features,
                                                     all_dfs,
-                                                    tokenizer=self.tokenizer,
+                                                    word_index=self._word_index,
                                                     df_max_min=self.df_max_min,
                                                     alexa_rank_1k_domain_unique=self.alexa_rank_1k_domain_unique,
-                                                    alexa_rank_100k_domain_unique=self.alexa_rank_100k_domain_unique,
-                                                    config=self._feature_config)
+                                                    alexa_rank_100k_domain_unique=self.alexa_rank_100k_domain_unique,)
 
                 features_df = self._client.submit(_combined_features, snapshot_fea_dfs)
-                print("Waiting for concat")
 
                 features_df = features_df.result()
                 self._client.shutdown()
@@ -451,8 +447,8 @@ class CreateFeatureURLStage(MultiMessageStage):
                 features_df['pid_process'] = df['PID_Process']
                 features_df['snapshot_id'] = df['snapshot_id']
                 features_df = features_df.sort_values(by=["pid_process", "snapshot_id"]).reset_index(drop=True)
-                #features_df['ID'] = 1
-                x = SourceMessageMeta(features_df, x.source)
+                
+                x = AppShieldMessageMeta(features_df, x.source)
 
                 unique_pid_processes = features_df.pid_process.unique()
 
@@ -464,7 +460,11 @@ class CreateFeatureURLStage(MultiMessageStage):
                     to_send.append(multi_message)
                 return to_send
 
-            input.pipe(ops.map(on_next), ops.flatten()).subscribe(output)
+            def on_completed():
+                # Close dask client when pipeline initiates shutdown
+                self._client.close()
+
+            input.pipe(ops.map(on_next), ops.on_completed(on_completed), ops.flatten()).subscribe(output)
 
         node = seg.make_node_full(self.unique_name, node_fn)
         seg.make_edge(stream, node)

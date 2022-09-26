@@ -17,22 +17,18 @@ import logging
 import typing
 from functools import partial
 
-import cupy as cp
-import neo
-
 import cudf
-
-#import morpheus._lib.messages as neom
-import morpheus._lib.stages as neos
+import cupy as cp
+import morpheus._lib.stages as srfs
+import srf
 from morpheus.config import Config
-from morpheus.pipeline.messages import DataClassProp
-from morpheus.pipeline.messages import InferenceMemory
-from morpheus.pipeline.messages import MultiInferenceMessage
-from morpheus.pipeline.messages import MultiInferenceNLPMessage
-from morpheus.pipeline.messages import MultiMessage
-from morpheus.pipeline.messages import get_input
-from morpheus.pipeline.messages import set_input
-from morpheus.pipeline.preprocessing import PreprocessBaseStage
+from morpheus.messages.data_class_prop import DataClassProp
+from morpheus.messages.multi_inference_message import (
+    InferenceMemory, MultiInferenceMessage, MultiInferenceNLPMessage,
+    get_input, set_input)
+from morpheus.messages.multi_message import MultiMessage
+from morpheus.stages.preprocess.preprocess_base_stage import \
+    PreprocessBaseStage
 
 logger = logging.getLogger(__name__)
 
@@ -75,6 +71,9 @@ class PreprocessingURLStage(PreprocessBaseStage):
     @property
     def name(self) -> str:
         return "preprocess-phisurl"
+    
+    def supports_cpp_node(self):
+        return False
 
     def _pre_process_batch(self, x: MultiMessage) -> MultiInferenceNLPMessage:
         df = x.get_meta()
@@ -87,8 +86,9 @@ class PreprocessingURLStage(PreprocessBaseStage):
         for col in input_two_df.columns:
             input_two_df[col] = input_two_df[col].astype('float32')
 
-        input_one_data = cp.asarray(input_one_df.as_gpu_matrix(order='C'))
-        input_two_data = cp.asarray(input_two_df.as_gpu_matrix(order='C'))
+        input_one_data = cp.asarray(input_one_df.to_cupy())
+        input_two_data = cp.asarray(input_two_df.to_cupy())
+        
         count = input_one_data.shape[0]
 
         seg_ids = cp.zeros((count, 3), dtype=cp.uint32)
@@ -110,5 +110,5 @@ class PreprocessingURLStage(PreprocessBaseStage):
 
         return partial(pre_process_batch_fn)
 
-    def _get_preprocess_node(self, seg: neo.Segment):
-        return neos.PreprocessingRWStage(seg, self.unique_name)
+    def _get_preprocess_node(self, seg: srf.Builder):
+        return srfs.PreprocessingRWStage(seg, self.unique_name)

@@ -1,4 +1,4 @@
-name: "dga-appshield-cnn-onnx"
+name: "dga-appshield-cnn"
 platform: "onnxruntime_onnx"
 backend: "onnxruntime"
 max_batch_size: 256
