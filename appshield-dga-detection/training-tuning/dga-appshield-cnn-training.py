@@ -1,4 +1,5 @@
-# Copyright (c) 2022, NVIDIA CORPORATION.
+# Copyright (c) 2019-2022, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+#  Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -11,24 +12,34 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+#
+
+"""
+# Install libraries
+pip install tldextract tensorflow torch swifter
+
+# Example usage:
+python dga-appshield-cnn-training.py
+
+"""
 
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as pyplot
 from sklearn.preprocessing import LabelEncoder
-
+import swifter
 import tldextract
 
 import torch
 from torch.utils.data import TensorDataset, DataLoader
 
 import tensorflow as tf
-from tensorflow.keras.optimizers import Adam
+from tensorflow.keras.optimizers import SGD,RMSprop,Adam
 from tensorflow.keras.preprocessing.text import Tokenizer
 from tensorflow.keras.preprocessing.sequence import pad_sequences
 
-# Consts
-EPOCHS = 30
+# Parameters
+EPOCHS = 1 #30
 BATCH_SIZE = 1000
 MALICIOUS_RATIO = 0.01
 LEARNING_RATE = 0.001
@@ -36,7 +47,7 @@ LEARNING_RATE = 0.001
 TRAIN_BATCH_SIZE = 500
 TEST_BATCH_SIZE = 500
 EMB_SIZE = 10
-EPOCHS_SIAMESE = 120
+EPOCHS_SIAMESE = 1#20
 LEARNING_RATE_SIAMESE = 1e-3
 CLASS_WEIGHTS = {0: 100, 1:1}
 ALPHA = 1.5  # value between 0-2
@@ -188,7 +199,7 @@ def train_model_binary(X_train, y_train, X_test, y_test):
 
     model.compile(loss='binary_crossentropy', optimizer='adam', metrics=['accuracy'])
     batch_size = 1000
-    model.fit(X_train, y_train, batch_size=batch_size, epochs=30,
+    model.fit(X_train, y_train, batch_size=batch_size, epochs=EPOCHS,
               validation_data=([X_test], y_test), class_weight=CLASS_WEIGHTS)
     return model
 
@@ -212,9 +223,10 @@ def model_eval_binary(model, X_test, y_test, domain_test, type_test):
         recall_step = len(D_test[(D_test['pred'] > thr) & (D_test['label'] == 1)]) / len(D_test[D_test['label'] == 1])
         recall.append(recall_step)
         TPs = len_mal * recall_step
-        precision.append(TPs / (TPs + FPs))
-        if TPs / (TPs + FPs) > 0.9 and flag_pass == False:
-            print('Precision: {}'.format(TPs / (TPs + FPs)))
+        precision_score = TPs / (TPs + FPs + 0.0000001) # handle div by zero
+        precision.append(precision_score)
+        if precision_score > 0.9 and flag_pass == False:
+            print('Precision: {}'.format(precision_score))
             print('Recall: {}'.format(recall_step))
             print('Threshhold: {}'.format(thr))
             thr_final = thr
@@ -379,7 +391,7 @@ def model_eval_families(model, train_indices_same, train_indices_diff, test_indi
     print(len(df_test_diff_emb_mini[(df_test_diff_emb_mini['predict_dist']<0.5) & ~df_test_diff_emb_mini['predict_label'].isin(['simda','fobber','pykspa_v1'])])/len(df_test_same_emb_mini[(~df_test_same_emb_mini['label'].isin(['simda','fobber','pykspa_v1'])) & (df_test_same_emb_mini['predict_label']==df_test_same_emb_mini['label']) & (df_test_same_emb_mini['predict_dist']<0.5)]))
 
 tokenizer = Tokenizer()
-tokenizer.word_index = pd.read_csv('tokenizer.csv').set_index('keys')['values'].to_dict()
+tokenizer.word_index = pd.read_csv('../models/tokenizer.csv').set_index('keys')['values'].to_dict()
 max_features = len(tokenizer.word_index) + 1
 
 print("Reading tokenizer...")
@@ -388,17 +400,17 @@ print("Reading data for training")
 df_binary = pd.read_csv("../datasets/dga_training_dataset.csv")
 df_families = df_binary.copy()
 
-print("Processing data for binary model...")
-X_train, y_train, X_test, y_test, domain_test, type_test = data_preprocessing_binary(df_binary)
+# print("Processing data for binary model...")
+# X_train, y_train, X_test, y_test, domain_test, type_test = data_preprocessing_binary(df_binary)
 
-print("Training binary model...")
-model_binary = train_model_binary(X_train, y_train, X_test, y_test)
+# print("Training binary model...")
+# model_binary = train_model_binary(X_train, y_train, X_test, y_test)
 
-print("Saving binary model...")
-model_binary.save('../dga_binary_keras_model')
+# print("Saving binary model...")
+# model_binary.save('../models/dga_binary_keras_model')
 
-print("Evaluating binary model...")
-model_eval_binary(model_binary, X_test, y_test, domain_test, type_test)
+# print("Evaluating binary model...")
+# model_eval_binary(model_binary, X_test, y_test, domain_test, type_test)
 
 print("Processing data for families model...")
 train_generator, validation_generator, X_data, encoded_labels, steps_per_epoch, domains, labels_type, train_indices_same, train_indices_diff, test_indices_same, test_indices_diff = data_preprocessing_families(df_families)
@@ -406,7 +418,7 @@ print("Training families model...")
 model_families = train_model_families(train_generator, steps_per_epoch)
 
 print("Saving family model...")
-model_families.save('../dga_family_keras_model')
+model_families.save('../models/dga_family_keras_model')
 
 print("Evaluating families model...")
 model_eval_families(model_families, train_indices_same, train_indices_diff, test_indices_same, test_indices_diff)
