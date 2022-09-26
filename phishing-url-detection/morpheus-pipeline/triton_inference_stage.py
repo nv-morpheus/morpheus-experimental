@@ -20,26 +20,21 @@ import threading
 import typing
 import warnings
 from abc import abstractmethod
-from functools import lru_cache
-from functools import partial
+from functools import lru_cache, partial
 
 import cupy as cp
+import morpheus._lib.stages as _stages
 import numpy as np
 import srf
 import tritonclient.grpc as tritonclient
-from tritonclient.utils import InferenceServerException
-from tritonclient.utils import triton_to_np_dtype
-
-import morpheus._lib.stages as _stages
 from morpheus.cli.register_stage import register_stage
-from morpheus.config import Config
-from morpheus.config import PipelineModes
-from morpheus.messages import MultiInferenceMessage
-from morpheus.messages import ResponseMemory
-from morpheus.messages import ResponseMemoryProbs
-from morpheus.stages.inference.inference_stage import InferenceStage
-from morpheus.stages.inference.inference_stage import InferenceWorker
+from morpheus.config import Config, PipelineModes
+from morpheus.messages import (MultiInferenceMessage, ResponseMemory,
+                               ResponseMemoryProbs)
+from morpheus.stages.inference.inference_stage import (InferenceStage,
+                                                       InferenceWorker)
 from morpheus.utils.producer_consumer_queue import ProducerConsumerQueue
+from tritonclient.utils import InferenceServerException, triton_to_np_dtype
 
 logger = logging.getLogger(__name__)
 

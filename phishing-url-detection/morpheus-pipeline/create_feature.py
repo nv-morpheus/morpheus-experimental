@@ -17,9 +17,6 @@ import re
 import typing
 from urllib.parse import urlparse
 
-import dataclasses
-import typing
-
 import numpy as np
 import pandas as pd
 import srf

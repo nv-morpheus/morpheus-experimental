@@ -16,23 +16,17 @@ import logging
 
 import click
 import psutil
-
-import logging
-
-import click
-import psutil
+from create_feature import CreateFeatureURLStage
 from morpheus.config import Config, CppConfig, PipelineModes
 from morpheus.pipeline.linear_pipeline import LinearPipeline
 from morpheus.stages.general.monitor_stage import MonitorStage
-from triton_inference_stage import TritonInferenceStage
 from morpheus.stages.input.appshield_source_stage import AppShieldSourceStage
 from morpheus.stages.output.write_to_file_stage import WriteToFileStage
 from morpheus.stages.postprocess.add_scores_stage import AddScoresStage
 from morpheus.stages.postprocess.serialize_stage import SerializeStage
 from morpheus.utils.logger import configure_logging
-
-from create_feature import CreateFeatureURLStage
 from preprocessing import PreprocessingURLStage
+from triton_inference_stage import TritonInferenceStage
 
 
 @click.command()
