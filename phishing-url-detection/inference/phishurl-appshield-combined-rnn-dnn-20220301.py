@@ -241,7 +241,7 @@ def processing(df):
     return df
 
 # Alexa rank dict
-alexa_rank = pd.read_csv('/raid0/haim/haim/data/alexa-top-500k.csv',header=None)
+alexa_rank = pd.read_csv('../datasets/alexa-top-500k.csv',header=None)
 alexa_rank.columns = ['index','url']
 alexa_rank_domain = alexa_rank['url'].apply(get_domain)
 alexa_rank_1k = alexa_rank_domain.iloc[0:1000]
@@ -250,7 +250,7 @@ alexa_rank_1k_domain_unique = pd.unique(alexa_rank_1k)
 alexa_rank_100k_domain_unique = pd.unique(alexa_rank_100k)
 
 # Read the URL plugins
-path = "/raid0/haim/haim/URL_Snapshots/"
+path = "../datasets/url-data/"
 snapshots = os.listdir(path)
 snapshots = [int(x.split('-')[1]) for x in snapshots if 'snap' in x]
 snapshots.sort()
@@ -289,7 +289,7 @@ url_clean_tokens = pad_sequences(url_clean_tokens, maxlen=MAX_LEN, padding='post
 df_output = pd.concat([url_stractural_features, pd.DataFrame(columns = ['word_'+str(i) for i in range(MAX_LEN)] , data = url_clean_tokens)], axis=1)
 
 # Loading model
-model = tf.keras.models.load_model('/raid0/haim/haim/url_model_keras_final')
+model = tf.keras.models.load_model('../models/url_model_keras')
 
 url_stractural_features = np.array(url_stractural_features)
 Y_pred = model.predict([url_clean_tokens, url_stractural_features])
@@ -304,7 +304,7 @@ df_output['pred'] = Y_pred
 import onnx
 import onnxruntime
 
-ONNX_URL_FILE_PATH = "/raid0/haim/haim/url_model_tensorflow.onnx"
+ONNX_URL_FILE_PATH = "../models/url_model_tensorflow.onnx"
 session = onnxruntime.InferenceSession(ONNX_URL_FILE_PATH, None)
 input_name_0 = session.get_inputs()[0].name
 input_name_1 = session.get_inputs()[1].name

@@ -1,4 +1,5 @@
-# Copyright (c) 2022, NVIDIA CORPORATION.
+# Copyright (c) 2019-2022, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+#  Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,12 +13,23 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+
+# Install required dependencies
+#!pip install torch
+#!pip install tldextract
+#!pip install tensorflow
+
+# Import required dependencies
 import pandas as pd
 import numpy as np
 import tldextract
 import json, os
 import tensorflow as tf
-
+from keras.models import Sequential
+from keras.layers.core import Dense
+from keras.layers.core import Dropout
+from keras.layers.core import Activation
+from keras.layers.embeddings import Embedding
 from tensorflow.keras.preprocessing.text import Tokenizer
 from tensorflow.keras.preprocessing.sequence import pad_sequences
 
@@ -82,13 +94,13 @@ def predict_family_df(domain):
     return output_df
 
 # Loading binary model
-model = tf.keras.models.load_model('/raid0/haim/haim/dga_model_keras')
+model = tf.keras.models.load_model('../models/dga_model_keras')
 
 # Loading family model
-model_family = tf.keras.models.load_model('/raid0/haim/haim/dga_family_model_keras')
+model_family = tf.keras.models.load_model('../models/dga_family_model_keras')
 
 # Loading reference embedding vectors
-ref_save_df = pd.read_csv('model_ref_new.csv')
+ref_save_df = pd.read_csv('../models/model_ref_new.csv')
 
 ref_families = {}
 for dga_family in ref_save_df['Family']:
@@ -100,7 +112,7 @@ tokenizer = Tokenizer()
 tokenizer.word_index = pd.read_csv('tokenizer.csv').set_index('keys')['values'].to_dict()
 
 # Read the URL plugins
-path = "/raid0/haim/haim/URL_Snapshots/"
+path = "../datasets/dga-appshield-data/"
 snapshots = os.listdir(path)
 snapshots = [int(x.split('-')[1]) for x in snapshots if 'snap' in x]
 snapshots.sort()
@@ -132,13 +144,13 @@ data_pred = predict_family_df(data_tokens)
 import onnx
 import onnxruntime
 
-ONNX_DGA_FILE_PATH = "/raid0/haim/haim/dga_binary_model_tensorflow.onnx"
+ONNX_DGA_FILE_PATH = "ga_binary_model_tensorflow.onnx"
 session = onnxruntime.InferenceSession(ONNX_DGA_FILE_PATH, None)
 input_name = session.get_inputs()[0].name
 output_name = session.get_outputs()[0].name
 result = session.run([output_name], {input_name: data_tokens.astype(np.float32)})
 
-ONNX_DGA_FAMILY_FILE_PATH = "/raid0/haim/haim/dga_family_model_tensorflow.onnx"
+ONNX_DGA_FAMILY_FILE_PATH = "dga_family_model_tensorflow.onnx"
 session = onnxruntime.InferenceSession(ONNX_DGA_FAMILY_FILE_PATH, None)
 input_name = session.get_inputs()[0].name
 output_name = session.get_outputs()[0].name
