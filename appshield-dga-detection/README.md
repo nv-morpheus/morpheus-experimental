@@ -3,9 +3,6 @@
 ### Use Case
 Detection of domains created by domain generation algorithms
 
-### Owner
-Haim Elisha
-
 ### Version
 1.0
 

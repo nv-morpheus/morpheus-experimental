@@ -3,9 +3,6 @@
 ## Use Case
 Classify URLs as directing to phishing campaigns or not.
 
-## Owner
-Haim Elisha
-
 ### Version
 1.0
 
