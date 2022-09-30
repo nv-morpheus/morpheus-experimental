@@ -4,17 +4,33 @@ Morpheus Experimental is a staging/collaboration/experimental area for developme
 
 Prototype contributions from the community are welcome. A prototype should include at minimum a tutorial-style notebook, model file, sample data, training script, inference script, and documentation. More information can be found in the [Contributing Guide](CONTRIBUTING.md).
 
-## Getting started
+## Getting Started
 
-To get started with a specific prototype additional requirments must be installed into your environment. Each prototype directory contains its own `requirements.txt` file. 
+We recommend building morpheus experimental from source in an environment with a modern GPU with at least 16GB of memory.
+
+### General Requirements
+- Pascal architecture 16GB GPU or better
+- [Git LFS](https://git-lfs.github.com/)
+- [Jupyter](https://jupyter.org/install)
+
+
+### Clone the Repository
+
+```bash
+MORPHEUS_EXPERIMENTAL_ROOT=$(pwd)/morpheus-experimental
+git clone https://github.com/nv-morpheus/morpheus-experimental $MORPHEUS_EXPERIMENTAL_ROOT
+cd $MORPHEUS_EXPERIMENTAL_ROOT
+```
+
+### Prototype Specific Requirements
+To get started with a specific prototype additional requirements must be installed into your environment. Each prototype directory contains its own `requirements.txt` file. 
 
 ```bash 
 cd ${MORPHEUS_EXPERIMENTAL_ROOT}/${PROTOTYPE}
 pip install -r requirements.txt
 ```
 
-To run the morpheus pipeline for the prototype follow the instructions for setting up your morpheus environment found in the [main morpheus repo]
-(https://github.com/nv-morpheus/Morpheus#getting-started-with-morpheus)
+To run the morpheus pipeline for the prototype follow the instructions for setting up your morpheus environment found in the [main morpheus repo](https://github.com/nv-morpheus/Morpheus#getting-started-with-morpheus)
 
 
 # Current Cybersecurity Workflow Prototypes
@@ -35,7 +51,7 @@ Model files for public release (ONNX preferred to pytorch/tensorflow)
 
 ## datasets
 
-Samples of training data and inference dataset with model output to be used to test training and inference scripts. Links to publicaly available datasets are also welcome.
+Samples of training data and inference dataset with model output to be used to test training and inference scripts. Links to  publicly available datasets are also welcome.
 
 ## training-tuning
 
@@ -46,7 +62,7 @@ A script and python notebook showing how to train or fine-tune the model. The tu
 A non-morpheus pipeline script that contains data loading, preprocessing, model loading, inference, postprocessing, and serialized output file. It uses desired morpheus pipeline variables as input variables to the script (ie. threshold=0.6). It produces a reliable and repeatable output file from the inference dataset. It includes `requirements.txt` file with dependencies and versions used for non-morpheus inference.
 
 ## morpheus-pipeline (optional)
-All the necessary files for a full Morpheus pipeline of the prototype similiar to pipelines found in [Morpheus Examples] https://github.com/nv-morpheus/Morpheus/tree/branch-22.09/examples with it's own `requirements.txt` files. 
+All the necessary files for a full Morpheus pipeline of the prototype similar to pipelines found in [Morpheus Examples](https://github.com/nv-morpheus/Morpheus/tree/branch-22.09/examples) with it's own `requirements.txt` files. 
 
 ## model documentation
 
@@ -72,3 +88,4 @@ A README.md that contains the following information for each model:
  - **Out-of-scope use cases** - Use cases not envisioned during development
  - **Ethical considerations** - Ethical analysis of risks and harms
  - **References** - Resources used in model development
+ 
