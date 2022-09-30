@@ -13,8 +13,8 @@ cd ${MORPHEUS_EXPERIMENTAL_ROOT}/${PROTOTYPE}
 pip install -r requirements.txt
 ```
 
-To run the morpheus pipeline for the prototype follow the instructions for setting up your morpheus environment found here:
-https://github.com/nv-morpheus/Morpheus#getting-started-with-morpheus
+To run the morpheus pipeline for the prototype follow the instructions for setting up your morpheus environment found in the [main morpheus repo]
+(https://github.com/nv-morpheus/Morpheus#getting-started-with-morpheus)
 
 
 # Current Cybersecurity Workflow Prototypes
@@ -46,7 +46,7 @@ A script and python notebook showing how to train or fine-tune the model. The tu
 A non-morpheus pipeline script that contains data loading, preprocessing, model loading, inference, postprocessing, and serialized output file. It uses desired morpheus pipeline variables as input variables to the script (ie. threshold=0.6). It produces a reliable and repeatable output file from the inference dataset. It includes `requirements.txt` file with dependencies and versions used for non-morpheus inference.
 
 ## morpheus-pipeline (optional)
-All the necessary files for a full Morpheus pipeline of the prototype similiar to pipelines found in Morpheus Examples with it's own `requirements.txt` files https://github.com/nv-morpheus/Morpheus/tree/branch-22.09/examples
+All the necessary files for a full Morpheus pipeline of the prototype similiar to pipelines found in [Morpheus Examples] https://github.com/nv-morpheus/Morpheus/tree/branch-22.09/examples with it's own `requirements.txt` files. 
 
 ## model documentation
 
