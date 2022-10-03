@@ -13,23 +13,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-
-# Install required dependencies
-#!pip install torch
-#!pip install tldextract
-#!pip install tensorflow
-
-# Import required dependencies
 import pandas as pd
 import numpy as np
 import tldextract
 import json, os
 import tensorflow as tf
-from keras.models import Sequential
-from keras.layers.core import Dense
-from keras.layers.core import Dropout
-from keras.layers.core import Activation
-from keras.layers.embeddings import Embedding
 from tensorflow.keras.preprocessing.text import Tokenizer
 from tensorflow.keras.preprocessing.sequence import pad_sequences
 
@@ -94,13 +82,13 @@ def predict_family_df(domain):
     return output_df
 
 # Loading binary model
-model = tf.keras.models.load_model('../models/dga_model_keras')
+model = tf.keras.models.load_model('../models/dga_binary_keras_model')
 
 # Loading family model
 model_family = tf.keras.models.load_model('../models/dga_family_model_keras')
 
 # Loading reference embedding vectors
-ref_save_df = pd.read_csv('../models/model_ref_new.csv')
+ref_save_df = pd.read_csv('../models/model_ref.csv')
 
 ref_families = {}
 for dga_family in ref_save_df['Family']:
@@ -109,7 +97,7 @@ families = list(ref_families.keys())
 
 # Read tokenizer
 tokenizer = Tokenizer()
-tokenizer.word_index = pd.read_csv('tokenizer.csv').set_index('keys')['values'].to_dict()
+tokenizer.word_index = pd.read_csv('../models/tokenizer.csv').set_index('keys')['values'].to_dict()
 
 # Read the URL plugins
 path = "../datasets/dga-appshield-data/"
@@ -125,7 +113,6 @@ for snap_file in snapshots:
         for file in f:
             if '.json' in file:
                 files.append(os.path.join(r, file))
-    #try:
         data, timestamp = get_plugin_files(files)
 
 data['Domain'] = data['URL'].apply(get_domain)
@@ -137,14 +124,13 @@ data_pred = predict_family_df(data_tokens)
 # Create onnx models
 #!pip install onnxruntime
 #!pip install git+https://github.com/onnx/tensorflow-onnx
-#!python -m tf2onnx.convert --saved-model /raid0/haim/haim/dga_model_keras --output dga_binary_model_tensorflow.onnx
-#!python -m tf2onnx.convert --saved-model /raid0/haim/haim/dga_family_model_keras --output dga_family_model_tensorflow.onnx
+#!python -m tf2onnx.convert --saved-model ../models/dga_binary_keras_model --output dga_binary_model_tensorflow.onnx
+#!python -m tf2onnx.convert --saved-model ../models/dga_family_model_keras --output dga_family_model_tensorflow.onnx
 
 # Inference onnx model
-import onnx
 import onnxruntime
 
-ONNX_DGA_FILE_PATH = "ga_binary_model_tensorflow.onnx"
+ONNX_DGA_FILE_PATH = "dga_binary_model_tensorflow.onnx"
 session = onnxruntime.InferenceSession(ONNX_DGA_FILE_PATH, None)
 input_name = session.get_inputs()[0].name
 output_name = session.get_outputs()[0].name
