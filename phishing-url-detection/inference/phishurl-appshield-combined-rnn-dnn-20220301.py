@@ -22,6 +22,7 @@ import numpy as np
 import pandas as pd
 import tensorflow as tf
 import tldextract
+import swifter
 
 from tensorflow.keras.preprocessing.sequence import pad_sequences
 from tensorflow.keras.preprocessing.text import Tokenizer
@@ -270,7 +271,7 @@ url_df = processing(data)
 url_df['URL_clean'] = url_df['URL'].copy().apply(remove_prefix)
 url_df['URL_clean'] = url_df['URL_clean'].apply(lambda x: clean_nlp(x))
 
-df_max_min = pd.read_csv('max_min_urls.csv')
+df_max_min = pd.read_csv('../models/max_min_urls.csv')
 
 url_stractural_features = url_df[STRACTURAL_FEATURES]
 for feature in STRACTURAL_FEATURES:
@@ -280,7 +281,7 @@ for feature in STRACTURAL_FEATURES:
 
 # Read tokenizer
 tokenizer = Tokenizer()
-tokenizer.word_index = pd.read_csv('tokenizer_urls.csv').set_index('keys')['values'].to_dict()
+tokenizer.word_index = pd.read_csv('../models/tokenizer_urls.csv').set_index('keys')['values'].to_dict()
 
 url_df_clean = url_df['URL_clean']
 url_clean_tokens = tokenizer.texts_to_sequences(url_df_clean)
@@ -298,10 +299,9 @@ df_output['pred'] = Y_pred
 # Create onnx model
 #!pip install onnxruntime
 #!pip install git+https://github.com/onnx/tensorflow-onnx
-#!python -m tf2onnx.convert --saved-model /raid0/haim/haim/url_model_keras_final --output url_model_tensorflow.onnx
+#!python -m tf2onnx.convert --saved-model ../models/url_model_keras --output ../models/url_model_tensorflow.onnx
 
 # Inference onnx model
-import onnx
 import onnxruntime
 
 ONNX_URL_FILE_PATH = "../models/url_model_tensorflow.onnx"

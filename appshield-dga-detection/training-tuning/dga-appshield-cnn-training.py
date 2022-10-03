@@ -12,29 +12,19 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-#
 
-"""
-# Install libraries
-pip install tldextract tensorflow torch swifter
-
-# Example usage:
-python dga-appshield-cnn-training.py
-
-"""
-
+import swifter
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as pyplot
 from sklearn.preprocessing import LabelEncoder
-import swifter
 import tldextract
 
 import torch
 from torch.utils.data import TensorDataset, DataLoader
 
 import tensorflow as tf
-from tensorflow.keras.optimizers import SGD,RMSprop,Adam
+from tensorflow.keras.optimizers import Adam
 from tensorflow.keras.preprocessing.text import Tokenizer
 from tensorflow.keras.preprocessing.sequence import pad_sequences
 
@@ -79,8 +69,6 @@ def get_domain_space(domain):
 def split_train_test_dga(df, ratio=0.8):
     df_dga = df[df['label'] == 1]
     df_legit = df[df['label'] == 0]
-    X_dga, y_dga = df_dga['domain_1'], df_dga['label']
-    X_legit, y_legit = df_legit['domain_1'], df_legit['label']
     train_dga_i = []
     train_ben_i = []
     test_dga_i = []
@@ -278,20 +266,13 @@ def data_preprocessing_families(df):
     df['new_col'] = df['type'].isin(domains).astype(int)
     domains_idx = np.array(df.index[df['new_col'] == 1])
     noise_idx = np.array(df.index[df['new_col'] == 0])
-    indices = domains_idx
+
     train_indices_same = np.intersect1d(X_train.index, domains_idx, assume_unique=False)
     train_indices_diff = np.intersect1d(X_train.index, noise_idx, assume_unique=False)
     test_indices_same = np.intersect1d(X_test.index, domains_idx, assume_unique=False)
     test_indices_diff = np.intersect1d(X_test.index, noise_idx, assume_unique=False)
-    train_classes, train_cnt = np.unique(encoded_labels[train_indices_same], return_counts=True)
-    test_classes, test_cnt = np.unique(encoded_labels[test_indices_same], return_counts=True)
-    stacked = np.stack((train_cnt, test_cnt), axis=1)
-
-    anc_idx = np.random.choice(train_indices_same)
-    anchor = X_data[anc_idx]
-    encoded_labels_train = encoded_labels[domains_idx]
+    
     steps_per_epoch = int(train_indices_same.size / TRAIN_BATCH_SIZE)
-    validation_steps = int(test_indices_same.size / TEST_BATCH_SIZE)
 
     train_generator = triplets_generator(indices=X_train.index, batch_size=TRAIN_BATCH_SIZE,
                                          anc_indices=train_indices_same, domain_indices=train_indices_same)
@@ -300,7 +281,7 @@ def data_preprocessing_families(df):
 
     return train_generator, validation_generator, X_data, encoded_labels, steps_per_epoch, domains, labels_type, train_indices_same, train_indices_diff, test_indices_same, test_indices_diff
 
-def train_model_families(train_generator, steps_per_epoch):
+def train_model_families():
     # Defining the model
     inputA = tf.keras.layers.Input(shape=(75,), name='input')
     x = tf.keras.layers.Embedding(max_features, 128, input_length=75)(inputA)
@@ -327,28 +308,20 @@ def train_model_families(train_generator, steps_per_epoch):
 
     siamese_net.compile(loss=triplet_loss, optimizer=Adam(learning_rate=LEARNING_RATE_SIAMESE))
 
-    history = siamese_net.fit(
+    siamese_net.fit(
         train_generator, steps_per_epoch=steps_per_epoch, epochs=EPOCHS_SIAMESE, workers=8, use_multiprocessing=True)
-
     return model
 
 def model_eval_families(model, train_indices_same, train_indices_diff, test_indices_same, test_indices_diff):
     train_indices_same = np.sort(train_indices_same)
     train_indices_diff = np.sort(train_indices_diff)
     x_train_same = X_data[train_indices_same]
-    x_train_diff = X_data[train_indices_diff]
     y_train_same = labels_type.iloc[train_indices_same]
-    y_train_diff = labels_type.iloc[train_indices_diff]
     x_test_same = X_data[test_indices_same]
     x_test_diff = X_data[test_indices_diff]
     y_test_same = labels_type.iloc[test_indices_same]
     y_test_diff = labels_type.iloc[test_indices_diff]
 
-    # x_train_raw = x_train.reshape(-1,32*32*3)
-    x_train_same_emb = model.predict(x_train_same)
-    x_train_diff_emb = model.predict(x_train_diff)
-
-    # x_train_raw = x_train.reshape(-1,32*32*3)
     x_test_same_emb = model.predict(x_test_same)
     x_test_diff_emb = model.predict(x_test_diff)
 
@@ -415,12 +388,10 @@ model_eval_binary(model_binary, X_test, y_test, domain_test, type_test)
 print("Processing data for families model...")
 train_generator, validation_generator, X_data, encoded_labels, steps_per_epoch, domains, labels_type, train_indices_same, train_indices_diff, test_indices_same, test_indices_diff = data_preprocessing_families(df_families)
 print("Training families model...")
-model_families = train_model_families(train_generator, steps_per_epoch)
+model_families = train_model_families()
 
 print("Saving family model...")
 model_families.save('../models/dga_family_keras_model')
 
 print("Evaluating families model...")
 model_eval_families(model_families, train_indices_same, train_indices_diff, test_indices_same, test_indices_diff)
-
-

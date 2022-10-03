@@ -23,7 +23,6 @@ python phishurl-appshield-combined-lstm-dnn.py
 
 """
 
-import string
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -278,7 +277,8 @@ def data_preprocessing(df):
     X_mal = X[X['label'] == 1]
     X_ben = X[X['label'] == 0]
     Y_mal = X_mal.pop('label')
-    Y_ben = X_ben.pop('label')
+    X_ben.pop('label')
+    
     # Split the data to train and test
     X_mal_train, X_mal_test, Y_mal_train, Y_mal_test = train_test_split(
         X_mal, Y_mal, train_size=0.25)
@@ -319,6 +319,7 @@ def nlp_processing(X_train, X_test):
     # Train and test nlp dataframe
     X_train_nlp = X_train['url_clean']
     X_test_nlp = X_test['url_clean']
+    
     # Convert the words to tokens
     tokenizer = Tokenizer(num_words=NLP_TOKENS)
 
@@ -360,7 +361,7 @@ def train_model(X_train_nlp, X_train_features, Y_train):
                   optimizer="adam", metrics=['accuracy'])
 
     # Train the model
-    history = model.fit(x=[X_train_nlp, X_train_features], y=Y_train, epochs=NUM_EPOCHS, batch_size=BATCH_SIZE,
+    model.fit(x=[X_train_nlp, X_train_features], y=Y_train, epochs=NUM_EPOCHS, batch_size=BATCH_SIZE,
                         workers=8, use_multiprocessing=True,
                         class_weight=CLASS_WEIGHTS)
 
@@ -372,12 +373,13 @@ def model_eval(model, X_test_nlp, X_test_features, Y_test):
     Y_pred = model.predict([X_test_nlp, np.array(X_test_features)])
     X_test['pred'] = Y_pred
     X_test['label'] = Y_test
+    
     # Plotting precision-recall curve
     recall = []
     precision = []
     ratio_malicious_benign = 0.05
     flag_pass = False
-    thr_final = 0
+
     for thr in np.arange(0, 1, 0.01):
         FPs = len(X_test[(X_test['pred'] > thr) & (X_test['label'] == 0)])
         len_ben = len(X_test[X_test['label'] == 0])
@@ -391,7 +393,6 @@ def model_eval(model, X_test_nlp, X_test_features, Y_test):
             print('Presicion: {}'.format(TPs / (TPs + FPs)))
             print('Recall: {}'.format(recall_step))
             print('Threshhold: {}'.format(thr))
-            thr_final = thr
             flag_pass = True
     plt.plot(recall, precision, marker='.')
     plt.xlabel('Recall')
