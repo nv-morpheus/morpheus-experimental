@@ -19,6 +19,9 @@ on:
   push:
     branches:
       - 'pull-request/**'
+  
+  # Temp, remove later
+  pull_request:
 
 # This allows a subsequently queued workflow run to interrupt previous runs
 concurrency:
