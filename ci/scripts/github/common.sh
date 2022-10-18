@@ -50,7 +50,6 @@ PR_NUM="${GITHUB_REF_NAME##*/}"
 function create_conda_env() {
     rapids-logger "Creating conda env"
     conda config --add pkgs_dirs /opt/conda/pkgs
-    conda config --env --add channels conda-forge
     conda config --env --set channel_alias ${CONDA_CHANNEL_ALIAS:-"https://conda.anaconda.org"}
     mamba env create -q -n morpheus-experimental -f ${MORPHEUS_EXPERIMENTAL_ROOT}/ci/conda_env/ci.yml
 
