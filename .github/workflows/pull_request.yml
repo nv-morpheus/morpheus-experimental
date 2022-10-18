@@ -55,4 +55,4 @@ jobs:
 
       - name: Check
         shell: bash
-        run: ./morpheus/ci/scripts/github/checks.sh
+        run: ./morpheus-experimental/ci/scripts/github/checks.sh
