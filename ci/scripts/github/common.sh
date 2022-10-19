@@ -43,9 +43,7 @@ REPO_NAME=$(basename "${GITHUB_REPOSITORY}")
 ORG_NAME="${GITHUB_REPOSITORY_OWNER}"
 PR_NUM="${GITHUB_REF_NAME##*/}"
 
-rapids-logger "Env Setup"
 print_env_vars
-
 
 function create_conda_env() {
     rapids-logger "Creating conda env"
@@ -61,10 +59,10 @@ function create_conda_env() {
 
 function fetch_base_branch() {
     rapids-logger "Retrieving base branch from GitHub API: ${GITHUB_API_URL}/repos/${ORG_NAME}/${REPO_NAME}/pulls/${PR_NUM}"
-    [[ -n "$GH_TOKEN" ]] && CURL_HEADERS=('-H' "Authorization: token ${GH_TOKEN}")
+    [[ -n "$GH_TOKEN" ]] && CURL_HEADERS=('-H' "Authorization: Bearer ${GH_TOKEN}")
     RESP=$(
     curl -s \
-        -H "Accept: application/vnd.github.v3+json" \
+        -H "Accept: application/vnd.github+json" \
         "${CURL_HEADERS[@]}" \
         "${GITHUB_API_URL}/repos/${ORG_NAME}/${REPO_NAME}/pulls/${PR_NUM}"
     )
