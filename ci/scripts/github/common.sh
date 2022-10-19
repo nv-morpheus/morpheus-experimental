@@ -19,9 +19,6 @@ function print_env_vars() {
     env | grep -v -E "AWS_ACCESS_KEY_ID|AWS_SECRET_ACCESS_KEY|GH_TOKEN" | sort
 }
 
-rapids-logger "Env Setup"
-print_env_vars
-rapids-logger "---------"
 mkdir -p ${WORKSPACE_TMP}
 source /opt/conda/etc/profile.d/conda.sh
 export MORPHEUS_EXPERIMENTAL_ROOT=${MORPHEUS_EXPERIMENTAL_ROOT:-$(git rev-parse --show-toplevel)}
@@ -46,6 +43,9 @@ REPO_NAME=$(basename "${GITHUB_REPOSITORY}")
 ORG_NAME="${GITHUB_REPOSITORY_OWNER}"
 PR_NUM="${GITHUB_REF_NAME##*/}"
 
+rapids-logger "Env Setup"
+print_env_vars
+
 
 function create_conda_env() {
     rapids-logger "Creating conda env"
@@ -69,6 +69,7 @@ function fetch_base_branch() {
         "${GITHUB_API_URL}/repos/${ORG_NAME}/${REPO_NAME}/pulls/${PR_NUM}"
     )
 
+    rapids-logger "$(echo "${RESP}" | jq)"
     BASE_BRANCH=$(echo "${RESP}" | jq -r '.base.ref')
 
     # Change target is the branch name we are merging into but due to the weird way jenkins does
