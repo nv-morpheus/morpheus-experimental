@@ -26,10 +26,8 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  CHANGE_TARGET: "origin/${{ github.base_ref }}"
   GH_TOKEN: "${{ github.token }}"
   GIT_COMMIT: "${{ github.sha }}"
-  HEAD_REF: "${{ github.head_ref }}"
   MORPHEUS_EXPERIMENTAL_ROOT: "${{ github.workspace }}/morpheus-experimental"
   WORKSPACE: "${{ github.workspace }}/morpheus-experimental"
   WORKSPACE_TMP: "${{ github.workspace }}/tmp"

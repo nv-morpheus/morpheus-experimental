@@ -60,7 +60,7 @@ function create_conda_env() {
 }
 
 function fetch_base_branch() {
-    rapids-logger "Retrieving base branch from GitHub API"
+    rapids-logger "Retrieving base branch from GitHub API: ${GITHUB_API_URL}/repos/${ORG_NAME}/${REPO_NAME}/pulls/${PR_NUM}"
     [[ -n "$GH_TOKEN" ]] && CURL_HEADERS=('-H' "Authorization: token ${GH_TOKEN}")
     RESP=$(
     curl -s \
