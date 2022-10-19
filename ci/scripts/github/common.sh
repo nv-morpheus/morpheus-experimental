@@ -59,15 +59,15 @@ function create_conda_env() {
 
 function fetch_base_branch() {
     rapids-logger "Retrieving base branch from GitHub API: ${GITHUB_API_URL}/repos/${ORG_NAME}/${REPO_NAME}/pulls/${PR_NUM}"
-    [[ -n "$GH_TOKEN" ]] && CURL_HEADERS=('-H' "Authorization: token ${GH_TOKEN}")
+    [[ -n "$GH_TOKEN" ]] && CURL_HEADERS=('-H' "Authorization: Bearer ${GH_TOKEN}")
     RESP=$(
-    curl -i -s \
-        -H "Accept: application/vnd.github.v3+json" \
+    curl -s \
+        -H "Accept: application/vnd.github+json" \
         "${CURL_HEADERS[@]}" \
         "${GITHUB_API_URL}/repos/${ORG_NAME}/${REPO_NAME}/pulls/${PR_NUM}"
     )
 
-    rapids-logger "${RESP}"
+    rapids-logger "$(echo "${RESP}" | jq)"
     BASE_BRANCH=$(echo "${RESP}" | jq -r '.base.ref')
 
     # Change target is the branch name we are merging into but due to the weird way jenkins does
