@@ -37,7 +37,6 @@ def _match_inputs(x, y, shingle_size):
 
 
 class Jaccard(Distance):
-
     def __init__(self, shingle_size=4):
         self._shingle_size = shingle_size
 
@@ -47,11 +46,7 @@ class Jaccard(Distance):
 
     def _d(self, x, y):
 
-        _JAC_SWITCH = {
-            set: self._jac_set,
-            str: self._jac_str,
-            dict: self._jac_dict
-        }
+        _JAC_SWITCH = {set: self._jac_set, str: self._jac_str, dict: self._jac_dict}
 
         func = _JAC_SWITCH[type(x)]
         return func(x, y)

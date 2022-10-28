@@ -41,6 +41,9 @@ This model is a convolution neural network model trained to classify URL domains
 ## [Phishing URL Detection via AppShield](https://github.com/nv-morpheus/morpheus-experimental/tree/main/phishing-url-detection)
 This model is a binary classifier to label phishing URLs and non-phishing URLs obtained from host process data. Input data comes from AppShield.
 
+## [Syslog Resemblance Grouping](https://github.com/nv-morpheus/morpheus-experimental/tree/main/syslog-resemblance-grouping)
+This technique syntactically groups system log messages and finds group representatives for data exploration and triage.
+
 
 # Repo Structure
 Each prototype has its own directory that contains everything belonging to the specific prototype. Directories can include the following subfolders and documentation:

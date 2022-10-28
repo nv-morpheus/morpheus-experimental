@@ -1,5 +1,5 @@
-# Syslog Resemblance Grouping - SRG
-SRG is designed to find a subset of representative strings within a a large collection of messages. These representative strings create groupings with which to categorize the messages for further exploration or triage.
+# Syslog Resemblance Grouping (SRG)
+Syslog Resemblance Grouping (SRG) is designed to find a subset of representative strings within a a large collection of messages. These representative strings create groupings with which to categorize the messages for further exploration or triage.
 
 ## Version
 1.0

@@ -27,7 +27,6 @@ def _match_inputs(x, y):
 
 
 class Lev(Distance):
-
     def __init__(self):
         pass
 
@@ -51,8 +50,6 @@ class Lev(Distance):
                 if char1 == char2:
                     new_distances.append(distances[index1])
                 else:
-                    new_distances.append(1 + min((distances[index1],
-                                                  distances[index1 + 1],
-                                                  new_distances[-1])))
+                    new_distances.append(1 + min((distances[index1], distances[index1 + 1], new_distances[-1])))
             distances = new_distances
         return distances[-1]
