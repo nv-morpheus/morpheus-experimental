@@ -14,23 +14,35 @@
 # limitations under the License.
 
 from dataclasses import dataclass
+from math import ceil
+from math import exp
+from math import factorial
+from math import floor
+from math import log
+from math import pi
+from math import sqrt
 from typing import Union
+
+import matplotlib.pyplot as plt
+import numpy as np
+from srg.utils import create_x_axis
+from srg.utils import find_local_max
+from srg.utils import find_local_min
+
+import dask
+
 import cudf
 import dask_cudf
-import dask
-import numpy as np
-from math import ceil, sqrt, pi, exp, log, factorial, floor
-from srg.utils import create_x_axis, find_local_max, find_local_min
-import matplotlib.pyplot as plt
 
 
 def _b(rex, rx, p, h):
-    return min(rex, (rx+sqrt(pow(rx, 2.0)+8*p*pow(h, 2.0)))/2)
+    return min(rex, (rx + sqrt(pow(rx, 2.0) + 8 * p * pow(h, 2.0))) / 2)
 
 
 def _p_check(r, p, rex, rx, h, eps):
     b = _b(rex, rx, p, h)
-    return sqrt(factorial(r))/factorial(p) * pow(rx*b/pow(h, 2.0), p) * exp(-pow(rx-b, 2.0)/pow(2.0*h, 2.0)) <= eps
+    return sqrt(factorial(r)) / factorial(p) * pow(rx * b / pow(h, 2.0), p) * exp(
+        -pow(rx - b, 2.0) / pow(2.0 * h, 2.0)) <= eps
 
 
 @dataclass
@@ -47,7 +59,7 @@ class _Params:
     def __post_init__(self):
         if self.bandwidth is None:
             # self.bandwidth = 0.9 * min(self.std, self.iqr / 1.34) * pow(self.n, -0.2)
-            self.bandwidth = pow((4*pow(self.std, 5))/(3*self.n), 0.2)
+            self.bandwidth = pow((4 * pow(self.std, 5)) / (3 * self.n), 0.2)
         if self.bandwidth > 0:
 
             self.scale = self.Xmax - self.Xmin
@@ -55,9 +67,9 @@ class _Params:
             self.q = pow(-1, self.r) / sqrt(2 * pi) * self.n * pow(self.h, self.r + 1)
             self.eps_prime = self.error / (self.n * abs(self.q))
             self.r_x = self.h / 2.0
-            self.centers = [self.r_x + i * 2.0 * self.r_x for i in range(int(ceil(1.0/self.h)))]
-            self.boundaries = [i*self.h for i in range(int(ceil(1.0 / self.h)))]
-            self.r_ex = self.r_x + 2 * self.h * sqrt(log(sqrt(factorial(self.r))/self.eps_prime))
+            self.centers = [self.r_x + i * 2.0 * self.r_x for i in range(int(ceil(1.0 / self.h)))]
+            self.boundaries = [i * self.h for i in range(int(ceil(1.0 / self.h)))]
+            self.r_ex = self.r_x + 2 * self.h * sqrt(log(sqrt(factorial(self.r)) / self.eps_prime))
             self.p = 1
             while not _p_check(self.r, self.p, self.r_ex, self.r_x, self.h, self.eps_prime) and self.p <= 100:
                 self.p += 1
@@ -75,10 +87,7 @@ class _Params:
 
 
 class FastKDE:
-
-    def __init__(self,
-                 derivative: int = 0,
-                 error: float = 0.0001):
+    def __init__(self, derivative: int = 0, error: float = 0.0001):
 
         self._derivative = derivative
         self._error = error
@@ -101,7 +110,8 @@ class FastKDE:
     def error(self):
         return self._error
 
-    def fit(self, X,
+    def fit(self,
+            X,
             delimiter=None,
             names=None,
             npartitions: int = 2,
@@ -211,8 +221,11 @@ class FastKDE:
                 self._flat_model.append(group)
         scaled = ddf.map_partitions(lambda df: self._scale_df(df, groupby)).dropna(subset=['scaled'])
         raw_B = scaled.reduction(chunk=self._group_calculate_B,
-                                 chunk_kwargs={'groupby': groupby},
-                                 aggregate=self._group_combine_B, meta=dict).compute()
+                                 chunk_kwargs={
+                                     'groupby': groupby
+                                 },
+                                 aggregate=self._group_combine_B,
+                                 meta=dict).compute()
         self._B = dict()
         for group, B in raw_B.items():
             self._B[group] = np.asarray(B)
@@ -224,13 +237,13 @@ class FastKDE:
         B = dict()
         for group in self._groups:
             K = self._params[group].p
-            T = self._params[group].r+1
+            T = self._params[group].r + 1
             L = len(self._params[group].centers)
             B[group] = [[[0.0 for _ in range(T)] for _ in range(K)] for _ in range(L)]
         for row in df.to_dict('records'):
             group = row[groupby]
             K = self._params[group].p
-            T = self._params[group].r+1
+            T = self._params[group].r + 1
             L = len(self._params[group].centers)
             x_i = row['scaled']
             little_l = sum([b <= x_i for b in self._params[group].boundaries]) - 1
@@ -246,7 +259,7 @@ class FastKDE:
         B = dict()
         for group in self._groups:
             K = self._params[group].p
-            T = self._params[group].r+1
+            T = self._params[group].r + 1
             L = len(self._params[group].centers)
             B[group] = [[[0.0 for _ in range(T)] for _ in range(K)] for _ in range(L)]
         for B_dict in s:
@@ -382,7 +395,7 @@ class FastKDE:
         kd = 0.0
         for little_l, center in int_centers:
             for k in range(self._params.p):
-                for s in range(int(floor(self._params.r/2) + 1)):
+                for s in range(int(floor(self._params.r / 2) + 1)):
                     for t in range(self._params.r - 2 * s + 1):
                         kd = kd + self._a[s, t]*self._B[little_l, k, t] *\
                             exp(-pow(abs(x-center), 2.0)/(2*pow(self._params.h, 2.0))) *\
@@ -399,7 +412,7 @@ class FastKDE:
         kd = 0.0
         for little_l, center in int_centers:
             for k in range(self._params[group].p):
-                for s in range(int(floor(self._params[group].r/2) + 1)):
+                for s in range(int(floor(self._params[group].r / 2) + 1)):
                     for t in range(self._params[group].r - 2 * s + 1):
                         kd = kd + self._a[s, t] * self._B[group][little_l, k, t] * \
                               exp(-pow(abs(x-center), 2.0)/(2*pow(self._params[group].h, 2.0))) * \
@@ -409,7 +422,7 @@ class FastKDE:
 
     def _calculate_B(self, s):
         K = self._params.p
-        T = self._params.r+1
+        T = self._params.r + 1
         L = len(self._params.centers)
         # B = np.zeros((L, K, T))
         B = [[[0.0 for _ in range(T)] for _ in range(K)] for _ in range(L)]
@@ -425,7 +438,7 @@ class FastKDE:
 
     def _combine_B(self, s):
         K = self._params.p
-        T = self._params.r+1
+        T = self._params.r + 1
         L = len(self._params.centers)
         # B = np.zeros((L, K, T))
         B = [[[0.0 for _ in range(T)] for _ in range(K)] for _ in range(L)]
@@ -446,5 +459,6 @@ class FastKDE:
         a = np.zeros((S, T))
         for s in range(S):
             for t in range(T):
-                a[s, t] = pow(-1, s+t)*factorial(r) / (pow(2, s)*factorial(s)*factorial(t)*factorial(r - 2 * s - t))
+                a[s, t] = pow(
+                    -1, s + t) * factorial(r) / (pow(2, s) * factorial(s) * factorial(t) * factorial(r - 2 * s - t))
         return a

@@ -13,10 +13,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from srg.fastmap.distances._distance import Distance, InputError
-from math import sqrt, log, exp
-from srg.utils import is_list_like
+from math import exp
+from math import log
+from math import sqrt
+
+from srg.fastmap.distances._distance import Distance
+from srg.fastmap.distances._distance import InputError
 from srg.fastmap.distances._helpers import _match_vec_inputs
+from srg.utils import is_list_like
 
 
 def _norm(x):
@@ -47,7 +51,6 @@ def _d(x, y):
 
 
 class Cosine(Distance):
-
     def __init__(self):
         pass
 

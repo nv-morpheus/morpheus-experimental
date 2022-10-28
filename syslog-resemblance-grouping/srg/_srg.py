@@ -13,18 +13,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import Union
 import os
-import cudf
-import dask_cudf
-import dask
+from typing import Union
 
+import dill as pickle
 from srg.fastkde import FastKDE
 from srg.fastmap import FastMap
 from srg.fastmap.distances import Jaccard
 
-import dill as pickle
+import dask
 
+import cudf
+import dask_cudf
 
 _PRESORT_COLUMN = 'presort'
 _PRESORT_LABEL_COLUMN = 'presort_label'
@@ -32,7 +32,6 @@ _COMBINED_LABEL = 'combined_label'
 
 
 class SRG:
-
     def __init__(self):
         self._model_built = False
         self._presort = None
@@ -45,7 +44,8 @@ class SRG:
         self._groups = None
         self._reps = None
 
-    def fit(self, X,
+    def fit(self,
+            X,
             delimiter=None,
             names=None,
             npartitions=2,
@@ -113,7 +113,8 @@ class SRG:
 
         self._model_built = True
 
-    def transform(self, X,
+    def transform(self,
+                  X,
                   model: int = None,
                   delimiter=None,
                   names=None,
@@ -209,10 +210,9 @@ class SRG:
             pdf = df.to_pandas().copy()
         else:
             pdf = df.copy()
-        pdf[_PRESORT_LABEL_COLUMN] = pdf.apply(lambda x:
-                                               sum([1 if x[_PRESORT_COLUMN] > minimal_value
-                                                    else 0 for minimal_value in self._presort_minima]),
-                                               axis=1)
+        pdf[_PRESORT_LABEL_COLUMN] = pdf.apply(
+            lambda x: sum([1 if x[_PRESORT_COLUMN] > minimal_value else 0 for minimal_value in self._presort_minima]),
+            axis=1)
         return pdf
 
     def _combined_label(self, df):
@@ -220,12 +220,12 @@ class SRG:
             pdf = df.to_pandas().copy()
         else:
             pdf = df.copy()
-        pdf[_COMBINED_LABEL] = pdf.apply(lambda x:
-                                         '%i::%i' %
+        pdf[_COMBINED_LABEL] = pdf.apply(lambda x: '%i::%i' %
                                          (x[_PRESORT_LABEL_COLUMN],
-                                          sum([1 if x[self._col] > minimal_value
-                                               else 0 for minimal_value
-                                               in self._proj_minima[x[_PRESORT_LABEL_COLUMN]]])),
+                                          sum([
+                                              1 if x[self._col] > minimal_value else 0
+                                              for minimal_value in self._proj_minima[x[_PRESORT_LABEL_COLUMN]]
+                                          ])),
                                          axis=1)
 
     def save(self, path):

@@ -13,30 +13,36 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from dataclasses import dataclass
 import os
 import random
-import cudf
-import dask_cudf
-import dask
+from dataclasses import dataclass
+from math import sqrt
+from typing import Any
+from typing import Callable
+from typing import Dict
+from typing import List
+from typing import Union
+
+import dill as pickle
 import numpy as np
 from numpy.random import poisson
-from math import sqrt
-from typing import Dict, Any, Callable, List, Union
 from srg.fastmap.distances._distance import Distance
-import dill as pickle
 from tqdm import tqdm_notebook
+
+import dask
+
+import cudf
+import dask_cudf
 
 
 class ModelError(Exception):
-
     def __init__(self, message):
         self.message = message
 
 
 class FastMapObject:
-
-    def __init__(self, obj: object,
+    def __init__(self,
+                 obj: object,
                  transform: Union[object, Callable[[Any], Any], None] = None,
                  hasher: Union[None, Callable[[Any], int]] = None):
 
@@ -88,8 +94,8 @@ class Pivots:
 
 
 class FastMapModel:
-
-    def __init__(self, dim: int,
+    def __init__(self,
+                 dim: int,
                  distance: Distance,
                  dist_args: Dict[str, Any] = dict(),
                  obj_transformer: Callable[[Any], Any] = None):
@@ -124,14 +130,12 @@ class FastMapModel:
 
 
 class FastMap:
-
     def __init__(self,
                  dim: int,
                  distance: Distance,
                  dist_args: Dict[str, Any] = dict(),
                  num_models: int = 1,
-                 iters: int = 5
-                 ):
+                 iters: int = 5):
 
         self._dim = dim
         self._dist_args = dist_args
@@ -167,17 +171,14 @@ class FastMap:
     def _groupby_candidate_distances(self, df, groupby, position, left_pivots):
         pdf = df.to_pandas().copy()
         for i in range(self._num_models):
-            pdf['model_%i' % i] = pdf.apply(lambda x:
-                                            self._group_pivot_distance(left_pivots[x[groupby]][i],
-                                                                       x[self._col],
-                                                                       position,
-                                                                       i,
-                                                                       x[groupby]),
-                                            axis=1,
-                                            result_type='expand')
+            pdf['model_%i' % i] = pdf.apply(
+                lambda x: self._group_pivot_distance(left_pivots[x[groupby]][i], x[self._col], position, i, x[groupby]),
+                axis=1,
+                result_type='expand')
         return pdf
 
-    def fit(self, X,
+    def fit(self,
+            X,
             delimiter=None,
             names=None,
             npartitions: int = 2,
@@ -223,43 +224,64 @@ class FastMap:
             except Exception as e1:
                 print(e1)
                 self._groups = None
-        sample_fracs = {group: max(50, 2 * self._num_models) / group_count
-                        for group, group_count
-                        in ddf.groupby(groupby).count()[self._col].compute().to_pandas().to_dict().items()}
+        sample_fracs = {
+            group: max(50, 2 * self._num_models) / group_count
+            for group,
+            group_count in ddf.groupby(groupby).count()[self._col].compute().to_pandas().to_dict().items()
+        }
         left = ddf.head(1)[self._col].to_arrow().to_pylist()[0]
-        self._pivots = {group:
-                        {model_num:
-                         {0:
-                          {'left': left,
-                           'left_proj': [0.0 for _ in range(self._dim)],
-                           'right': left,
-                           'right_proj': [0.0 for _ in range(self._dim)], 'dist': 0.0}}
-                         for model_num in range(self._num_models)} for group in self._groups}
+        self._pivots = {
+            group: {
+                model_num: {
+                    0: {
+                        'left': left,
+                        'left_proj': [0.0 for _ in range(self._dim)],
+                        'right': left,
+                        'right_proj': [0.0 for _ in range(self._dim)],
+                        'dist': 0.0
+                    }
+                }
+                for model_num in range(self._num_models)
+            }
+            for group in self._groups
+        }
         for k in tqdm_notebook(range(self._dim), desc='Current dimension'):
             initial_group_samples = ddf.reduction(chunk=self._groupby_initial_pivots_chunks,
-                                                  chunk_kwargs={'groupby': groupby,
-                                                                'sample_fracs': sample_fracs},
-                                                  aggregate=self._groupby_initial_pivots_aggregate, meta=dict).compute()
+                                                  chunk_kwargs={
+                                                      'groupby': groupby, 'sample_fracs': sample_fracs
+                                                  },
+                                                  aggregate=self._groupby_initial_pivots_aggregate,
+                                                  meta=dict).compute()
 
-            initial_pivots = {group: random.sample(list(samples), self._num_models)
-                              for group, samples in initial_group_samples.items()}
+            initial_pivots = {
+                group: random.sample(list(samples), self._num_models)
+                for group,
+                samples in initial_group_samples.items()
+            }
             right_pivots = {group: [[left, 0.0] for left in initial_pivots[group]] for group in self._groups}
             for m in tqdm_notebook(range(self._iters), desc='Iteration', leave=False):
                 left_pivots = {group: [new_left for [new_left, _] in right_pivots[group]] for group in self._groups}
-                assigned_ddf = ddf.map_partitions(lambda df:
-                                                  self._groupby_candidate_distances(df, groupby, k, left_pivots))
+                assigned_ddf = ddf.map_partitions(
+                    lambda df: self._groupby_candidate_distances(df, groupby, k, left_pivots))
                 right_pivots = assigned_ddf.reduction(chunk=self._groupby_chunk,
-                                                      chunk_kwargs={'groupby': groupby,
-                                                                    'lefts': left_pivots},
+                                                      chunk_kwargs={
+                                                          'groupby': groupby, 'lefts': left_pivots
+                                                      },
                                                       aggregate=self._groupby_aggregate,
-                                                      aggregate_kwargs={'lefts': left_pivots}, meta=dict).compute()
+                                                      aggregate_kwargs={
+                                                          'lefts': left_pivots
+                                                      },
+                                                      meta=dict).compute()
             for group in self._groups:
                 for i in range(self._num_models):
                     left, right, dist = left_pivots[group][i], right_pivots[group][i][0], right_pivots[group][i][1]
-                    final_pivots = {'left': left,
-                                    'left_proj': self._i_proj(left, k, i),
-                                    'right': right,
-                                    'right_proj': self._i_proj(right, k, i), 'dist': dist}
+                    final_pivots = {
+                        'left': left,
+                        'left_proj': self._i_proj(left, k, i),
+                        'right': right,
+                        'right_proj': self._i_proj(right, k, i),
+                        'dist': dist
+                    }
                     self._pivots[group][i][k] = final_pivots
         self._model_built = True
         self._group_models = True
@@ -318,14 +340,18 @@ class FastMap:
         n = ddf[self._col].count().compute()
         samp_frac = max(50, 3 * self._num_models) / n
         left = ddf.head(1)[self._col].to_arrow().to_pylist()[0]
-        self._pivots = {model_num:
-                        {0:
-                         {'left': left,
-                          'left_proj': [0.0 for _ in range(self._dim)],
-                          'right': left,
-                          'right_proj': [0.0 for _ in range(self._dim)],
-                          'dist': 0.0}}
-                        for model_num in range(self._num_models)}
+        self._pivots = {
+            model_num: {
+                0: {
+                    'left': left,
+                    'left_proj': [0.0 for _ in range(self._dim)],
+                    'right': left,
+                    'right_proj': [0.0 for _ in range(self._dim)],
+                    'dist': 0.0
+                }
+            }
+            for model_num in range(self._num_models)
+        }
         for k in tqdm_notebook(range(self._dim), desc='Current dimension'):
             init_pivs = random.sample(list(set(ddf[self._col].sample(frac=samp_frac).compute().to_arrow().to_pylist())),
                                       self._num_models)
@@ -334,20 +360,28 @@ class FastMap:
                 left_pivots = [new_left for [new_left, _] in right_pivots]
                 assigned_ddf = ddf.map_partitions(lambda df: self._candidate_distances(df, k, left_pivots))
                 right_pivots = assigned_ddf.reduction(chunk=self._chunk,
-                                                      chunk_kwargs={'lefts': left_pivots},
+                                                      chunk_kwargs={
+                                                          'lefts': left_pivots
+                                                      },
                                                       aggregate=self._aggregate,
-                                                      aggregate_kwargs={'lefts': left_pivots},
+                                                      aggregate_kwargs={
+                                                          'lefts': left_pivots
+                                                      },
                                                       meta=list).compute()
             for i in range(self._num_models):
                 left, right, dist = left_pivots[i], right_pivots[i][0], right_pivots[i][1]
-                final_pivots = {'left': left,
-                                'left_proj': self._i_proj(left, k, i),
-                                'right': right,
-                                'right_proj': self._i_proj(right, k, i), 'dist': dist}
+                final_pivots = {
+                    'left': left,
+                    'left_proj': self._i_proj(left, k, i),
+                    'right': right,
+                    'right_proj': self._i_proj(right, k, i),
+                    'dist': dist
+                }
                 self._pivots[i][k] = final_pivots
         self._model_built = True
 
-    def transform(self, X,
+    def transform(self,
+                  X,
                   model: int = None,
                   delimiter=None,
                   names=None,
@@ -392,7 +426,7 @@ class FastMap:
             meta = {c: v for c, v in zip(ddf._meta, ddf._meta.dtypes)}
             for i in range(self._dim):
                 meta['x_%i' % i] = 'float'
-            projs = ddf.map_partitions(lambda df: self._group_assign_single_projs(df, col, group,  model), meta=meta)
+            projs = ddf.map_partitions(lambda df: self._group_assign_single_projs(df, col, group, model), meta=meta)
         else:
             projs = ddf.map_partitions(lambda df: self._group_assign_multi_projs(df, col, group, model))
         return projs

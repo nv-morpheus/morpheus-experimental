@@ -13,24 +13,25 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from srg.fastmap.distances._distance import Distance, InputError
-from pandas.api.types import is_list_like
-from math import sqrt, pow
+from math import pow
+from math import sqrt
 
+from pandas.api.types import is_list_like
+from srg.fastmap.distances._distance import Distance
+from srg.fastmap.distances._distance import InputError
 from srg.fastmap.distances._helpers import _match_vec_inputs
 
 
 def _d(x, y):
     if isinstance(x, dict):
         all_keys = {*x}.union({*y})
-        diffs = [x.get(key, 0)-y.get(key, 0) for key in all_keys]
+        diffs = [x.get(key, 0) - y.get(key, 0) for key in all_keys]
     else:
         diffs = [xi - yi for (xi, yi) in zip(x, y)]
     return sqrt(sum([pow(diff, 2) for diff in diffs]))
 
 
 class L2(Distance):
-
     def __init__(self):
         pass
 
