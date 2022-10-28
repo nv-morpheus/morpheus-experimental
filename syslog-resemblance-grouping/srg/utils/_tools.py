@@ -69,7 +69,7 @@ def is_list_like(obj) -> bool:
         and not isinstance(obj, (str, bytes, dict, set))
         and not (isinstance(obj, np.ndarray) and obj.ndim == 0)
     )
-    
+
 
 def create_x_axis(start, stop, step=0.01):
     return [start + i * step for i in range(int(ceil((stop - start)/step)))]
@@ -85,4 +85,3 @@ def find_local_min(x, y):
 
 def find_local_max(x, y):
     return find_local_min(x, [-y_i for y_i in y])
-    

@@ -30,4 +30,3 @@ def _match_vec_inputs(x, y):
     else:
         assert len(x) == len(y), "Non-set, non-dict list-like inputs must have the same length"
         return x, y
-        

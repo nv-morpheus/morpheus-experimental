@@ -64,4 +64,3 @@ class Cosine(Distance):
         d = _d(x, y)
 
         return d
-        

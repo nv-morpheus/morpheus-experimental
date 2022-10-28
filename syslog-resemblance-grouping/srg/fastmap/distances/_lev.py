@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from srg.fastmap.distances._distance import Distance, InputError
+from srg.fastmap.distances._distance import Distance
 
 
 def _match_inputs(x, y):
@@ -56,4 +56,3 @@ class Lev(Distance):
                                                   new_distances[-1])))
             distances = new_distances
         return distances[-1]
-        

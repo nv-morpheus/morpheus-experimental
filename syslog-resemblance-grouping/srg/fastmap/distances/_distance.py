@@ -15,6 +15,7 @@
 
 import abc
 
+
 class InputError(Exception):
     """
     Exception raised for errors in the input.
@@ -37,4 +38,3 @@ class Distance(metaclass=abc.ABCMeta):
     @abc.abstractmethod
     def calculate(self, x, y) -> float:
         pass
-    

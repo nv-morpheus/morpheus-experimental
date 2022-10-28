@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from srg.fastmap.distances._distance import Distance, InputError
+from srg.fastmap.distances._distance import Distance
 from srg.utils import shingler
 
 
@@ -86,4 +86,3 @@ class Jaccard(Distance):
             min_sum += mini
             max_sum += maxi
         return 1 - min_sum / max_sum
-        
