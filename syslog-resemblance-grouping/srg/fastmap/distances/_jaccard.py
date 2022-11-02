@@ -37,6 +37,9 @@ def _match_inputs(x, y, shingle_size):
 
 
 class Jaccard(Distance):
+    """
+    Calculates the Jaccard distance between two sets of strings.
+    """
     def __init__(self, shingle_size=4):
         self._shingle_size = shingle_size
 

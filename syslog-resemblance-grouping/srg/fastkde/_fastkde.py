@@ -52,13 +52,11 @@ class _Params:
     Xmax: float
     n: int
     std: float
-    # iqr: float
     r: int
     error: float
 
     def __post_init__(self):
         if self.bandwidth is None:
-            # self.bandwidth = 0.9 * min(self.std, self.iqr / 1.34) * pow(self.n, -0.2)
             self.bandwidth = pow((4 * pow(self.std, 5)) / (3 * self.n), 0.2)
         if self.bandwidth > 0:
 
@@ -87,6 +85,9 @@ class _Params:
 
 
 class FastKDE:
+    """
+    Approximation method for univariate Gaussian kernel density estimation
+    """
     def __init__(self, derivative: int = 0, error: float = 0.0001):
 
         self._derivative = derivative
@@ -97,6 +98,14 @@ class FastKDE:
         self._a = None
         self._model_built = False
         self._flat_model = False
+        """
+        Parameters
+        ----------
+        derivative: int
+            The derivative of the kernel density estimation function.
+        error: float
+            The specified precision of the kernel density estimation function.
+        """
 
     @property
     def bandwidth(self):
@@ -118,6 +127,27 @@ class FastKDE:
             column: Union[str, None] = None,
             groupby: Union[str, None] = None,
             bandwidth: float = None):
+
+        """
+        Fits the kernel density estimation function to the provided univariate data.
+
+        Parameters
+        ----------
+        X
+            A pre-loaded collection of data or the path to a csv
+        delimiter: str
+            If loading a csv from disk, this is the delimiter of the csv. Leave as `None` to use the default of the
+            loader.
+        names: List[str]
+            Manually define the csv column names
+        column: str
+            The column containing the data for the KDE
+        groupby: str
+            This allows multiple KDE's to be generated for a single data aggregated by a grouping column
+        bandwidth: float
+            Manually specify the desired bandwidth for the KDE. Otherwise a bandwidth is selected based on the standard
+            deviation of the data.
+        """
         if groupby is None:
             self._fit_series(X, delimiter, names, npartitions, column, bandwidth)
         else:
@@ -281,6 +311,26 @@ class FastKDE:
         return pdf
 
     def transform(self, X, input_column=None, group=None, output_column='density'):
+        """
+        Calculates the KDE for the each point of the provided data
+
+        Parameters
+        ----------
+        X
+            A pre-loaded collection of data or a single value to apply the KDE function to.
+        input_column: str
+            The column containing the data for the KDE
+        group: str
+            The group column or specific group if multiple KDE's were generated.
+        ouptut_column: str
+            The name of the output column if a collection of data points was passed into the transform method.
+
+        Returns
+        -------
+        float or List[float] or dask_cudf.core.DataFrame
+            If a single point is passed into transform, a single float is returned. If a list is passed in then a list
+            is returned. Otherwise, a dask_cudf DataFrame is returned if a Series or DataFrame is used.
+        """
         assert self._model_built, 'Density not yet estimated'
         if isinstance(self._B, dict):
             return self._groupby_model_transform(X, input_column, group, output_column)
@@ -337,6 +387,21 @@ class FastKDE:
         return create_x_axis(start, stop, step)
 
     def get_local_extrema(self, increments=1000):
+        """
+        Determines the local minima and maxima of the KDE.
+
+        Parameters
+        ----------
+        increments: int
+            The number of points to use to fill out the KDE curve.
+
+        Returns
+        -------
+        local_minima: List[float]
+            List of floats containing the local minima
+        local_maxima: List[float]
+            List of floats containing the local maxima
+        """
         assert self._model_built, 'Density not yet estimated'
         if isinstance(self._B, dict):
             local_min = dict()
@@ -361,6 +426,25 @@ class FastKDE:
         return local_min, local_max
 
     def plot_density(self, increments=1000, width=10, height=10, title=None):
+        """
+        Return a plot of the KDE curve.
+
+        Parameters
+        ----------
+        increments: int
+            The number of points to use to fill out the KDE curve.
+        width: int
+            The width of the plot
+        height: int
+            The height of the plot
+        title: str
+            The title for the plot
+
+        Returns
+        -------
+        matplotlib.pyplot.figure
+            Figure object of the plot
+        """
         assert self._model_built, 'Density not yet estimated'
         assert not isinstance(self._B, dict), 'groupby kde plotting not implemented'
         fig = plt.figure(figsize=(width, height))
@@ -424,7 +508,6 @@ class FastKDE:
         K = self._params.p
         T = self._params.r + 1
         L = len(self._params.centers)
-        # B = np.zeros((L, K, T))
         B = [[[0.0 for _ in range(T)] for _ in range(K)] for _ in range(L)]
         for x_i in s.values_host:
             little_l = sum([b <= x_i for b in self._params.boundaries]) - 1
@@ -440,7 +523,6 @@ class FastKDE:
         K = self._params.p
         T = self._params.r + 1
         L = len(self._params.centers)
-        # B = np.zeros((L, K, T))
         B = [[[0.0 for _ in range(T)] for _ in range(K)] for _ in range(L)]
         for B_i in s:
             for firstIdx, oneD in enumerate(B_i):

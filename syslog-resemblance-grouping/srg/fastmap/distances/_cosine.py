@@ -51,6 +51,10 @@ def _d(x, y):
 
 
 class Cosine(Distance):
+    """
+    Calculate the cosine distance between two vectors. This is defined as the secant on the unit circle between two
+    vectors.
+    """
     def __init__(self):
         pass
 

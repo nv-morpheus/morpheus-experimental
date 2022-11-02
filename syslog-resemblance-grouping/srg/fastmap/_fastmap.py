@@ -67,6 +67,9 @@ class FastMapObject:
 
 @dataclass
 class Pivots:
+    """
+    A helper class containing two anchor pivots for the FastMap method.
+    """
     left: object
     left_proj: list
     right: object
@@ -94,6 +97,7 @@ class Pivots:
 
 
 class FastMapModel:
+
     def __init__(self,
                  dim: int,
                  distance: Distance,
@@ -130,13 +134,35 @@ class FastMapModel:
 
 
 class FastMap:
+    """
+    A multidimensional scaling technique [1]_ for projecting objects into a vector space designed to maintain the
+    relative distance between objects for a given distance metric.
+
+    .. _[1]:
+        Faloutsos, C., & Lin, K. I. (1995, May). FastMap: A fast algorithm for indexing, data-mining and
+        visualization of traditional and multimedia datasets. In Proceedings of the 1995 ACM SIGMOD international
+        conference on Management of data (pp. 163-174).
+    """
     def __init__(self,
                  dim: int,
                  distance: Distance,
                  dist_args: Dict[str, Any] = dict(),
                  num_models: int = 1,
                  iters: int = 5):
-
+        """
+        Parameters
+        ----------
+        dim: int
+            The dimension of the resulting vector space embedding
+        distance: Distance
+            The distance metric to use to create the vector space embedding
+        dist_args: Dict[str, Any]
+            Any arguments to pass to the distance metric method
+        num_models: int
+            The number of simultaneous FastMap models to build over the input objects
+        iters: int
+            The number of iterations to find anchor points for each model
+        """
         self._dim = dim
         self._dist_args = dist_args
         self._distance = distance(**dist_args)
@@ -184,6 +210,24 @@ class FastMap:
             npartitions: int = 2,
             column: Union[str, None] = None,
             groupby: Union[str, None] = None):
+        """
+        Find the FastMap model for the given input data
+
+        Parameters
+        ----------
+        X: str or dask_cudf.DataFrame or list
+            The path to a csv to load or a collection of objects to project
+        delimiter: str
+            If a csv path is specified, this indicates the delimiter to use when reading the file
+        names: List[str]
+            Manually specify the column names for an input csv
+        npartitions: int
+            The number of partitions for the dask_cudf DataFrame
+        column: str
+            The column containing the data to be projected
+        groupby: str
+            Specify the column grouping for building submodels.
+        """
         if groupby is None:
             self._full_fit(X, delimiter, names, npartitions, column)
         else:
@@ -388,6 +432,26 @@ class FastMap:
                   npartitions: int = 2,
                   column: Union[str, None] = None,
                   group: Union[str, None] = None):
+        """
+        Apply the model to an object or collection of objects and return the embedding.
+
+        Parameters
+        ----------
+        X: str or list or dask_cudf.DataFrame
+            The path to a csv or an individual object or collection of objects to project.
+        model: int
+            If multiple models were generated, specify the model to use when passing in a single object
+        delimiter: str
+            If a path is input, this manually sets the csv delimiter
+        names: List[str]
+            Manually specify the column names of an input csv
+        npartitions: int
+            The number of partitions for the dask_cudf DataFrame
+        column: str
+            The column containing the data to be projected
+        group: str
+            Specify the column containing the grouping if submodels were built.
+        """
         if model is not None:
             if model >= self._num_models:
                 print('Not a valid model. Transforming all models.')
@@ -604,12 +668,28 @@ class FastMap:
         return candidates
 
     def save(self, path):
+        """
+        Pickle the FastMap model(s).
+
+        Parameters
+        ----------
+        path: str
+            The path to save the pickle of the model.
+        """
         assert self._model_built, "Model has not been built"
         with open(path, 'wb') as f:
             pickle.dump(self, f)
 
     @classmethod
     def load(cls, path):
+        """
+        Load a pre-built FastMap model(s).
+
+        Parameters
+        ----------
+        path: str
+            The path to the pre-built model pickle
+        """
         with open(path, 'rb') as f:
             fastmap = pickle.load(f)
         return fastmap

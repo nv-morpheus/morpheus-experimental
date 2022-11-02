@@ -32,6 +32,13 @@ _COMBINED_LABEL = 'combined_label'
 
 
 class SRG:
+    """
+    A technique for syntactically grouping strings and electing a group representative for each group.
+    See `SRG README`_ for more details on how the technique is designed.
+
+    .. _SRG README:
+        https://github.com/nv-morpheus/morpheus-experimental/tree/main/syslog-resemblance-grouping/README.md
+    """
     def __init__(self):
         self._model_built = False
         self._presort = None
@@ -55,6 +62,33 @@ class SRG:
             shingle_size=4,
             bandwidth=None,
             presort='length'):
+        """
+        Find the groups and representatives for the provided data set.
+
+        Parameters
+        ----------
+        X: str or List[str] or (dask_)cudf Series/DataFrame
+            A path to a csv to load, a list of strings, or a pre-loaded (dask_)cudf Series or DataFrame
+        delimiter: str
+            If a csv path is specified, this indicates the delimiter to use when reading the file
+        names: List[str]
+            Manually specify the column names for an input csv
+        npartitions: int
+            The number of partitions for the dask_cudf DataFrame
+        column: str
+            The column containing the data to be grouped
+        num_fastmaps: int
+            The number of simultaneous FastMap models to build.
+        iters: int
+            The number of passes to find the FastMap pivots.
+        shingle_size: int
+            The size of the n-gram character shingles created over the string data.
+        bandwidth: float
+            Manually specify the bandwidth for the kernel density estimators.
+        presort: str
+            The desired method for pre-sorting the data. Default is to create subgroups based on the lengths of the
+            strings.
+        """
         self._presort = presort
         self._col = column or 'obj'
         if isinstance(X, (dask.dataframe.core.Series, dask.dataframe.core.DataFrame)) and\
@@ -115,11 +149,33 @@ class SRG:
 
     def transform(self,
                   X,
-                  model: int = None,
                   delimiter=None,
                   names=None,
                   npartitions: int = 2,
                   column: Union[str, None] = None):
+        """
+        Find the group and representative for a specific string or each string in a collection.
+
+        Parameters
+        ----------
+        X: str or List[str] or (dask_)cudf Series/DataFrame
+            A single string, a path to a csv to load, a list of strings,
+            or a pre-loaded (dask_)cudf Series or DataFrame
+        delimiter: str
+            If a csv path is specified, this indicates the delimiter to use when reading the file
+        names: List[str]
+            Manually specify the column names for an input csv
+        npartitions: int
+            The number of partitions for the dask_cudf DataFrame
+        column: str
+            The column containing the data to be grouped
+
+        Returns
+        -------
+        Tuple or DataFrame
+            The group and representative if a single string is passed or a DataFrame with the group and representative
+            for each string added to the input DataFrame
+        """
         col = column or 'obj'
         if isinstance(X, (dask.dataframe.core.Series, dask.dataframe.core.DataFrame)) and\
            not isinstance(X, (dask_cudf.core.DataFrame, dask_cudf.core.Series)):
@@ -182,7 +238,6 @@ class SRG:
                         current_dist = candidates[incoming_group][1]
                         if current_dist > abs(maxima - row['x_0']):
                             candidates[incoming_group] = [row[self._col], abs(maxima - row['x_0'])]
-        # print(candidates)
         return candidates
 
     def _rep_agg(self, chunks):
@@ -229,12 +284,28 @@ class SRG:
                                          axis=1)
 
     def save(self, path):
+        """
+        Pickle the FastMap model(s).
+
+        Parameters
+        ----------
+        path: str
+            The path to save the pickle of the model.
+        """
         assert self._model_built, "Model has not been built"
         with open(path, 'wb') as f:
             pickle.dump(self, f)
 
     @classmethod
     def load(cls, path):
+        """
+        Load a pre-built FastMap model(s).
+
+        Parameters
+        ----------
+        path: str
+            The path to the pre-built model pickle
+        """
         with open(path, 'rb') as f:
             srg = pickle.load(f)
         return srg

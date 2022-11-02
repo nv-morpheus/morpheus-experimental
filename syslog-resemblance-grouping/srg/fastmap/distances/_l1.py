@@ -29,6 +29,9 @@ def _d(x, y):
 
 
 class L1(Distance):
+    """
+    Calculatest the L1 distance between two vectors.
+    """
     def __init__(self):
         pass
 

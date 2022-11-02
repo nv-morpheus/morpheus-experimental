@@ -70,10 +70,33 @@ def is_list_like(obj) -> bool:
 
 
 def create_x_axis(start, stop, step=0.01):
+    """
+    Helper function to create a list of equally spaced step values for the given range.
+
+    Parameters
+    ----------
+    start: float
+        The start of the range
+    stop: float
+        The end of the range. If the step does not equally divide the range, the final value will be the smallest
+        stepped value greater than or equal to the `stop` value.
+    step: float
+        The distance between each point in the list.
+    """
     return [start + i * step for i in range(int(ceil((stop - start) / step)))]
 
 
 def find_local_min(x, y):
+    """
+    For a given set of x and y points such that f(x)=y, find the local minima for the curve defined by f(x).
+
+    Parameters
+    ----------
+    x: List[float]
+        Curve function input
+    y: List[float]
+        Curve function output
+    """
     minima = []
     for idx in range(1, len(x) - 1):
         if y[idx] <= y[idx - 1] and y[idx] < y[idx + 1]:
@@ -82,4 +105,14 @@ def find_local_min(x, y):
 
 
 def find_local_max(x, y):
+    """
+    For a given set of x and y points such that f(x)=y, find the local maxima for the curve defined by f(x).
+
+    Parameters
+    ----------
+    x: List[float]
+        Curve function input
+    y: List[float]
+        Curve function output
+    """
     return find_local_min(x, [-y_i for y_i in y])

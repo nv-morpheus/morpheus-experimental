@@ -28,11 +28,29 @@ class InputError(Exception):
 
 
 class Distance(metaclass=abc.ABCMeta):
+    """
+    Base abstract class for distance metrics to be utilized by the FastMap method.
+    """
     @staticmethod
     @abc.abstractmethod
     def get_name(self):
+        """
+        Return the name of the distance metric.
+        """
         pass
 
     @abc.abstractmethod
     def calculate(self, x, y) -> float:
+        """
+        Calculate the distance between two objects.
+
+        Parameters
+        ----------
+        x: object
+        y: object
+
+        Returns
+        -------
+        float
+        """
         pass

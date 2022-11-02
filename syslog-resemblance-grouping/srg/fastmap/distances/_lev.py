@@ -27,6 +27,9 @@ def _match_inputs(x, y):
 
 
 class Lev(Distance):
+    """
+    Calculates the Levenshtein edit distance between two strings.
+    """
     def __init__(self):
         pass
 
