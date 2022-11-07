@@ -13,8 +13,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import os
-
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
@@ -50,13 +48,23 @@ def get_metrics(pred, labels, out_dir, name='RGCN'):
     roc_auc = auc(fpr, tpr)
     pr_auc = auc(rec, prc)
 
-    save_roc_curve(fpr, tpr, roc_auc, os.path.join(out_dir, name + "_roc_curve.png"), model_name=name)
+    # uncomment to save individual plots.
+    # save_roc_curve(fpr, tpr, roc_auc, os.path.join(out_dir, name + "_roc_curve.png"), model_name=name)
     # save_pr_curve( rec, prc, pr_auc, ap, os.path.join(out_dir, name + "_pr_curve.png"), model_name=name)
     auc_r = (fpr, tpr, roc_auc, name)
     return acc, f1, precision, recall, roc_auc, pr_auc, ap, confusion_matrix, auc_r
 
 
 def save_roc_curve(fpr, tpr, roc_auc, location, model_name='Model'):
+    """Produce and save AUC ROC curve
+
+    Args:
+        fpr (_type_): false positive rate
+        tpr (_type_): true negative rate
+        roc_auc (_type_): auc score
+        location (_type_): location dir
+        model_name (str, optional): model name. Defaults to 'Model'.
+    """
     f = plt.figure()
     lw = 2
     plt.plot(fpr, tpr, color='darkorange', lw=lw, label='ROC curve (area = %0.2f)' % roc_auc)
@@ -70,11 +78,21 @@ def save_roc_curve(fpr, tpr, roc_auc, location, model_name='Model'):
     f.savefig(location)
 
 
-def save_pr_curve(rec, prc, pr_auc, ap, location, model_name='Model'):
+def save_pr_curve(rec, prec, pr_auc, ap, location, model_name='Model'):
+    """Produce and save precision-recall curve
+
+    Args:
+        rec (_type_): recall
+        prec (_type_): precision
+        pr_auc (_type_): precision-recall curve
+        ap (_type_): average precision
+        location (_type_): location dir
+        model_name (str, optional): model name. Defaults to 'Model'.
+    """
 
     f = plt.figure()
     lw = 2
-    plt.plot(rec, prc, color='darkorange', lw=lw, label='PR curve (area = %0.2f)' % pr_auc)
+    plt.plot(rec, prec, color='darkorange', lw=lw, label='PR curve (area = %0.2f)' % pr_auc)
     plt.xlim([0.0, 1.0])
     plt.ylim([0.0, 1.05])
     plt.xlabel('Recall')
@@ -85,9 +103,19 @@ def save_pr_curve(rec, prc, pr_auc, ap, location, model_name='Model'):
 
 
 def precision_top_k_day(df_day, top_k, model_name, user_id='userId_id'):
+    """ This takes the max of the predictions AND the max of label FRAUD for each User_ID,
+    and sorts by decreasing order of fraudulent prediction
 
-    # This takes the max of the predictions AND the max of label FRAUD for each User_ID,
-    # and sorts by decreasing order of fraudulent prediction
+    Args:
+        df_day (dataframe): dataframe of scores
+        top_k (int): K in top k
+        model_name (string): model name
+        user_id (str, optional): user_id column. Defaults to 'userId_id'.
+
+    Returns:
+        _type_: precision @topk of given day.
+    """
+
     df_day = df_day.groupby(user_id).max().sort_values(by=model_name, ascending=False).reset_index(drop=False)
 
     # Get the top k most suspicious users
@@ -101,6 +129,17 @@ def precision_top_k_day(df_day, top_k, model_name, user_id='userId_id'):
 
 
 def user_precision_top_k(predictions_df, top_k, model_name, user_id='userId_id'):
+    """ Precision at top K for user at given day.
+
+    Args:
+        predictions_df (_type_): prediction score.
+        top_k (_type_): k rank
+        model_name (_type_): model used
+        user_id (str, optional): UserId. Defaults to 'userId_id'.
+
+    Returns:
+        _type_: precision top k/day
+    """
 
     # Sort days by increasing order
     list_days = list(predictions_df['day'].unique())
@@ -129,10 +168,25 @@ def user_precision_top_k(predictions_df, top_k, model_name, user_id='userId_id')
     return nb_compromised_users_per_day, user_precision_top_k_per_day_list, mean_user_precision_top_k, detected_users_at
 
 
-#  Baseline comparison
+#  Baseline models for comparison.
 
 
 def baseline_models(train_x, test_x, train_idx, test_idx, labels, test_label, name='XGB', result_dir='azure_result'):
+    """This trains and produce metric from supervised baseline model (XGBoost)
+
+    Args:
+        train_x : training data
+        test_x : test data
+        train_idx : training index
+        test_idx : test index
+        labels : groundtruth label
+        test_label : evalaution label
+        name (str, optional): model name. Defaults to 'XGB'.
+        result_dir (str, optional): result directory. Defaults to 'azure_result'.
+
+    Returns:
+        _type_: evaluation metrics such acc, f1, precision, recall, roc_auc, pr_auc
+    """
 
     from xgboost import XGBClassifier
 
@@ -155,7 +209,21 @@ def unsupervised_models(train_x,
                         test_label,
                         name='iforest',
                         result_dir='azure_result'):
+    """This trains and produce metric from unsupervised baseline model (iforest)
 
+    Args:
+        train_x (pd.DataFrame): _description_
+        test_x (pd.DataFrame): _description_
+        train_idx (_type_): _description_
+        test_idx (_type_): _description_
+        labels (_type_): _description_
+        test_label (_type_): _description_
+        name (str, optional): _description_. Defaults to 'iforest'.
+        result_dir (str, optional): _description_. Defaults to 'azure_result'.
+
+    Returns:
+        _type_: evaluation metrics such acc, f1, precision, recall, roc_auc, pr_auc
+    """
     from sklearn.ensemble import IsolationForest
     ff = IsolationForest(n_estimators=100)
     ff.fit(train_x)
@@ -165,5 +233,4 @@ def unsupervised_models(train_x,
 
     acc, f1, precision, recall, roc_auc, pr_auc, ap, confusion_matrix, roc_r = get_metrics(
         baseline_pred, test_label[test_idx], out_dir=result_dir, name=name, )
-    # acc, f1, precision, recall, roc_auc, pr_auc, ap, confusion_matrix = 0, 0, 0, 0,0, 0, 0, 0
     return acc, f1, precision, recall, roc_auc, pr_auc, ap, confusion_matrix, baseline_pred[:, 1], roc_r

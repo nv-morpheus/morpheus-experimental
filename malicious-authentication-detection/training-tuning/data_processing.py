@@ -21,25 +21,25 @@ import torch
 
 
 def map_node_id(df, col_name):
-    """ map node to id.
+    """ Convert column node list to integer index for dgl graph.
 
     Args:
-        df (_type_): dataframe
-        col_name (_type_): column list
+        df (DataFrame): dataframe
+        col_name (list: column list
     """
     node_index = {j: i for i, j in enumerate(df[col_name].unique())}
     df[col_name + "_id"] = df[col_name].map(node_index)
 
 
 def build_azure_graph(train_data, col_drop):
-    """Build graph
+    """Build heterograph from edglist and node index.
 
     Args:
-        train_data (_type_): _description_
-        col_drop (_type_): _description_
+        train_data (_type_): training data for node features.
+        col_drop (_type_): features to drop from node features.
 
     Returns:
-        _type_: dlg graph, feature tensor
+        _type_: dlg graph, normalized feature tensor
     """
 
     edge_list = {
@@ -51,8 +51,10 @@ def build_azure_graph(train_data, col_drop):
         ('authentication', 'request-by', 'device'): (train_data['auth_id'].values, train_data['ipAddress_id'].values)
     }
     G = dgl.heterograph(edge_list)
-    feature_tensors = torch.tensor(train_data.drop(col_drop, axis=1).values).float()
-    feature_tensors = (feature_tensors - feature_tensors.mean(0)) / (0.0001 + feature_tensors.std(0))
+    feature_tensors = torch.tensor(
+        train_data.drop(col_drop, axis=1).values).float()
+    feature_tensors = (feature_tensors - feature_tensors.mean(0)
+                       ) / (0.0001 + feature_tensors.std(0))
 
     return G, feature_tensors
 
@@ -61,7 +63,7 @@ def get_anonomized_dataset():
     """Return anonomized dataset.
 
     Returns:
-        _type_: _description_
+        _type_: split of training, test data.
     """
 
     df = pd.read_parquet('data/anomized_azure.pq')
@@ -69,22 +71,31 @@ def get_anonomized_dataset():
     train_data = df[~test_mask]
     test_data = df[test_mask]
 
-    return train_data, test_data, train_data.index, test_data.index, df['status_flag'].values, df
+    return train_data, test_data, train_data.index, test_data.index, df[
+        'status_flag'].values, df
 
 
 def prepare_data(df_cleaned):
+    """ Prepare aggregated features from raw azure dataframe.
 
+    Args:
+        df_cleaned (DataFrame):raw azure dataset converted from json.
+
+    Returns:
+        _type_: feature processed dataframe
+    """
+
+    # convert bool features to int and set status_flag label based on succcess error code.
     df_cleaned['riskDetail'] = (df_cleaned['riskDetail'] == 'none').astype(int)
-    df_cleaned['deviceDetail.isCompliant'] = (df_cleaned['deviceDetail.isCompliant']).astype(int)
-    df_cleaned['deviceDetail.isManaged'] = (df_cleaned['deviceDetail.isManaged']).astype(int)
-    df_cleaned['status_flag'] = (df_cleaned['status.failureReason'] != 'Other.').astype(int)
+    df_cleaned['deviceDetail.isCompliant'] = (
+        df_cleaned['deviceDetail.isCompliant']).astype(int)
+    df_cleaned['deviceDetail.isManaged'] = (
+        df_cleaned['deviceDetail.isManaged']).astype(int)
+    # df_cleaned['status_flag'] = (df_cleaned['status.failureReason'] != 'Other.').astype(int)
+    df_cleaned['status_flag'] = (
+        df_cleaned['status.errorCode'] != 0).astype(int)
 
-    # Grouping based on selected features.
-    # count_cats = pd.Series(
-    #    {cc: df_cleaned[cc].nunique() for cc in df_cleaned.columns}).sort_values()
-    # Filter specific columns to apply OHE:
-    # ohe_cols = list(count_cats[count_cats.between(3,60)].index)
-    # ohe_cols.remove('status.failureReason')
+    # Create OHE set features & their aggregation function.
     ohe_cols = [
         'deviceDetail.trustType',
         'riskState',
@@ -94,10 +105,12 @@ def prepare_data(df_cleaned):
         'deviceDetail.operatingSystem'
     ]
 
-    df_ohe = pd.get_dummies(df_cleaned, columns=ohe_cols, prefix=ohe_cols, prefix_sep='_')
-    ohe_col_agg = {c: 'sum' for col in ohe_cols for c in df_ohe.columns if c.startswith(col)}
+    df_ohe = pd.get_dummies(df_cleaned, columns=ohe_cols,
+                            prefix=ohe_cols, prefix_sep='_')
+    ohe_col_agg = {
+        c: 'sum' for col in ohe_cols for c in df_ohe.columns
+        if c.startswith(col)}
 
-    print(ohe_cols)
     agg_func = {
         'location.city': 'nunique',
         'location.countryOrRegion': 'nunique',
@@ -108,19 +121,28 @@ def prepare_data(df_cleaned):
         'riskDetail': 'sum',
         'status_flag': 'max'
     }
+    # set dummy fraud_label feature. This could be replaced with get_fraud() method
+    # if there are know frauds for testing.
     df_ohe['fraud_label'] = 0.0
     # df_ohe['fraud_label'][get_fraud_index(df)] = 1.0
     agg_func = {**agg_func, **ohe_col_agg}
     group_by = ['appId', 'userId', 'ipAddress', 'day']
-    print(df_ohe.columns)
-    gg = df_ohe.groupby(group_by).agg(agg_func).reset_index()
+    grouped_df = df_ohe.groupby(group_by).agg(agg_func).reset_index()
 
-    return gg
+    return grouped_df
 
 
 def convert_json_csv_schema(json_df):
+    """Convert raw json azure to model input dataframe.
 
-    column_list_sel = [
+    Args:
+        json_df (_type_): json input dataset
+
+    Returns:
+        _type_: dataframe
+    """
+
+    feature_list = [
         '_time',
         'appId',
         'clientAppUsed',
@@ -145,15 +167,16 @@ def convert_json_csv_schema(json_df):
         'riskLevelDuringSignIn',
         'riskState',
         'status.failureReason',
+        'status.errorCode'
         'userId',
         'userPrincipalName',
         'day'
     ]
 
-    new_schema_column = sorted(json_df.columns.tolist())
-    col_csv_json = {col: None for col in column_list_sel}
-    for csv_col in sorted(column_list_sel):
-        for jsc in new_schema_column:
+    new_schema_features = sorted(json_df.columns.tolist())
+    col_csv_json = {col: None for col in feature_list}
+    for csv_col in sorted(feature_list):
+        for jsc in new_schema_features:
             if jsc.startswith('prop') and jsc[11:] == csv_col:
                 col_csv_json[csv_col] = jsc
             elif jsc == csv_col:
@@ -169,13 +192,23 @@ def convert_json_csv_schema(json_df):
     return csv_df
 
 
-def synthetic_azure(file_name):
-    # Load raw json dataset
+def synthetic_azure(file_name, split_day=235):
+    """Process input json azure file and produce processed training and test data
+
+    Args:
+        file_name (str): json file input name.
+        split_day (int): day split for training & test dataset
+
+    Returns:
+        _type_: training_data, train_index, test_index, test_data, training_label, original data
+    """
+    # Load Json, convert to dataframe, extract features.
     df = pd.json_normalize(json.load(open(file_name, 'r')))
     df = convert_json_csv_schema(df)
     df = prepare_data(df)
 
-    test_mask = (df.day > 330)  # (grp.day > 43) & (grp.day < 60)
+    test_mask = (df.day > split_day)
     train_data = df[~test_mask]
     test_data = df[test_mask]
-    return train_data, test_data, train_data.index, test_data.index, df['status_flag'].values, df
+    return train_data, test_data, train_data.index, test_data.index, df[
+        'status_flag'].values, df

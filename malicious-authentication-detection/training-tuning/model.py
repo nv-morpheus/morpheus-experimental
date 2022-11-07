@@ -89,8 +89,8 @@ class HeteroRGCN(nn.Module):
         return h_dict[self.target]
 
     def forward(self, g, features):
-        # get user logits
-        # return h_dict['user']
+        """ Input is Graph g and features for target node.
+        """
         return self.layers[-1](self.embed(g, features))
 
     def infer(self, g, features):
