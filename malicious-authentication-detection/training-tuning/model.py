@@ -1,19 +1,36 @@
+# SPDX-FileCopyrightText: Copyright (c) 2022 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+import os
+import pickle
+
+import dgl.function as fn
+import dgl.nn.pytorch as dglnn
+import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-import dgl.nn.pytorch as dglnn
-import dgl.function as fn
-import os, pickle
-import numpy as np
+
 
 class HeteroRGCNLayer(nn.Module):
+
     def __init__(self, in_size, out_size, etypes):
         super(HeteroRGCNLayer, self).__init__()
         # W_r for each relation
         input_sizes = [in_size] * len(etypes) if type(in_size) == int else in_size
-        self.weight = nn.ModuleDict({
-                name: nn.Linear(in_dim, out_size) for name, in_dim in zip(etypes, input_sizes)
-            })
+        self.weight = nn.ModuleDict({name: nn.Linear(in_dim, out_size) for name, in_dim in zip(etypes, input_sizes)})
 
     def forward(self, G, feat_dict):
         # The input is a dictionary of node features for each type
@@ -24,32 +41,30 @@ class HeteroRGCNLayer(nn.Module):
                 Wh = self.weight[etype](feat_dict[srctype])
                 # Save it in graph for message passing
                 G.nodes[srctype].data['Wh_%s' % etype] = Wh
-                # Specify per-relation message passing functions: (message_func, reduce_func).
-                # Note that the results are saved to the same destination feature 'h', which
-                # hints the type wise reducer for aggregation.
                 funcs[etype] = (fn.copy_u('Wh_%s' % etype, 'm'), fn.mean('m', 'h'))
-        # Trigger message passing of multiple types.
-        # The first argument is the message passing functions for each relation.
-        # The second one is the type wise reducer, could be "sum", "max",
-        # "min", "mean", "stack"
+      
         G.multi_update_all(funcs, 'sum')
         # return the updated node feature dictionary
         return {ntype: G.dstnodes[ntype].data['h'] for ntype in G.ntypes if 'h' in G.dstnodes[ntype].data}
 
+
 class HeteroRGCN(nn.Module):
+
     def __init__(self, g, in_size, hidden_size, out_size, n_layers, embedding_size, device='cpu', target='transaction'):
         super(HeteroRGCN, self).__init__()
         self.target = target
         # Use trainable node embeddings as featureless inputs.
-        embed_dict = {ntype: nn.Parameter(torch.Tensor(g.number_of_nodes(ntype), embedding_size))
-                      for ntype in g.ntypes if ntype != self.target}
+        embed_dict = {
+            ntype: nn.Parameter(torch.Tensor(g.number_of_nodes(ntype), embedding_size))
+            for ntype in g.ntypes if ntype != self.target
+        }
         for key, embed in embed_dict.items():
             nn.init.xavier_uniform_(embed)
         self.embed_dict = {ntype: embedding.to(device) for ntype, embedding in embed_dict.items()}
         # create layers
-        
-        in_sizes = [in_size if src_type == self.target else embedding_size for  src_type,_,_ in g.canonical_etypes]
-        layers  = [HeteroRGCNLayer(in_sizes, hidden_size, g.etypes)]
+
+        in_sizes = [in_size if src_type == self.target else embedding_size for src_type, _, _ in g.canonical_etypes]
+        layers = [HeteroRGCNLayer(in_sizes, hidden_size, g.etypes)]
         # hidden layers
         for i in range(n_layers - 1):
             layers.append(HeteroRGCNLayer(hidden_size, hidden_size, g.etypes))
@@ -59,7 +74,7 @@ class HeteroRGCN(nn.Module):
         self.layers = nn.Sequential(*layers)
         self.device = device
         self.g_embed = None
-        
+
     def embed(self, g, features):
         # get embeddings for all node types. for user node type, use passed in user features
         h_dict = {self.target: features}
@@ -87,8 +102,7 @@ class HeteroRGCN(nn.Module):
 
 
 def save_model(g, model, model_dir):
-    torch.save({'model_state_dict': model.state_dict()},
-               os.path.join(model_dir, 'model.pt'))
+    torch.save({'model_state_dict': model.state_dict()}, os.path.join(model_dir, 'model.pt'))
     # with open(os.path.join(model_dir, 'model_hyperparams.pkl'), 'wb') as f:
     #     pickle.dump(hyperparams, f)
     with open(os.path.join(model_dir, 'graph.pkl'), 'wb') as f:
