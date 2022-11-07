@@ -16,7 +16,6 @@
 import json
 
 import dgl
-import numpy as np
 import pandas as pd
 import torch
 
@@ -33,7 +32,7 @@ def map_node_id(df, col_name):
 
 
 def build_azure_graph(train_data, col_drop):
-    """Build graph 
+    """Build graph
 
     Args:
         train_data (_type_): _description_
@@ -59,7 +58,7 @@ def build_azure_graph(train_data, col_drop):
 
 
 def get_anonomized_dataset():
-    """Return anonomized dataset. 
+    """Return anonomized dataset.
 
     Returns:
         _type_: _description_
@@ -76,15 +75,16 @@ def get_anonomized_dataset():
 def prepare_data(df_cleaned):
 
     df_cleaned['riskDetail'] = (df_cleaned['riskDetail'] == 'none').astype(int)
-    df_cleaned['deviceDetail.isCompliant'] = (df_cleaned['deviceDetail.isCompliant'] == True).astype(int)
-    df_cleaned['deviceDetail.isManaged'] = (df_cleaned['deviceDetail.isManaged'] == True).astype(int)
+    df_cleaned['deviceDetail.isCompliant'] = (df_cleaned['deviceDetail.isCompliant']).astype(int)
+    df_cleaned['deviceDetail.isManaged'] = (df_cleaned['deviceDetail.isManaged']).astype(int)
     df_cleaned['status_flag'] = (df_cleaned['status.failureReason'] != 'Other.').astype(int)
 
     # Grouping based on selected features.
-    count_cats = pd.Series({cc: df_cleaned[cc].nunique() for cc in df_cleaned.columns}).sort_values()
+    # count_cats = pd.Series(
+    #    {cc: df_cleaned[cc].nunique() for cc in df_cleaned.columns}).sort_values()
     # Filter specific columns to apply OHE:
-    #ohe_cols = list(count_cats[count_cats.between(3,60)].index)
-    #ohe_cols.remove('status.failureReason')
+    # ohe_cols = list(count_cats[count_cats.between(3,60)].index)
+    # ohe_cols.remove('status.failureReason')
     ohe_cols = [
         'deviceDetail.trustType',
         'riskState',
@@ -109,7 +109,7 @@ def prepare_data(df_cleaned):
         'status_flag': 'max'
     }
     df_ohe['fraud_label'] = 0.0
-    #df_ohe['fraud_label'][get_fraud_index(df)] = 1.0
+    # df_ohe['fraud_label'][get_fraud_index(df)] = 1.0
     agg_func = {**agg_func, **ohe_col_agg}
     group_by = ['appId', 'userId', 'ipAddress', 'day']
     print(df_ohe.columns)
@@ -175,14 +175,7 @@ def synthetic_azure(file_name):
     df = convert_json_csv_schema(df)
     df = prepare_data(df)
 
-    test_mask = (df.day > 330)  #(grp.day > 43) & (grp.day < 60)
+    test_mask = (df.day > 330)  # (grp.day > 43) & (grp.day < 60)
     train_data = df[~test_mask]
     test_data = df[test_mask]
     return train_data, test_data, train_data.index, test_data.index, df['status_flag'].values, df
-
-
-def azure_data():
-    # preprocessed data
-    # Load raw dataset
-    # feature engineering & aggregation
-    return get_anonomized_dataset()

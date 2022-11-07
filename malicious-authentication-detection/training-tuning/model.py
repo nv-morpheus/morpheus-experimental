@@ -17,8 +17,6 @@ import os
 import pickle
 
 import dgl.function as fn
-import dgl.nn.pytorch as dglnn
-import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -42,7 +40,7 @@ class HeteroRGCNLayer(nn.Module):
                 # Save it in graph for message passing
                 G.nodes[srctype].data['Wh_%s' % etype] = Wh
                 funcs[etype] = (fn.copy_u('Wh_%s' % etype, 'm'), fn.mean('m', 'h'))
-      
+
         G.multi_update_all(funcs, 'sum')
         # return the updated node feature dictionary
         return {ntype: G.dstnodes[ntype].data['h'] for ntype in G.ntypes if 'h' in G.dstnodes[ntype].data}

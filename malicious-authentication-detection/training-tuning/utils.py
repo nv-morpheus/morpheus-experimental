@@ -13,8 +13,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import logging
 import os
+
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
@@ -51,7 +51,7 @@ def get_metrics(pred, labels, out_dir, name='RGCN'):
     pr_auc = auc(rec, prc)
 
     save_roc_curve(fpr, tpr, roc_auc, os.path.join(out_dir, name + "_roc_curve.png"), model_name=name)
-    #save_pr_curve( rec, prc, pr_auc, ap, os.path.join(out_dir, name + "_pr_curve.png"), model_name=name)
+    # save_pr_curve( rec, prc, pr_auc, ap, os.path.join(out_dir, name + "_pr_curve.png"), model_name=name)
     auc_r = (fpr, tpr, roc_auc, name)
     return acc, f1, precision, recall, roc_auc, pr_auc, ap, confusion_matrix, auc_r
 
@@ -133,12 +133,12 @@ def user_precision_top_k(predictions_df, top_k, model_name, user_id='userId_id')
 
 
 def baseline_models(train_x, test_x, train_idx, test_idx, labels, test_label, name='XGB', result_dir='azure_result'):
-    
+
     from xgboost import XGBClassifier
 
     classifier = XGBClassifier(n_estimators=100)
 
-    #baseline_train = train_data.drop(col_remove, axis=1)
+    # baseline_train = train_data.drop(col_remove, axis=1)
     classifier.fit(train_x, labels[train_idx])
     baseline_pred = classifier.predict_proba(test_x)
 
@@ -157,16 +157,13 @@ def unsupervised_models(train_x,
                         result_dir='azure_result'):
 
     from sklearn.ensemble import IsolationForest
-    from sklearn.metrics import auc
-    from sklearn.metrics import average_precision_score
-    from sklearn.metrics import precision_recall_curve
     ff = IsolationForest(n_estimators=100)
-    ff.fit(train_x)  # , labels[train_idx])
+    ff.fit(train_x)
     baseline_pred = -ff.score_samples(test_x)
 
     baseline_pred = np.hstack(((1 - baseline_pred).reshape(-1, 1), baseline_pred.reshape(-1, 1)))
 
     acc, f1, precision, recall, roc_auc, pr_auc, ap, confusion_matrix, roc_r = get_metrics(
         baseline_pred, test_label[test_idx], out_dir=result_dir, name=name, )
-    #acc, f1, precision, recall, roc_auc, pr_auc, ap, confusion_matrix = 0, 0, 0, 0,0, 0, 0, 0
+    # acc, f1, precision, recall, roc_auc, pr_auc, ap, confusion_matrix = 0, 0, 0, 0,0, 0, 0, 0
     return acc, f1, precision, recall, roc_auc, pr_auc, ap, confusion_matrix, baseline_pred[:, 1], roc_r
