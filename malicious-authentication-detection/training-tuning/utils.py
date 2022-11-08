@@ -23,6 +23,17 @@ from sklearn.metrics import roc_curve
 
 
 def get_metrics(pred, labels, out_dir, name='RGCN'):
+    """Compute evaluation metrics
+
+    Args:
+        pred : prediction
+        labels (_type_): groundtruth label
+        out_dir (_type_): directory for saving
+        name (str, optional): model name. Defaults to 'RGCN'.
+
+    Returns:
+        _type_: _description_
+    """
 
     labels, pred, pred_proba = labels, pred.argmax(1), pred[:, 1]
 
@@ -185,7 +196,7 @@ def baseline_models(train_x, test_x, train_idx, test_idx, labels, test_label, na
         result_dir (str, optional): result directory. Defaults to 'azure_result'.
 
     Returns:
-        _type_: evaluation metrics such acc, f1, precision, recall, roc_auc, pr_auc
+        list: evaluation metrics such acc, f1, precision, recall, roc_auc, pr_auc
     """
 
     from xgboost import XGBClassifier
@@ -212,17 +223,17 @@ def unsupervised_models(train_x,
     """This trains and produce metric from unsupervised baseline model (iforest)
 
     Args:
-        train_x (pd.DataFrame): _description_
-        test_x (pd.DataFrame): _description_
-        train_idx (_type_): _description_
-        test_idx (_type_): _description_
-        labels (_type_): _description_
-        test_label (_type_): _description_
-        name (str, optional): _description_. Defaults to 'iforest'.
-        result_dir (str, optional): _description_. Defaults to 'azure_result'.
+        train_x (pd.DataFrame): train data
+        test_x (pd.DataFrame): test data
+        train_idx (_type_): training data index
+        test_idx (_type_): test data index
+        labels (_type_): training label
+        test_label (_type_): test labe
+        name (str, optional): model name. Defaults to 'iforest'.
+        result_dir (str, optional): metrics
 
     Returns:
-        _type_: evaluation metrics such acc, f1, precision, recall, roc_auc, pr_auc
+        list : evaluation metrics such acc, f1, precision, recall, roc_auc, pr_auc
     """
     from sklearn.ensemble import IsolationForest
     ff = IsolationForest(n_estimators=100)
