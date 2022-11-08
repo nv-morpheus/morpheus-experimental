@@ -71,7 +71,7 @@ if __name__ == '__main__':
     ]
 
     _, test_data, _, test_idx, labels, df = synthetic_azure(
-        'dataset/azure_synthetic/azure_ad_logs_sample_with_anomaly_train.json')
+        'dataset/azure_synthetic/azure_ad_logs_sample_with_anomaly_all.json')
 
     g_test, feature_tensors = build_azure_graph(df, meta_cols)
 

@@ -97,10 +97,7 @@ def prepare_data(df_cleaned):
         'riskDetail': 'sum',
         'status_flag': 'max'
     }
-    # set dummy fraud_label feature. This could be replaced with get_fraud() method
-    # if there are know frauds for testing.
-    df_ohe['fraud_label'] = 0.0
-    # df_ohe['fraud_label'][get_fraud_index(df)] = 1.0
+    
     agg_func = {**agg_func, **ohe_col_agg}
     group_by = ['appId', 'userId', 'ipAddress', 'day']
     grouped_df = df_ohe.groupby(group_by).agg(agg_func).reset_index()
@@ -167,13 +164,16 @@ def convert_json_csv_schema(json_df):
 
     return csv_df
 
+def get_fraud_label_index(df):
+    fraud_index = (df['_time'].dt.day >= 30) & (df['userPrincipalName']=='attacktarget@domain.com')
+    return fraud_index
 
-def synthetic_azure(file_name, split_day=235):
+def synthetic_azure(file_name, split_day=241):
     """Process input json azure file and produce processed training and test data
 
     Args:
         file_name (str): json file input name.
-        split_day (int): day split for training & test dataset
+        split_day (int): day split for training & test dataset. Default 241
 
     Returns:
         _type_: training_data, train_index, test_index, test_data, training_label, original data
@@ -181,6 +181,12 @@ def synthetic_azure(file_name, split_day=235):
     # Load Json, convert to dataframe, extract features.
     df = pd.json_normalize(json.load(open(file_name, 'r')))
     df = convert_json_csv_schema(df)
+    
+    # set fraud index
+    fraud_index = get_fraud_label_index(df)
+    df['fraud_label'] = 0.0
+    df.loc[fraud_index, 'fraud_label'] = 1.0
+
     df = prepare_data(df)
 
     # map node to index
@@ -188,6 +194,7 @@ def synthetic_azure(file_name, split_day=235):
     for col in ['appId', 'userId', 'ipAddress']:
         map_node_id(df, col)
 
+    # split data into training and test based on days.
     test_mask = (df.day > split_day)
     train_data = df[~test_mask]
     test_data = df[test_mask]

@@ -41,6 +41,8 @@ This model is a convolution neural network model trained to classify URL domains
 ## [Phishing URL Detection via AppShield](https://github.com/nv-morpheus/morpheus-experimental/tree/main/phishing-url-detection)
 This model is a binary classifier to label phishing URLs and non-phishing URLs obtained from host process data. Input data comes from AppShield.
 
+## [Detection of Malicious authentication using Relational Graph Neural Network (RGCN)](https://github.com/nv-morpheus/morpheus-experimental/tree/main/rgcn-authentication-detection)
+This model shows an application of a graph neural network for malicious authentication detection in Azure-AD signon heterogeneous graph. An Azure-AD signon dataset  includes four types of nodes, authentication, user, device and service application nodes are used for modeling. A Relational graph neural network (RGCN)is used to identify malicious authentications from azure-ad signon input.
 
 # Repo Structure
 Each prototype has its own directory that contains everything belonging to the specific prototype. Directories can include the following subfolders and documentation:

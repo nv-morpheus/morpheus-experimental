@@ -20,6 +20,7 @@ from sklearn.metrics import auc
 from sklearn.metrics import average_precision_score
 from sklearn.metrics import precision_recall_curve
 from sklearn.metrics import roc_curve
+import os
 
 
 def get_metrics(pred, labels, out_dir, name='RGCN'):
@@ -246,3 +247,47 @@ def unsupervised_models(train_x,
     acc, f1, precision, recall, roc_auc, pr_auc, ap, confusion_matrix, roc_r = get_metrics(
         baseline_pred, test_label[test_idx], out_dir=result_dir, name=name, )
     return acc, f1, precision, recall, roc_auc, pr_auc, ap, confusion_matrix, baseline_pred[:, 1], roc_r
+
+def compare_models(test_logits, fraud_labels, test_seed, train_seed, train_embed, test_embed, outdir='./'):
+    # RGCN
+    acc, f1, precision, recall, roc_auc, pr_auc, ap, confusion_matrix, _ = get_metrics(
+        test_logits.numpy(), fraud_labels[test_seeds], out_dir=result_dir, name='RGCN')
+
+
+    test_scores['rgcn'] = test_logits.numpy()[:,1]
+
+    # XGBoost
+    acc, f1, precision, recall, roc_auc, pr_auc, ap, confusion_matrix, pred_xgb, roc_xgg = baseline_models(
+        train_x=train_data.drop(col_remove, axis=1), test_x=test_data.drop(col_remove, axis=1),
+        train_idx=train_idx, test_idx=test_idx, labels=labels.cpu().numpy() ,
+        test_label=fraud_labels, name='XGB')
+
+    test_scores['xgb'] = pred_xgb
+
+    # RGCN+XGBoost
+    acc, f1, precision, recall, roc_auc, pr_auc, ap, confusion_matrix, pred_rgcn_xgb, _ = baseline_models(
+        train_x=train_embedding.cpu().numpy(),
+        test_x=test_embedding.cpu().numpy(), 
+        train_idx=train_seeds,
+        test_idx=test_seeds,
+        labels=labels.cpu().numpy(),
+        test_label=fraud_labels,
+        name='RGCN+XGB')
+
+    test_scores['rgcn_xgb'] = pred_rgcn_xgb
+
+    # rgcn + iforest
+    acc, f1, precision, recall, roc_auc, pr_auc, ap, confusion_matrix, pred_rgcn_if, roc_rgcniff = unsupervised_models(
+        train_x=train_embedding.cpu().numpy(), test_x=test_embedding.cpu().numpy(), 
+        train_idx=train_seeds, test_idx=test_seeds,
+        labels=labels.cpu().numpy(),
+        test_label=fraud_labels, name='RGCN_iforest')
+
+    test_scores['rgcn_if'] = pred_rgcn_if
+
+    #iforest
+    acc, f1, precision, recall, roc_auc, pr_auc, ap, confusion_matrix, iff_scores,_ = unsupervised_models(
+        train_x=train_data.drop(col_remove, axis=1), test_x=test_data.drop(col_remove, axis=1), 
+        train_idx=train_data.index, test_idx=test_data.reset_index().index,
+        labels=test_data.fraud_label,
+        test_label=fraud_labels, name='iforest')
