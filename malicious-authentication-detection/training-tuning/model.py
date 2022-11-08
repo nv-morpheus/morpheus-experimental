@@ -13,9 +13,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import os
-import pickle
-
 import dgl.function as fn
 import torch
 import torch.nn as nn
@@ -97,11 +94,3 @@ class HeteroRGCN(nn.Module):
         embedding = self.embed(g, features)
         predictions = self.layers[-1](embedding)
         return nn.Sigmoid()(predictions), embedding
-
-
-def save_model(g, model, model_dir):
-    torch.save({'model_state_dict': model.state_dict()}, os.path.join(model_dir, 'model.pt'))
-    # with open(os.path.join(model_dir, 'model_hyperparams.pkl'), 'wb') as f:
-    #     pickle.dump(hyperparams, f)
-    with open(os.path.join(model_dir, 'graph.pkl'), 'wb') as f:
-        pickle.dump(g, f)

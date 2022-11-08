@@ -51,10 +51,8 @@ def build_azure_graph(train_data, col_drop):
         ('authentication', 'request-by', 'device'): (train_data['auth_id'].values, train_data['ipAddress_id'].values)
     }
     G = dgl.heterograph(edge_list)
-    feature_tensors = torch.tensor(
-        train_data.drop(col_drop, axis=1).values).float()
-    feature_tensors = (feature_tensors - feature_tensors.mean(0)
-                       ) / (0.0001 + feature_tensors.std(0))
+    feature_tensors = torch.tensor(train_data.drop(col_drop, axis=1).values).float()
+    feature_tensors = (feature_tensors - feature_tensors.mean(0)) / (0.0001 + feature_tensors.std(0))
 
     return G, feature_tensors
 
@@ -71,8 +69,7 @@ def get_anonomized_dataset():
     train_data = df[~test_mask]
     test_data = df[test_mask]
 
-    return train_data, test_data, train_data.index, test_data.index, df[
-        'status_flag'].values, df
+    return train_data, test_data, train_data.index, test_data.index, df['status_flag'].values, df
 
 
 def prepare_data(df_cleaned):
@@ -87,13 +84,10 @@ def prepare_data(df_cleaned):
 
     # convert bool features to int and set status_flag label based on succcess error code.
     df_cleaned['riskDetail'] = (df_cleaned['riskDetail'] == 'none').astype(int)
-    df_cleaned['deviceDetail.isCompliant'] = (
-        df_cleaned['deviceDetail.isCompliant']).astype(int)
-    df_cleaned['deviceDetail.isManaged'] = (
-        df_cleaned['deviceDetail.isManaged']).astype(int)
+    df_cleaned['deviceDetail.isCompliant'] = (~df_cleaned['deviceDetail.isCompliant'].isna()).astype(int)
+    df_cleaned['deviceDetail.isManaged'] = (~df_cleaned['deviceDetail.isManaged'].isna()).astype(int)
     # df_cleaned['status_flag'] = (df_cleaned['status.failureReason'] != 'Other.').astype(int)
-    df_cleaned['status_flag'] = (
-        df_cleaned['status.errorCode'] != 0).astype(int)
+    df_cleaned['status_flag'] = (df_cleaned['status.errorCode'] != 0).astype(int)
 
     # Create OHE set features & their aggregation function.
     ohe_cols = [
@@ -105,11 +99,8 @@ def prepare_data(df_cleaned):
         'deviceDetail.operatingSystem'
     ]
 
-    df_ohe = pd.get_dummies(df_cleaned, columns=ohe_cols,
-                            prefix=ohe_cols, prefix_sep='_')
-    ohe_col_agg = {
-        c: 'sum' for col in ohe_cols for c in df_ohe.columns
-        if c.startswith(col)}
+    df_ohe = pd.get_dummies(df_cleaned, columns=ohe_cols, prefix=ohe_cols, prefix_sep='_')
+    ohe_col_agg = {c: 'sum' for col in ohe_cols for c in df_ohe.columns if c.startswith(col)}
 
     agg_func = {
         'location.city': 'nunique',
@@ -167,7 +158,7 @@ def convert_json_csv_schema(json_df):
         'riskLevelDuringSignIn',
         'riskState',
         'status.failureReason',
-        'status.errorCode'
+        'status.errorCode',
         'userId',
         'userPrincipalName',
         'day'
@@ -207,8 +198,12 @@ def synthetic_azure(file_name, split_day=235):
     df = convert_json_csv_schema(df)
     df = prepare_data(df)
 
+    # map node to index
+    df['auth_id'] = df.index
+    for col in ['appId', 'userId', 'ipAddress']:
+        map_node_id(df, col)
+
     test_mask = (df.day > split_day)
     train_data = df[~test_mask]
     test_data = df[test_mask]
-    return train_data, test_data, train_data.index, test_data.index, df[
-        'status_flag'].values, df
+    return train_data, test_data, train_data.index, test_data.index, df['status_flag'].values, df
