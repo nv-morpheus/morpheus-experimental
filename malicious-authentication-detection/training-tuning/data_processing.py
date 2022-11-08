@@ -97,7 +97,7 @@ def prepare_data(df_cleaned):
         'riskDetail': 'sum',
         'status_flag': 'max'
     }
-    
+
     agg_func = {**agg_func, **ohe_col_agg}
     group_by = ['appId', 'userId', 'ipAddress', 'day']
     grouped_df = df_ohe.groupby(group_by).agg(agg_func).reset_index()
@@ -164,9 +164,11 @@ def convert_json_csv_schema(json_df):
 
     return csv_df
 
+
 def get_fraud_label_index(df):
-    fraud_index = (df['_time'].dt.day >= 30) & (df['userPrincipalName']=='attacktarget@domain.com')
+    fraud_index = (df['_time'].dt.day >= 30) & (df['userPrincipalName'] == 'attacktarget@domain.com')
     return fraud_index
+
 
 def synthetic_azure(file_name, split_day=241):
     """Process input json azure file and produce processed training and test data
@@ -181,7 +183,7 @@ def synthetic_azure(file_name, split_day=241):
     # Load Json, convert to dataframe, extract features.
     df = pd.json_normalize(json.load(open(file_name, 'r')))
     df = convert_json_csv_schema(df)
-    
+
     # set fraud index
     fraud_index = get_fraud_label_index(df)
     df['fraud_label'] = 0.0
