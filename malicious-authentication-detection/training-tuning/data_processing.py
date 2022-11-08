@@ -57,21 +57,6 @@ def build_azure_graph(train_data, col_drop):
     return G, feature_tensors
 
 
-def get_anonomized_dataset():
-    """Return anonomized dataset.
-
-    Returns:
-        _type_: split of training, test data.
-    """
-
-    df = pd.read_parquet('data/anomized_azure.pq')
-    test_mask = (df.day > 43) & (df.day < 60)
-    train_data = df[~test_mask]
-    test_data = df[test_mask]
-
-    return train_data, test_data, train_data.index, test_data.index, df['status_flag'].values, df
-
-
 def prepare_data(df_cleaned):
     """ Prepare aggregated features from raw azure dataframe.
 
