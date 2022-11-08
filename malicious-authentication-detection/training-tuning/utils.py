@@ -207,6 +207,7 @@ def baseline_models(train_x, test_x, train_idx, test_idx, labels, test_label, na
     classifier.fit(train_x, labels[train_idx])
     baseline_pred = classifier.predict_proba(test_x)
 
+    # compute metrics on prediction
     acc, f1, precision, recall, roc_auc, pr_auc, ap, confusion_matrix, roc_r = get_metrics(
         baseline_pred, test_label[test_idx], out_dir=result_dir, name=name, )
     return acc, f1, precision, recall, roc_auc, pr_auc, ap, confusion_matrix, baseline_pred[:, 1], roc_r
@@ -225,10 +226,10 @@ def unsupervised_models(train_x,
     Args:
         train_x (pd.DataFrame): train data
         test_x (pd.DataFrame): test data
-        train_idx (_type_): training data index
-        test_idx (_type_): test data index
-        labels (_type_): training label
-        test_label (_type_): test labe
+        train_idx (list): training data index
+        test_idx (list): test data index
+        labels (list): training label
+        test_label (list): test labe
         name (str, optional): model name. Defaults to 'iforest'.
         result_dir (str, optional): metrics
 

@@ -77,8 +77,10 @@ if __name__ == '__main__':
 
     # Load graph model.
     model, g_training = load_model("modeldir/")
-
+    model = model.to(device)
+    g_test = g_test.to(device)
     test_logits, test_seeds, test_embedding = inference(model, g_test, feature_tensors, test_idx, target_node)
+
     # collect result
     authentication_score = test_logits[:, 1].numpy()
     df_result = pd.DataFrame(test_embedding.numpy())
