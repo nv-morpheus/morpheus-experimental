@@ -13,7 +13,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Inference from trained model and saved graph structure.
+# Command to run inference from trained model and saved graph structure.
+# python inference.py --input_data dataset/azure_synthetic/azure_ad_logs_sample_with_anomaly_all.json
+# --model-dir modeldir/
+# --target-node authentication
+# --output result.csv
+
+import argparse
 
 import dgl
 import pandas as pd
@@ -28,11 +34,11 @@ def inference(model, g, feature_tensors, test_idx, target_node):
     """Minibatch inference on test graph
 
     Args:
-        model : trained HeteroRGCN
-        g : test graph
-        feature_tensors : node features
-        test_idx : test index
-        target_node : target node
+        model (HeteroRGCN) : trained HeteroRGCN model.
+        g (DGLHeterograph) : test graph
+        feature_tensors (torch.Tensor) : node features
+        test_idx (list): test index
+        target_node (list): target node
 
     Returns:
         list: logits, index, output embedding
@@ -51,10 +57,7 @@ def inference(model, g, feature_tensors, test_idx, target_node):
     return test_logits, test_seeds, test_embedding
 
 
-if __name__ == '__main__':
-
-    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-    target_node = "authentication"
+def main():
 
     # Read input data
     meta_cols = [
@@ -70,13 +73,12 @@ if __name__ == '__main__':
         'status_flag'
     ]
 
-    _, test_data, _, test_idx, labels, df = synthetic_azure(
-        'dataset/azure_synthetic/azure_ad_logs_sample_with_anomaly_all.json')
+    _, test_data, _, test_idx, labels, df = synthetic_azure(args.input_data)
 
     g_test, feature_tensors = build_azure_graph(df, meta_cols)
 
     # Load graph model.
-    model, g_training = load_model("modeldir/")
+    model, g_training = load_model(args.model_dir)
     model = model.to(device)
     g_test = g_test.to(device)
     test_logits, test_seeds, test_embedding = inference(model, g_test, feature_tensors, test_idx, target_node)
@@ -88,4 +90,22 @@ if __name__ == '__main__':
     df_result['test_index'] = test_seeds
 
     # output to csv file with embedding & last two column score, test index
-    df_result.to_csv('result.csv', index=False)
+    df_result.to_csv(args.output, index=False)
+
+
+if __name__ == '__main__':
+
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--input-data",
+                        help="JSON azure file input",
+                        default="dataset/azure_synthetic/azure_ad_logs_sample_with_anomaly_all.json")
+    parser.add_argument("--model-dir", help="directory for model files", default="modeldir/")
+    parser.add_argument("--target-node", help="Target node", default="authentication")
+    parser.add_argument("--output", required=False, help="output filename", default="result.csv")
+
+    args = parser.parse_args()
+
+    device = device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+    target_node = args.target_node
+
+    main()

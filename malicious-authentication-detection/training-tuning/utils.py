@@ -32,7 +32,7 @@ def get_metrics(pred, labels, out_dir, name='RGCN'):
         name (str, optional): model name. Defaults to 'RGCN'.
 
     Returns:
-        _type_: _description_
+        List[List]: List of metrics f1, precision, recall, roc_auc, pr_auc, ap, confusion_matrix, auc_r
     """
 
     labels, pred, pred_proba = labels, pred.argmax(1), pred[:, 1]
@@ -70,10 +70,10 @@ def save_roc_curve(fpr, tpr, roc_auc, location, model_name='Model'):
     """Produce and save AUC ROC curve
 
     Args:
-        fpr (_type_): false positive rate
-        tpr (_type_): true negative rate
-        roc_auc (_type_): auc score
-        location (_type_): location dir
+        fpr (np.array): false positive rate
+        tpr (np.arry): true negative rate
+        roc_auc (float): auc score
+        location (str): location dir
         model_name (str, optional): model name. Defaults to 'Model'.
     """
     f = plt.figure()
@@ -93,11 +93,11 @@ def save_pr_curve(rec, prec, pr_auc, ap, location, model_name='Model'):
     """Produce and save precision-recall curve
 
     Args:
-        rec (_type_): recall
-        prec (_type_): precision
-        pr_auc (_type_): precision-recall curve
-        ap (_type_): average precision
-        location (_type_): location dir
+        rec (np.array): recall
+        prec (np.array): precision
+        pr_auc (float): precision-recall curve
+        ap (float): average precision
+        location (str): location dir
         model_name (str, optional): model name. Defaults to 'Model'.
     """
 
@@ -124,7 +124,7 @@ def precision_top_k_day(df_day, top_k, model_name, user_id='userId_id'):
         user_id (str, optional): user_id column. Defaults to 'userId_id'.
 
     Returns:
-        _type_: precision @topk of given day.
+        List: precision @topk of given day.
     """
 
     df_day = df_day.groupby(user_id).max().sort_values(by=model_name, ascending=False).reset_index(drop=False)
@@ -143,13 +143,13 @@ def user_precision_top_k(predictions_df, top_k, model_name, user_id='userId_id')
     """ Precision at top K for user at given day.
 
     Args:
-        predictions_df (_type_): prediction score.
-        top_k (_type_): k rank
-        model_name (_type_): model used
+        predictions_df (DataFrame): prediction score.
+        top_k (int): k rank
+        model_name (str): model used
         user_id (str, optional): UserId. Defaults to 'userId_id'.
 
     Returns:
-        _type_: precision top k/day
+        List: precision top k/day
     """
 
     # Sort days by increasing order
@@ -186,17 +186,17 @@ def baseline_models(train_x, test_x, train_idx, test_idx, labels, test_label, na
     """This trains and produce metric from supervised baseline model (XGBoost)
 
     Args:
-        train_x : training data
-        test_x : test data
-        train_idx : training index
-        test_idx : test index
-        labels : groundtruth label
-        test_label : evalaution label
+        train_x (DataFrame): training data
+        test_x (DataFrame): test data
+        train_idx (list) : training index
+        test_idx (list): test index
+        labels (list): groundtruth label
+        test_label (list): evalaution label
         name (str, optional): model name. Defaults to 'XGB'.
         result_dir (str, optional): result directory. Defaults to 'azure_result'.
 
     Returns:
-        list: evaluation metrics such acc, f1, precision, recall, roc_auc, pr_auc
+        List: evaluation metrics such acc, f1, precision, recall, roc_auc, pr_auc
     """
 
     from xgboost import XGBClassifier

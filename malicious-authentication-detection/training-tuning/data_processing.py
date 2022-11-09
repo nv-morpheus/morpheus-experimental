@@ -24,8 +24,8 @@ def map_node_id(df, col_name):
     """ Convert column node list to integer index for dgl graph.
 
     Args:
-        df (DataFrame): dataframe
-        col_name (list: column list
+        df (pd.DataFrame): dataframe
+        col_name (list) : column list
     """
     node_index = {j: i for i, j in enumerate(df[col_name].unique())}
     df[col_name + "_id"] = df[col_name].map(node_index)
@@ -35,11 +35,11 @@ def build_azure_graph(train_data, col_drop):
     """Build heterograph from edglist and node index.
 
     Args:
-        train_data (_type_): training data for node features.
-        col_drop (_type_): features to drop from node features.
+        train_data (pd.DataFrame): training data for node features.
+        col_drop (list): features to drop from node features.
 
     Returns:
-        _type_: dlg graph, normalized feature tensor
+       Tuple[DGLGraph, torch.tensor]: dlg graph, normalized feature tensor
     """
 
     edge_list = {
@@ -64,7 +64,7 @@ def prepare_data(df_cleaned):
         df_cleaned (DataFrame):raw azure dataset converted from json.
 
     Returns:
-        _type_: feature processed dataframe
+        DataFrame: feature processed dataframe
     """
 
     # convert bool features to int and set status_flag label based on succcess error code.
@@ -97,7 +97,7 @@ def prepare_data(df_cleaned):
         'riskDetail': 'sum',
         'status_flag': 'max'
     }
-
+    # Aggregate based on groupy column
     agg_func = {**agg_func, **ohe_col_agg}
     group_by = ['appId', 'userId', 'ipAddress', 'day']
     grouped_df = df_ohe.groupby(group_by).agg(agg_func).reset_index()
@@ -106,13 +106,13 @@ def prepare_data(df_cleaned):
 
 
 def convert_json_csv_schema(json_df):
-    """Convert raw json azure to model input dataframe.
+    """ Match new json schema to older dataframe input schema.
 
     Args:
-        json_df (_type_): json input dataset
+        json_df (DataFrame): Dataframe converted from json input.
 
     Returns:
-        _type_: dataframe
+        DataFrame: converted input dataframe
     """
 
     feature_list = [
@@ -166,6 +166,14 @@ def convert_json_csv_schema(json_df):
 
 
 def get_fraud_label_index(df):
+    """Return index of known fraudulent index.
+
+    Args:
+        df (DataFrame): input dataframe
+
+    Returns:
+        List: fraud index
+    """
     fraud_index = (df['_time'].dt.day >= 30) & (df['userPrincipalName'] == 'attacktarget@domain.com')
     return fraud_index
 
@@ -178,7 +186,7 @@ def synthetic_azure(file_name, split_day=241):
         split_day (int): day split for training & test dataset. Default 241
 
     Returns:
-        _type_: training_data, train_index, test_index, test_data, training_label, original data
+        List: training_data, train_index, test_index, test_data, training_label, original data
     """
     # Load Json, convert to dataframe, extract features.
     df = pd.json_normalize(json.load(open(file_name, 'r')))

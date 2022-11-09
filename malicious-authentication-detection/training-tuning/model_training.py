@@ -26,10 +26,10 @@ def save_model(g, model, hyperparameters, model_dir):
     """Save trained model with graph & hyperparameters dict
 
     Args:
-        g (_type_): dgl graph
-        model (_type_): trained RGCN model
-        model_dir (_type_): directory to save
-        hyperparameters (_type_): hyperparameter for model training.
+        g (DGLHeteroGraph): dgl graph
+        model (HeteroRGCN): trained RGCN model
+        model_dir (str): directory to save
+        hyperparameters (dict): hyperparameter for model training.
     """
     torch.save(model.state_dict(), os.path.join(model_dir, 'model.pt'))
     with open(os.path.join(model_dir, 'hyperparams.pkl'), 'wb') as f:
@@ -45,7 +45,7 @@ def load_model(model_dir):
         model_dir (str path):directory path for trained model obj.
 
     Returns:
-        _type_: model and graph structure.
+        List[HeteroRGCN, DGLHeteroGraph]: model and graph structure.
     """
 
     with open(os.path.join(model_dir, "graph.pkl"), 'rb') as f:
@@ -67,15 +67,15 @@ def init_loaders(g_train, train_idx, test_idx, val_idx, g_test, target_node='aut
     """Initialize dataloader and graph sampler. For training use neighbor sampling.
 
     Args:
-        g_train (_type_): train graph
-        train_idx (_type_): train feature index
-        test_idx (_type_): test feature index
-        val_idx (_type_): validation index
-        g_test (_type_): test graph
+        g_train (DGLHeteroGraph): train graph
+        train_idx (list): train feature index
+        test_idx (list): test feature index
+        val_idx (list): validation index
+        g_test (DGLHeteroGraph): test graph
         target_node (str, optional): target node. Defaults to 'authentication'.
 
     Returns:
-        _type_: list of dataloaders
+        List[NodeDataLoader,NodeDataLoader,NodeDataLoader]: list of dataloaders
     """
 
     neighbor_sampler = dgl.dataloading.MultiLayerFullNeighborSampler(2)
@@ -113,17 +113,17 @@ def train(model,
           feature_tensors,
           target_node='authentication',
           device='cpu'):
-    """Training GNN model
+    """Train RGCN model
 
     Args:
-        model : RGCN model
-        loss_func : loss function
-        train_dataloader : train dataloader class
-        labels: training label
-        optimizer : optimizer for training
-        feature_tensors : node features
+        model(HeteroRGCN): RGCN model
+        loss_func (nn.loss) : loss function
+        train_dataloader (NodeDataLoader) : train dataloader class
+        labels (list): training label
+        optimizer (nn.optimizer) : optimizer for training
+        feature_tensors (torch.Tensor) : node features
         target_node (str, optional): target node embedding. Defaults to 'authentication'.
-        device (str, optional): _description_. Defaults to 'cpu'.
+        device (str, optional): host device. Defaults to 'cpu'.
 
     Returns:
         _type_: training accuracy and training loss
@@ -152,14 +152,14 @@ def evaluate(model, eval_loader, feature_tensors, target_node, device='cpu'):
     """Takes trained RGCN model and input dataloader & produce logits and embedding.
 
     Args:
-        model: trained HeteroRGCN model object
-        eval_loader : evaluation dataloader
-        feature_tensors : test feature tensor
-        target_node (_type_): target node encoding.
+        model (HeteroRGCN): trained HeteroRGCN model object
+        eval_loader (NodeDataLoader): evaluation dataloader
+        feature_tensors (torch.Tensor) : test feature tensor
+        target_node (str): target node encoding.
         device (str, optional): device runtime. Defaults to 'cpu'.
 
     Returns:
-        _type_: logits, index & output embedding.
+        List: logits, index & output embedding.
     """
     model.eval()
     eval_logits = []
