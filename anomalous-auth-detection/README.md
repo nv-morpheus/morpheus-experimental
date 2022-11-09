@@ -1,7 +1,7 @@
-## Detection of Anomaly Authentication using Relational Graph Neural Network (RGCN)
+## Detection of Anomalous Authentication using Relational Graph Neural Network (RGCN)
 
 ## Use Case
-Detection of anomaly authentication on Azure-AD signon using Relational Graph Neural Network (RGCN)
+Detection of anomalous authentication on Azure-AD signon using Relational Graph Neural Network (RGCN)
 
 ### Version
 1.0
@@ -12,7 +12,7 @@ Azure active directory (Azure-AD) is an identity and access management service, 
 Similar works on anomalous authentication detection includes applying blackbox ML models on handcrafted features extracted from authentication logs or rule-based models. This workflow closely follows on the success of heterogenous GNN embedding on cyber application such as, fraud detection [[2](https://doi.org/10.1145/3269206.3272010),[5](https://www.vldb.org/pvldb/vol15/p427-rao.pdf)], cyber-attack detection on prevalence dataset [[3](http://arxiv.org/abs/2112.08986)]. Unlike earlier models, this work uses heterogenous graph for authentication graph modeling and relational GNN embedding for capturing relations among different entities. This allows us to take advantage of relations among users/services, and at the same time avoids feature extracting phase. At the end the model learns both from structural identity and unique feature identity of individual users. 
 The main motivation behind this work is to tackle the drawbacks of rule-based or feature based system, such as failure to generalize for new attacks and the requirements for dynamic rules that need to be maintained often. An evolving attack and connected anomalous users across the network are hard to detect through feature/rule-based methods. Additionally, using graph approach minimizes efforts on feature engineering tasks.
 
-This model shows an application of a graph neural network for anomaly authentication detection in Azure-AD sign-inn heterogeneous graph. An Azure-AD sign-in dataset it includes four types of nodes, authentication, user, device and service application nodes are used for modeling. A Relational graph neural network (RGCN)  is used to identify anomaly authentications.
+This model shows an application of a graph neural network for anomalous authentication detection in Azure-AD sign-inn heterogeneous graph. An Azure-AD sign-in dataset it includes four types of nodes, authentication, user, device and service application nodes are used for modeling. A Relational graph neural network (RGCN)  is used to identify anomalous authentications.
 
 ### Model Architecture
 It uses a  heterogeneous graph representation as input for RGCN. Since the input graph is heterogenous, an embedding for target node "authentication" is used for training the RGCN classifier. The model is trained as binary classifier with task to output "success" or "failure" to each authentication embedding.
