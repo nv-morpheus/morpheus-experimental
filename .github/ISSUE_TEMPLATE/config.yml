@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Report a security vulnerability
+    url: https://github.com/nv-morpheus/Morpheus/security/policy
+    about: Please review our [security policy](https://github.com/nv-morpheus/Morpheus/security/policy) for more details.
+  - name: Ask a Question
+    url: https://github.com/nv-morpheus/Morpheus-Experimental/Discussions
+    about: Please ask any questions here.
