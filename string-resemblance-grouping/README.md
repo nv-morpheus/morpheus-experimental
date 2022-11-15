@@ -1,5 +1,5 @@
-# Syslog Resemblance Grouping (SRG)
-Syslog Resemblance Grouping (SRG) is designed to find a subset of representative strings within a a large collection of messages. These representative strings create groupings with which to categorize the messages for further exploration or triage.
+# String Resemblance Grouping (SRG)
+String Resemblance Grouping (SRG) is designed to find a subset of representative strings within a a large collection of messages. These representative strings create groupings with which to categorize the messages for further exploration or triage.
 
 ## Version
 1.0
@@ -53,7 +53,7 @@ A single log instance or collection of logs or text files containing logs.
 The representative and a corresponding numeric label for the log instance or a dataframe containing the original logs and the assigned representative and numeric group.
 
 ### API Example
-See this [notebook](https://github.com/nv-morpheus/morpheus-experimental/syslog-resemblance-grouping/training-tuning/syslog-resemblance-grouping.ipynb) for an example on building and inferencing a SRG model.
+See this [notebook](https://github.com/nv-morpheus/morpheus-experimental/string-resemblance-grouping/training-tuning/string-resemblance-grouping.ipynb) for an example on building and inferencing a SRG model.
 
 ### Future work
 Currently SRG representatives and groups are output as the final result. Future work will instead leverage these representatives as initial "centroids" in a $k$-means variant using the weighted Jaccard distance and iteratively honing centroids that are the mean weights of the present shingles in the group. Once the $k$-means centroids converge or a fixed number of iterations is completed, the closest group member to each centroid is chosen as the final group representative.

@@ -37,7 +37,7 @@ class SRG:
     See `SRG README`_ for more details on how the technique is designed.
 
     .. _SRG README:
-        https://github.com/nv-morpheus/morpheus-experimental/tree/main/syslog-resemblance-grouping/README.md
+        https://github.com/nv-morpheus/morpheus-experimental/tree/main/string-resemblance-grouping/README.md
     """
     def __init__(self):
         self._model_built = False

@@ -202,4 +202,4 @@ mlruns/*
 .DS_Store
 
 # Explicitly ignore any srg datasets loaded by the user
-syslog-resemblance-grouping/datasets/*
+string-resemblance-grouping/datasets/*
