@@ -1,8 +1,0 @@
-numpy
-#cudf-cu11 dask-cudf-cu11 --extra-index url=https://pypi.ngc.nvidia.com
-cuml-cu11 --extra-index-url https://pypi.ngc.nvidia.com
-cupy
-pandas
-scikit-learn
-click
-

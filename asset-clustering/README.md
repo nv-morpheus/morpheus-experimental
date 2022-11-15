@@ -53,11 +53,13 @@ CHANGE HERE from model.py to train.py. And save the trained model.
 This saves trained model files under `../models` directory. Then the inference script can load the models for future inferences.
 
 ### How To Use This Model
+Combined with host data from DOCA AppShield, this model can be used to detect phishing URLs. A training notebook is also included so that users can update the model as more labeled data is collected. This model is based just on the URL: processing the structure of the URL and words in the URL. Many malicious URLs seem legitimate and are impossible to detect with our features, thus the recall is limited. We can improve the model by adding WHOIS (https://who.is/) and VirusTotal (https://www.virustotal.com/) infromation about the URL.
 
 ### Input
-
+Snapshots of URL plugins collected from DOCA AppShield
 
 ### Output
+Processes with URLs classified as phishing or non-phishing
 
 #### Out-of-scope use cases
 N/A
@@ -66,3 +68,4 @@ N/A
 N/A
 
 ### References
+

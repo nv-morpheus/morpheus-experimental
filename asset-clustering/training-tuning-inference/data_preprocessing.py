@@ -120,20 +120,24 @@ def read_process_data(wls_files):
 
 @click.command()
 @click.option('--debug', is_flag=True)
+@click.option('--data_range', default='day-01-day-01',
+     help='Range of dates for which wls files need to be read and preprocessed. '\
+     'For example day-01_day_02 reads wls_day-01.bz2 and wls_day-02.bz2, '\
+     'preprocess them and prepares a combined dataset.')
 def run(**kwargs):
     global dataset_path, readsize, MAX_LINES
     debug_mode = kwargs['debug']
     logging.basicConfig(level=logging.DEBUG, datefmt='%m%d-%H%M',
                         format='%(asctime)s: %(message)s')
-    dataset_path = '../data/'
+    dataset_path = '../datasets/'
     if debug_mode:
         ipfile_suffix = 'day-01_day-01'
         MAX_LINES = 5e6
         readsize = 32768*32
         opfile_suffix = '_{:d}Mlines'.format(int(MAX_LINES / 1e6))
     else:
-        ipfile_suffix = 'day-01_day-10'
-        MAX_LINES = 1e12
+        ipfile_suffix = kwargs['data_range']
+        MAX_LINES = 1e15
         readsize = 32768*32*30
         opfile_suffix = '_' + ipfile_suffix
         logger_fname = 'logs/dataprocess_{}.log'.format(ipfile_suffix)

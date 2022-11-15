@@ -356,3 +356,94 @@ def compute_val_counts(df_, col, clust_):
                       right_index=True, how='outer')
     freqs.fillna(0, inplace=True)
     return freqs
+
+
+def compute_chars(df_, clust_, NUM_DAYS=1, cluster_id='all',
+                  write_differences=False, verbose=False,
+                  top_diff_summary_feats=10,
+                  top_diff_detail_feats=8):
+    pddf = df_.to_pandas()
+    clusters = df_[clust_].value_counts().rename('clust_size')
+    clusters = clusters.reset_index().rename({'index':clust_}, axis=1)
+    ignore_cols = [clust_,'LogHost', 'num_accnt_logons','num_accnt_succ_logons']
+    for col in set(df_.columns)-set(ignore_cols):
+        colmean = df_.groupby(clust_, as_index=False)[col].mean().rename(col+'_mean')
+        colmean /= NUM_DAYS
+
+        df_[col + '_nz'] =df_[col].fillna(0).astype(bool)
+        colnonzero = df_.groupby(clust_, as_index=False)[col+'_nz'].sum()
+        colstats = cudf.merge(colmean, colnonzero, on=clust_, how='outer')
+
+        colmedian = df_.groupby(clust_, as_index=False)[col].median().rename(col+'_median')
+        colmedian /= NUM_DAYS
+        colstats = cudf.merge(colstats, colmedian, on=clust_, how='outer')
+        clusters = cudf.merge(clusters, colstats, on=clust_)
+
+        #Compute mean only using non-zero values
+        clusters[col + '_mean'] = clusters[col + '_mean'] * clusters['clust_size']/ clusters[col + '_nz']
+
+        clusters[col+'_nz_total'] = df_[col+'_nz'].sum()
+        clusters[col+'_mean_total'] = df_[col].sum()/(clusters[col+'_nz_total']*NUM_DAYS)
+        clusters[col+'_median_total'] = df_[col].median()
+        clusters[col+'_mean_dev'] = clusters[col+'_mean']/clusters[col+'_mean_total'] - 1
+        clusters[col+'_median_dev'] = clusters[col+'_median']/clusters[col+'_median_total'] - 1
+        clusters[col+'_nz_frac'] = 100*clusters[col+'_nz']/clusters['clust_size']
+        clusters[col+'_nz_frac_total'] = 100*clusters[col+'_nz_total']/df_.shape[0]
+        clusters[col+'_nz_frac_rem'] = 100*(clusters[col+'_nz_total']-clusters[col+'_nz'])/(df_.shape[0]-clusters['clust_size'])
+
+    devcols = [col for col in clusters.columns if col.endswith('_mean_dev')]
+    clusters[devcols] = clusters[devcols].fillna(0)
+    for idx in range(clusters.shape[0]):
+        clust_num = clusters[clust_].iloc[idx]
+        if cluster_id != 'all':
+            if clust_num != cluster_id:
+                continue
+        print("\nCLUSTER:{}, Size:{}".format(clust_num, clusters['clust_size'].iloc[idx]))
+        coldev = clusters[devcols].iloc[idx]
+        sortcols = coldev.abs().sort_values(ascending=False)
+
+        cols = sortcols.iloc[:30].index.to_arrow().to_pylist()
+        cols_ = [x[:-9]+'_nz_frac' for x in cols]
+        subsetdf = clusters.iloc[idx][cols_]
+        # Keep only features that have >5% non-zero values
+        cols = subsetdf.loc[subsetdf > 5].index.to_arrow().to_pylist()
+        cols = cols[:min(len(cols), top_diff_detail_feats)]
+        cols_ = [x[:-8] for x in cols]
+        cols_ = [x+y for x in cols_ for y in ('_mean', '_mean_total', '_nz_frac', '_nz_frac_rem')]
+
+        print("Features with Top differences:\n{}\n".format(
+            sortcols.iloc[:top_diff_summary_feats]))
+        if verbose:
+            print(clusters.iloc[idx][cols_])
+        if not verbose:
+            return
+
+        for col in cols:
+            col = col[:-8]
+            freq_0 = pddf.loc[pddf[clust_]==0][col].value_counts()
+            freq_rem = pddf.loc[pddf[clust_]!=0][col].value_counts()
+            freq_0, freq_rem = 100*freq_0/freq_0.sum(), 100*freq_rem/freq_rem.sum()
+            freqs =  cudf.merge(freq_0, freq_rem, left_index=True, right_index=True, how='outer')
+            freqs.fillna(0, inplace=True)
+            density_diff = freqs[col+'_x'] - freqs[col+'_y']
+            density_diff = density_diff.abs()
+            if density_diff.max() > 5:
+                print("{}: Max diff={:.2f}%".format(col, density_diff.max()))
+
+    if write_differences:
+        imp_cols = [
+            'cluster_dbscan_eps0.0005_minkp1','domain_ctr_validate_src_cnt_mean',
+            'domain_ctr_validate_src_cnt_nz_frac',
+            'total_logins_src_cnt_mean', 'total_logins_src_cnt_nz_frac',
+            'logon_type_2_mean','logon_type_2_nz_frac',
+            'logon_type_5_mean','logon_type_5_nz_frac',
+            'logon_type_11_mean', 'logon_type_11_nz_frac',
+            'logon_type_10_mean', 'logon_type_10_nz_frac',
+            'total_user_initi_logoff_cnt_nz_frac', 'DomainName_cnt_nz_frac',
+            'UserName_cnt_mean', 'DomainName_cnt_mean',
+            'TGT_req_src_cnt_mean', 'TGS_req_src_cnt_mean',
+            'uname_that_compacnt_login_frac_nz_frac', 'uname_that_compacnt_login_frac_mean',
+            'total_logoff_cnt_mean', 'total_logoff_cnt_nz_frac']
+        clusters[imp_cols].to_csv('../results/clust_chars.csv', header=True, index=False)
+    return clusters
+

@@ -10,6 +10,9 @@ import cuml
 import cuml.preprocessing as cupreproc
 from cuml.metrics.cluster import silhouette_score
 import pandas as pd
+import pickle
+import click
+import pdb
 
 os.environ["CUDA_VISIBLE_DEVICES"] = '0'
 
@@ -45,9 +48,9 @@ def predict_kmeans(clusters_, df_main, df_normed):
     for n_clusters_ in clusters_:
         model = get_kmeans(n_clusters_=n_clusters_)
         model = train(df_normed, model)
-        df_main['cluster_KM' + str(n_clusters_)] = model.predict(df_normed)
-        print(df_main['cluster_KM' + str(n_clusters_)].value_counts())
-    return df_main
+        df_main['cluster_KM_' + str(n_clusters_)] = model.predict(df_normed)
+        print(df_main['cluster_KM_' + str(n_clusters_)].value_counts())
+    return df_main, model
 
 
 def get_dbscan(metric_p=1, eps_=0.5, min_samples=8, library='cuml'):
@@ -235,8 +238,9 @@ def draw_tsne_cuml(df_, perplexity=25.0, learning_rate=100.0):
 
 def experiment_clust_methods(df_, df_norm_, models_=['KMeans', 'DBScan']):
     if 'KMeans' in models_:
+        clust_nums = [8, 10, 12, 16]
         inertia_dict = iterate_kmeans(df_norm_)
-        df_ = predict_kmeans([8, 10, 12, 16], df_, df_norm_)
+        df_ = predict_kmeans(clust_nums, df_, df_norm_)
         df_, KM_model = final_pass_kmeans(18, df_, df_norm_, clusters_touse=5)
 
     if 'DBScan' in models_:
@@ -293,15 +297,34 @@ def tsneplot_util(df_, tsne_cols, color_map, title, clust):
     plt.ylabel('tSNE2')
     plt.title(title)
 
+@click.command()
+@click.option('--model', default='dbscan', help='Clustering method to use.'\
+     ' Valid choices are \'kmeans\' or \'dbscan\'. Default is \'dbscan\'')
+@click.option('--experiment', is_flag=True,
+    help='Boolean flag. If provided, script experiments by iterating over values for '\
+     'parameters of the respective clustering method. When not provided,'\
+     'trains and saves the model.')
+def run(**kwargs):
+    model = kwargs['model']
+    experiment = kwargs['experiment']
+    PCA_expl_variance = 0.9
+    eps_dbsc = 0.0005
+    clusters_km = 10
 
-def run(full_path):
-    tsne_plot = False
-    df, df_norm = normalize_host_data(full_path)
+    compute_cluster_chars = True
 
+
+    global NUM_DAYS, norm_cols
+    data_fname = '../datasets/host_agg_data_day-01_day-10.csv'
+    NUM_DAYS = 10.0
+
+    assert model in ['kmeans', 'dbscan']
+
+    df, df_norm = normalize_host_data(data_fname)
+
+    # Perform PCA and do dimensionality reduction
     pca = cuml.PCA().fit(df_norm)
     expl_vars = pca.explained_variance_ratio_.to_pandas().to_list()
-    PCA_expl_variance = 0.9
-
     cum_sum_vars = [sum(expl_vars[:idx+1]) for idx in range(len(expl_vars))]
     pca_dims = [i for i,var in enumerate(cum_sum_vars) if var > PCA_expl_variance]
     pca_dims = pca_dims[0]
@@ -309,42 +332,36 @@ def run(full_path):
     pca_cols = ['pca_'+str(x) for x in range(pca_dims)]
     df_norm[pca_cols] = pca.transform(df_norm).iloc[:,:pca_dims]
     df_pca = df_norm[pca_cols].copy()
+    # Training or Experiment for the input clustering method
+    if model=='dbscan':
+        if experiment:
+            experiment_clust_methods(df, df_pca, models_=['DBScan'])
+        else:
+            fname = "../models/dbscan_eps{}.pkl".format(eps_dbsc)
+            df, dbsc_model = predict_dbscan(df, df_pca,  eps_=eps_dbsc, metric_p=1)
+            pickle.dump(model, open(fname, "wb"))
+            clust_ = 'cluster_dbscan_eps{}_minkp1'.format(eps_dbsc)
+    elif model=='kmeans':
+        if experiment:
+            experiment_clust_methods(df, df_pca, models_=['KMeans'])
+        else:
+            fname = "../models/kmeans_{}clusts.pkl".format(clusters_km)
+            df, kmeans_model = predict_kmeans(clusters_, df_main, df_normed)
+            pickle.dump(model, open(fname, "wb"))
+            clust_ = 'cluster_KM_{}'.format(clusters_km)
 
-    #iterate_kmeans(df_pca)
-    #clust_size, labels_ = iterate_dbscan(df_pca, metric_p=2, verbose=True)
-    #clust_size, labels_ = iterate_dbscan(df_pca, metric_p=1, verbose=True)
+    if not experiment and compute_cluster_chars:
+        cluster_chars = compute_chars(df, clust_, cluster_id=0, NUM_DAYS=NUM_DAYS)
 
-    #experiment_clust_methods(df, df_pca, models_=['DBScan'])
-    df, _ = predict_dbscan(df, df_pca,  eps_=0.0005, metric_p=1)
-    clust_ = 'cluster_dbscan_eps0.0005_minkp1'
-
-    print(df[clust_].value_counts())
-    cluster_chars = compute_chars(df, clust_, cluster_id=0, NUM_DAYS=NUM_DAYS)
-    if tsne_plot:
-        cols_tsne = [x for x in df_norm.columns if 'pca_' not in x]
-        df_tsne = draw_tsne(df_norm[cols_tsne].values)
-        df[['tsne_1','tsne_2']] = df_tsne
-        color_map = {0:'r', 1:'b', 2:'g', 3:'m', 4:'y', 5:'c', 6:'w'}
-        tsneplot_util(df.to_pandas(), ('tsne_1','tsne_2'), color_map,
-                                    title='TSNE- with pca as initialization',
-                                    clust = clust_)
+    return
 
 
 if __name__ == '__main__':
-    global norm_cols, NUM_DAYS
+
     dt = datetime.date.today()
     logger_fname = 'logs/modeling.log'.format(dt.strftime('%d%m%y'))
-
     print("Logging in {}".format(logger_fname))
     logging.basicConfig(level=logging.DEBUG, filename=logger_fname,
                         filemode='a', format='%(asctime)s: %(message)s',
                         datefmt='%m%d-%H%M')
-
-    logging.basicConfig(level=logging.DEBUG, filename=logger_fname,
-                        filemode='a', format='%(asctime)s: %(message)s',
-                        datefmt='%m%d-%H%M')
-
-    path = '../data/aggr/'
-    data_fname = 'host_agg_data_day-01_day-10.csv' #07_v1.csv'
-    NUM_DAYS = 10.0
-    run(path+data_fname)
+    run()

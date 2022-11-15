@@ -13,6 +13,7 @@ import pandas as pd
 import pickle
 import click
 import pdb
+from utils import compute_chars
 
 os.environ["CUDA_VISIBLE_DEVICES"] = '0'
 
@@ -45,6 +46,8 @@ def iterate_kmeans(df_, verbose=True):
 
 
 def predict_kmeans(clusters_, df_main, df_normed):
+    if type(clusters_) == int:
+        clusters_ = [clusters_]
     for n_clusters_ in clusters_:
         model = get_kmeans(n_clusters_=n_clusters_)
         model = train(df_normed, model)
@@ -104,8 +107,6 @@ def iterate_dbscan(df_, metric_p=1, verbose=False, library='sklearn'):
 def predict_dbscan(df_main, df_normed, eps_, metric_p=1):
     dbscan = get_dbscan(metric_p=metric_p, eps_=eps_)
     colname = 'cluster_dbscan_eps{:.4f}_minkp{}'.format(eps_,metric_p)
-    #labels = pd.Series(dbscan.fit_predict(df_normed.values))
-    #df_main[colname] = rename_labels(labels)
     df_main[colname] = dbscan.fit_predict(df_normed.values)
 
     return df_main, dbscan
@@ -136,95 +137,6 @@ def final_pass_kmeans(n_clusters_, df_main, df_normed, clusters_touse=5):
     return df_main, model
 
 
-def compute_chars(df_, clust_, NUM_DAYS=1, cluster_id='all',
-                  write_differences=False, verbose=False,
-                  top_diff_summary_feats=10,
-                  top_diff_detail_feats=8):
-    pddf = df_.to_pandas()
-    clusters = df_[clust_].value_counts().rename('clust_size')
-    clusters = clusters.reset_index().rename({'index':clust_}, axis=1)
-    ignore_cols = [clust_,'LogHost', 'num_accnt_logons','num_accnt_succ_logons']
-    for col in set(df_.columns)-set(ignore_cols):
-        colmean = df_.groupby(clust_, as_index=False)[col].mean().rename(col+'_mean')
-        colmean /= NUM_DAYS
-
-        df_[col + '_nz'] =df_[col].fillna(0).astype(bool)
-        colnonzero = df_.groupby(clust_, as_index=False)[col+'_nz'].sum()
-        colstats = cudf.merge(colmean, colnonzero, on=clust_, how='outer')
-
-        colmedian = df_.groupby(clust_, as_index=False)[col].median().rename(col+'_median')
-        colmedian /= NUM_DAYS
-        colstats = cudf.merge(colstats, colmedian, on=clust_, how='outer')
-        clusters = cudf.merge(clusters, colstats, on=clust_)
-
-        #Compute mean only using non-zero values
-        clusters[col + '_mean'] = clusters[col + '_mean'] * clusters['clust_size']/ clusters[col + '_nz']
-
-        clusters[col+'_nz_total'] = df_[col+'_nz'].sum()
-        clusters[col+'_mean_total'] = df_[col].sum()/(clusters[col+'_nz_total']*NUM_DAYS)
-        clusters[col+'_median_total'] = df_[col].median()
-        clusters[col+'_mean_dev'] = clusters[col+'_mean']/clusters[col+'_mean_total'] - 1
-        clusters[col+'_median_dev'] = clusters[col+'_median']/clusters[col+'_median_total'] - 1
-        clusters[col+'_nz_frac'] = 100*clusters[col+'_nz']/clusters['clust_size']
-        clusters[col+'_nz_frac_total'] = 100*clusters[col+'_nz_total']/df_.shape[0]
-        clusters[col+'_nz_frac_rem'] = 100*(clusters[col+'_nz_total']-clusters[col+'_nz'])/(df_.shape[0]-clusters['clust_size'])
-
-    devcols = [col for col in clusters.columns if col.endswith('_mean_dev')]
-    clusters[devcols] = clusters[devcols].fillna(0)
-    for idx in range(clusters.shape[0]):
-        clust_num = clusters[clust_].iloc[idx]
-        if cluster_id != 'all':
-            if clust_num != cluster_id:
-                continue
-        print("\nCLUSTER:{}, Size:{}".format(clust_num, clusters['clust_size'].iloc[idx]))
-        coldev = clusters[devcols].iloc[idx]
-        sortcols = coldev.abs().sort_values(ascending=False)
-
-        cols = sortcols.iloc[:30].index.to_arrow().to_pylist()
-        cols_ = [x[:-9]+'_nz_frac' for x in cols]
-        subsetdf = clusters.iloc[idx][cols_]
-        # Keep only features that have >5% non-zero values
-        cols = subsetdf.loc[subsetdf > 5].index.to_arrow().to_pylist()
-        cols = cols[:min(len(cols), top_diff_detail_feats)]
-        cols_ = [x[:-8] for x in cols]
-        cols_ = [x+y for x in cols_ for y in ('_mean', '_mean_total', '_nz_frac', '_nz_frac_rem')]
-
-        print("Features with Top differences:\n{}\n".format(
-            sortcols.iloc[:top_diff_summary_feats]))
-        if verbose:
-            print(clusters.iloc[idx][cols_])
-        if not verbose:
-            return
-
-        for col in cols:
-            col = col[:-8]
-            freq_0 = pddf.loc[pddf[clust_]==0][col].value_counts()
-            freq_rem = pddf.loc[pddf[clust_]!=0][col].value_counts()
-            freq_0, freq_rem = 100*freq_0/freq_0.sum(), 100*freq_rem/freq_rem.sum()
-            freqs =  cudf.merge(freq_0, freq_rem, left_index=True, right_index=True, how='outer')
-            freqs.fillna(0, inplace=True)
-            density_diff = freqs[col+'_x'] - freqs[col+'_y']
-            density_diff = density_diff.abs()
-            if density_diff.max() > 5:
-                print("{}: Max diff={:.2f}%".format(col, density_diff.max()))
-
-    if write_differences:
-        imp_cols = [
-            'cluster_dbscan_eps0.0005_minkp1','domain_ctr_validate_src_cnt_mean',
-            'domain_ctr_validate_src_cnt_nz_frac',
-            'total_logins_src_cnt_mean', 'total_logins_src_cnt_nz_frac',
-            'logon_type_2_mean','logon_type_2_nz_frac',
-            'logon_type_5_mean','logon_type_5_nz_frac',
-            'logon_type_11_mean', 'logon_type_11_nz_frac',
-            'logon_type_10_mean', 'logon_type_10_nz_frac',
-            'total_user_initi_logoff_cnt_nz_frac', 'DomainName_cnt_nz_frac',
-            'UserName_cnt_mean', 'DomainName_cnt_mean',
-            'TGT_req_src_cnt_mean', 'TGS_req_src_cnt_mean',
-            'uname_that_compacnt_login_frac_nz_frac', 'uname_that_compacnt_login_frac_mean',
-            'total_logoff_cnt_mean', 'total_logoff_cnt_nz_frac']
-        clusters[imp_cols].to_csv('../results/clust_chars.csv', header=True, index=False)
-    return clusters
-
 
 def draw_tsne(df_, init='random'):
     tsne = skmani.TSNE(n_components=2, learning_rate=100, init=init)
@@ -245,13 +157,13 @@ def experiment_clust_methods(df_, df_norm_, models_=['KMeans', 'DBScan']):
 
     if 'DBScan' in models_:
         print("\nMinkowski Param 1/2")
-        iterate_dbscan(df_norm_, metric_p=0.5)
+        iterate_dbscan(df_norm_, metric_p=0.5, verbose=True)
 
         print("\nManhattan Distance-Minkowski Param 1")
-        iterate_dbscan(df_norm_, metric_p=1)
+        iterate_dbscan(df_norm_, metric_p=1, verbose=True)
 
         print("\nEuclidean Distance-Minkowski Param 2")
-        iterate_dbscan(df_norm_, metric_p=2)
+        iterate_dbscan(df_norm_, metric_p=2, verbose=True)
     return
 
 
@@ -307,10 +219,11 @@ def tsneplot_util(df_, tsne_cols, color_map, title, clust):
 def run(**kwargs):
     model = kwargs['model']
     experiment = kwargs['experiment']
-    tsne_plot = False
     PCA_expl_variance = 0.9
     eps_dbsc = 0.0005
-    clusters_km = 10
+    clusters_km = 16
+
+    compute_cluster_chars = False
 
     global NUM_DAYS, norm_cols
     data_fname = '../datasets/host_agg_data_day-01_day-10.csv'
@@ -330,37 +243,29 @@ def run(**kwargs):
     pca_cols = ['pca_'+str(x) for x in range(pca_dims)]
     df_norm[pca_cols] = pca.transform(df_norm).iloc[:,:pca_dims]
     df_pca = df_norm[pca_cols].copy()
-    # Training or Experiment for the input clustering method
+
+    # Experiment or Training for the given clustering method
     if model=='dbscan':
         if experiment:
             experiment_clust_methods(df, df_pca, models_=['DBScan'])
         else:
             fname = "../models/dbscan_eps{}.pkl".format(eps_dbsc)
             df, dbsc_model = predict_dbscan(df, df_pca,  eps_=eps_dbsc, metric_p=1)
-            pickle.dump(model, open(fname, "wb"))
+            pickle.dump((dbsc_model, pca, pca_dims), open(fname, "wb"))
             clust_ = 'cluster_dbscan_eps{}_minkp1'.format(eps_dbsc)
     elif model=='kmeans':
         if experiment:
             experiment_clust_methods(df, df_pca, models_=['KMeans'])
         else:
             fname = "../models/kmeans_{}clusts.pkl".format(clusters_km)
-            df_, kmeans_model = predict_kmeans(clusters_, df_main, df_normed)
-            pickle.dump(model, open(fname, "wb"))
+            df, kmeans_model = predict_kmeans(clusters_km, df, df_pca)
+            pickle.dump((kmeans_model, pca, pca_dims), open(fname, "wb"))
             clust_ = 'cluster_KM_{}'.format(clusters_km)
 
-    if experiment:
-        return
-    print(df[clust_].value_counts())
-    exit()
-    cluster_chars = compute_chars(df, clust_, cluster_id=0, NUM_DAYS=NUM_DAYS)
-    if tsne_plot:
-        cols_tsne = [x for x in df_norm.columns if 'pca_' not in x]
-        df_tsne = draw_tsne(df_norm[cols_tsne].values)
-        df[['tsne_1','tsne_2']] = df_tsne
-        color_map = {0:'r', 1:'b', 2:'g', 3:'m', 4:'y', 5:'c', 6:'w'}
-        tsneplot_util(df.to_pandas(), ('tsne_1','tsne_2'), color_map,
-                                    title='TSNE- with pca as initialization',
-                                    clust = clust_)
+    if not experiment and compute_cluster_chars:
+        cluster_chars = compute_chars(df, clust_, cluster_id=0, NUM_DAYS=NUM_DAYS)
+
+    return
 
 
 if __name__ == '__main__':
