@@ -25,8 +25,8 @@ pip install -r requirements.txt
 ### Training
 
 #### Training data
-In this project we use the publicly available __[**Unified Host and Network Data Set**](https://csr.lanl.gov/data/2017/)__ dataset from the Advanced Research team in Cyber Systems of the Los Alamos National Laboratory to demonstrate various aspects involved in clustering assets in a given network.
-The dataset consists of netflow and windows event log (wls) files for 90 days. For this project we focus solely on the windows event log files which ave the naming convention wls_day-01.bz2, wls_day-02.bz2...,wls_day-90.bz2. The training data uses first ten days of data i.e. wls_day-01.bz2,...,wls_day-10.bz2. These ten days' data is prep-processed and the features are aggregated. The resulting dataset contains 11400 hosts and is saved in datasets/.
+In this project we use the publicly available __[**Unified Host and Network Data Set**](https://csr.lanl.gov/data/2017/)__[1] dataset from the Advanced Research team in Cyber Systems of the Los Alamos National Laboratory to demonstrate various aspects involved in clustering assets in a given network.
+The lanl dataset consists of netflow and windows event log (wls) files for 90 days. For this project we focus solely on the windows event log files which use the naming convention wls_day-01.bz2, wls_day-02.bz2,..., wls_day-90.bz2. The training data uses first ten days of data i.e. wls_day-01.bz2,..., wls_day-10.bz2. These ten days' data is pre-processed and the features are aggregated. The resulting dataset contains 14044 hosts and is saved in datasets/host_agg_data_day-01_day-10.csv.
 
 
 #### Training parameters
@@ -35,36 +35,30 @@ The following parameters are chosen in training for the DBSCAN algorithm:
 - *Manhattan distance* as the metric i.e. Minkowski distance with $p=1$.
 
 
-#### GPU model
-V100
-
 #### Model accuracy
-clusters found = 9
+clusters found = 9 (+1 cluster for for the noisy samples)
 Silhouette score = 0.975
 
 #### Training script
 
 To train the model run the following script under working directory.
 ```bash
-cd ${MORPHEUS_EXPERIMENTAL_ROOT}/asset-clustering/training-tuning
+cd ${MORPHEUS_EXPERIMENTAL_ROOT}/asset-clustering/training-tuning-inference
 # Run training script and save models
-python model.py
+python train.py --model dbscan
 ```
-CHANGE HERE from model.py to train.py. And save the trained model.
-
 This saves trained model files under `../models` directory. Then the inference script can load the models for future inferences.
 
-### How To Use This Model
-Combined with host data from DOCA AppShield, this model can be used to detect phishing URLs. A training notebook is also included so that users can update the model as more labeled data is collected. This model is based just on the URL: processing the structure of the URL and words in the URL. Many malicious URLs seem legitimate and are impossible to detect with our features, thus the recall is limited. We can improve the model by adding WHOIS (https://who.is/) and VirusTotal (https://www.virustotal.com/) infromation about the URL.
+### Inference Input
 
-### Input
-Snapshots of URL plugins collected from DOCA AppShield
+```
+python inferencepy --model dbscan
+```
+Whent the above comand is executed, dbscan clustering is performed on the windows event logs data from days 11 to 15. This data is pre-processed and aggregated to a validation dataset which can be found at datasets/host_agg_data_day-11_day-15.csv. This contains a total of 12606 hosts.
 
-### Output
-Processes with URLs classified as phishing or non-phishing
 
-#### Out-of-scope use cases
-N/A
+### Inference Output
+The clustering of the 12606 hosts is performed and the count of each cluster is printed to stdout.
 
 ### Ethical considerations
 N/A
