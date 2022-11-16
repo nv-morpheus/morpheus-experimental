@@ -8,7 +8,8 @@ import matplotlib.pyplot as plt
 import cudf
 import cuml
 import cuml.preprocessing as cupreproc
-from cuml.metrics.cluster import silhouette_score
+from cuml.metrics.cluster import silhouette_score as cusilhouette_score
+from sklearn.metrics import silhouette_score
 import pandas as pd
 import pickle
 import click
@@ -137,7 +138,6 @@ def final_pass_kmeans(n_clusters_, df_main, df_normed, clusters_touse=5):
     return df_main, model
 
 
-
 def draw_tsne(df_, init='random'):
     tsne = skmani.TSNE(n_components=2, learning_rate=100, init=init)
     return tsne.fit_transform(df_)
@@ -192,7 +192,7 @@ def normalize_host_data(data_fname_, norm_method='l2', preproc='minmax'):
 def get_silhouette_scores(df_, labels_,metric='euclidean', verbose=True):
     sh_sc = {}
     for label in labels_.columns:
-        sh_sc[label] = silhouette_score(df_, labels_[label], metric=metric)
+        sh_sc[label] = silhouette_score(df_.to_pandas(), labels_[label].to_pandas(), metric=metric)
         if verbose:
             print("For clustering {}, Silhouette Score is {:.3f}".format(
                 label, sh_sc[label]))
