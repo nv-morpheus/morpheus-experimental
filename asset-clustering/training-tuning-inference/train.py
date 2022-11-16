@@ -8,12 +8,9 @@ import matplotlib.pyplot as plt
 import cudf
 import cuml
 import cuml.preprocessing as cupreproc
-from cuml.metrics.cluster import silhouette_score as cusilhouette_score
-from sklearn.metrics import silhouette_score
-import pandas as pd
+from cuml.metrics.cluster import silhouette_score
 import pickle
 import click
-import pdb
 from utils import compute_chars
 
 os.environ["CUDA_VISIBLE_DEVICES"] = '0'
@@ -192,7 +189,7 @@ def normalize_host_data(data_fname_, norm_method='l2', preproc='minmax'):
 def get_silhouette_scores(df_, labels_,metric='euclidean', verbose=True):
     sh_sc = {}
     for label in labels_.columns:
-        sh_sc[label] = silhouette_score(df_.to_pandas(), labels_[label].to_pandas(), metric=metric)
+        sh_sc[label] = silhouette_score(df_, labels_[label], metric=metric)
         if verbose:
             print("For clustering {}, Silhouette Score is {:.3f}".format(
                 label, sh_sc[label]))

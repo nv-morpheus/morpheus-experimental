@@ -1,8 +1,7 @@
 numpy
-cudf-cu11
-cuml-cu11
-cupy
 pandas
 scikit-learn
 click
-
+cupy-cuda11x
+#cuml-cu11
+#cudf-cu11
