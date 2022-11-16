@@ -25,7 +25,7 @@ pip install -r requirements.txt
 ### Training
 
 #### Training data
-In this project we use the publicly available __[**Unified Host and Network Data Set][https://csr.lanl.gov/data/2017/)__ dataset from the Advanced Research team in Cyber Systems of the Los Alamos National Laboratory to demonstrate various aspects involved in clustering assets in a given network.
+In this project we use the publicly available __[**Unified Host and Network Data Set**](https://csr.lanl.gov/data/2017/)__ dataset from the Advanced Research team in Cyber Systems of the Los Alamos National Laboratory to demonstrate various aspects involved in clustering assets in a given network.
 The dataset consists of netflow and windows event log (wls) files for 90 days. For this project we focus solely on the windows event log files which ave the naming convention wls_day-01.bz2, wls_day-02.bz2...,wls_day-90.bz2. The training data uses first ten days of data i.e. wls_day-01.bz2,...,wls_day-10.bz2. These ten days' data is prep-processed and the features are aggregated. The resulting dataset contains 11400 hosts and is saved in datasets/.
 
 
