@@ -200,3 +200,6 @@ mlruns/*
 .vscode/settings.json
 .vscode/launch.json
 .DS_Store
+
+# Explicitly ignore any srg datasets loaded by the user
+string-resemblance-grouping/datasets/*
