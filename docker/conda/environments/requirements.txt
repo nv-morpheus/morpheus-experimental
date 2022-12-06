@@ -1,0 +1,5 @@
+####### Pip-only runtime dependencies (keep sorted!) #######
+ipywidgets
+jupyter-core>=4.11.2,<5.0
+jupyterlab
+nvidia-pyindex
