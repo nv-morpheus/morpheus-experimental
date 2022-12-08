@@ -17,6 +17,8 @@ def read_netflow(fname, nrows=None):
 
 
 def read_wls(fname, file_path=False, nrows=None):
+    """Read the windows event log file and return a data frame with the data
+    """
     if file_path:
         df = cudf.read_json(fname, lines=True, nrows=nrows)
     else:
@@ -27,30 +29,7 @@ def read_wls(fname, file_path=False, nrows=None):
     return df
 
 
-def compute_username_cnt(df_, host_):
-    df_ = df_[['LogHost', 'UserName']].copy()
-    unique_usernames = df_.groupby('LogHost')['UserName'].agg('unique')
-    unique_usernames = unique_usernames.rename('unique_usernames')
-
-    comb = cudf.merge(host_['unique_usernames'], unique_usernames, how='inner', on='LogHost')
-    naidx_x, naidx_y = comb['unique_usernames_x'].isna(), comb['unique_usernames_y'].isna()
-    if naidx_x.sum() or naidx_y.sum():
-        comb.loc[naidx_x]['unique_usernames_x'] = [[] for _ in range(naidx_x.sum())]
-        comb.loc[naidx_y]['unique_usernames_y'] = [[] for _ in range(naidx_y.sum())]
-
-    pdf_uniq_unames = comb[['unique_usernames_x', 'unique_usernames_y']].to_pandas()
-    pdf_uniq_unames = pdf_uniq_unames.apply(lambda x: list(x[0])+list(x[1]), axis=1)
-
-    comb['unique_usernames'] = cudf.from_pandas(pdf_uniq_unames)
-    comb['UserName_cnt'] = cudf.from_pandas(pdf_uniq_unames.apply(len))
-
-    comb.drop(['unique_usernames_x', 'unique_usernames_y'], axis=1, inplace=True)
-    host_.drop(['unique_usernames', 'UserName_cnt'], axis=1, inplace=True)
-    host_ = cudf.merge(host_, comb, how='outer', on='LogHost')
-    return host_
-
-
-def compute_username_cntv1(df_, host_, srcdict_):
+def compute_username_cnt(df_, host_, srcdict_):
     df_ = df_[['LogHost', 'UserName']].copy()
     df_ = df_.loc[~df_['UserName'].isna()]
 
@@ -81,31 +60,7 @@ def compute_username_cntv1(df_, host_, srcdict_):
     return host_, srcdict_
 
 
-def compute_username_domain_cnt(df_, host_):
-    df_ = df_[['LogHost', 'DomainName']].copy()
-    unique_username_domains = df_.groupby('LogHost')['DomainName'].agg('unique')
-    unique_username_domains = unique_username_domains.rename('unique_username_domains')
-
-    comb = cudf.merge(host_['unique_username_domains'], unique_username_domains,
-                    how='inner', on='LogHost')
-    naidx_x, naidx_y = comb['unique_username_domains_x'].isna(), comb['unique_username_domains_y'].isna()
-    if naidx_x.sum() or naidx_y.sum():
-        comb.loc[naidx_x, 'unique_username_domains_x'] = [set() for _ in range(naidx_x.sum())]
-        comb.loc[naidx_y, 'unique_username_domains_y'] = [set() for _ in range(naidx_y.sum())]
-
-    pdf_uniq_domains = comb[['unique_username_domains_x', 'unique_username_domains_y']].to_pandas()
-    pdf_uniq_domains = pdf_uniq_domains.apply(lambda x: list(x[0])+list(x[1]), axis=1)
-
-    comb['unique_username_domains'] = cudf.from_pandas(pdf_uniq_domains)
-    comb['DomainName_cnt'] = cudf.from_pandas(pdf_uniq_domains.apply(len))
-
-    comb.drop(['unique_username_domains_x', 'unique_username_domains_y'], axis=1, inplace=True)
-    host_.drop(['DomainName_cnt', 'unique_username_domains'], axis=1, inplace=True)
-    host_ = cudf.merge(host_, comb, how='outer', on='LogHost')
-    return host_
-
-
-def compute_username_domain_cntv1(df_, host_, srcdict_):
+def compute_username_domain_cnt(df_, host_, srcdict_):
     df_ = df_[['LogHost', 'DomainName']].copy()
     df_ = df_.loc[~df_['DomainName'].isna()]
 
@@ -132,9 +87,6 @@ def compute_username_domain_cntv1(df_, host_, srcdict_):
     comb = comb.drop(['DomainName_cnt_x', 'DomainName_cnt_y'], axis=1).set_index('LogHost')
     host_ = host_.drop('DomainName_cnt', axis=1)
     host_ = cudf.merge(host_, comb, how='inner', on='LogHost')
-
-    return host_, srcdict_
-
 
     host_ = cudf.merge(host_, udomain_cnt_df, how='outer', on='LogHost')
     host_ = host_.drop(['DomainName_cnt_x'], axis=1)
@@ -191,40 +143,7 @@ def logon_types(df_, host_, valid_logon_types):
     return host_
 
 
-def compute_diff_source_logon_cnt(df_, host_):
-    """
-    For each LogHost, Computes total number of unique sources with some event
-    Looks at all EventTypes.
-    """
-
-    df_ = df_[['LogHost', 'Source']].copy()
-    df_ = df_.loc[~df_['Source'].isna()]
-
-    unique_sources = df_.groupby('LogHost')['Source'].agg('unique')
-    unique_sources = unique_sources.rename('unique_sources')
-
-    comb = cudf.merge(host_['unique_sources'], unique_sources, how='inner', on='LogHost')
-    naidx_x, naidx_y = comb['unique_sources_x'].isna(), comb['unique_sources_y'].isna()
-    if naidx_x.sum() or naidx_y.sum():
-        comb.loc[naidx_x]['unique_sources_x'] = [[] for _ in range(naidx_x.sum())]
-        comb.loc[naidx_y]['unique_sources_y'] = [[] for _ in range(naidx_y.sum())]
-
-    add_two_list = lambda x: list(x[0]) if x[0] is not None else [] + \
-                             list(x[1]) if x[1] is not None else []
-    pdf_uniq_sources = comb[['unique_sources_x', 'unique_sources_y']].to_pandas()
-    pdf_uniq_sources = pdf_uniq_sources.apply(add_two_list, axis=1)
-
-    comb['unique_sources'] = cudf.from_pandas(pdf_uniq_sources)
-    comb['Source_cnt'] = cudf.from_pandas(pdf_uniq_sources.apply(len))
-
-    comb =comb.drop(['unique_sources_x', 'unique_sources_y'], axis=1)
-    host_.drop(['unique_sources', 'Source_cnt'], axis=1, inplace=True)
-    host_ = cudf.merge(host_, comb, how='outer', on='LogHost')
-
-    return host_
-
-
-def compute_diff_source_logon_cntv1(df_, host_, srcdict_):
+def compute_diff_source_logon_cnt(df_, host_, srcdict_):
     """
     For each LogHost, Computes total number of unique sources with some event
     Looks at all EventTypes.
@@ -320,6 +239,11 @@ def compute_eventid_cnt_source(df_, evid_, ev_str_, host_):
 
 
 def get_fnames(path, day_range):
+    """
+    Given the range of days in 'day_range', reads the files with format
+    'wls_day-xx' at 'path' and returns the files that fall with in the
+    ranage, inclusive of the days provided in 'day_range'.
+    """
 
     start_day, end_day = day_range.split('_')
     wls_files = [x for x in os.listdir(path) if x.startswith('wls_day')]
