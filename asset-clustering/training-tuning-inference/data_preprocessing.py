@@ -6,7 +6,6 @@ import click
 import numpy as np
 from utils import *
 from collections import defaultdict
-#get_fnames, read_wls, compute_logins_with_loghostuname, compute_eventid_cnt, compute_diff_source_logon_cnt, compute_eventid_cnt_source, logon_types, account_logons, compute_username_domain_cnt, compute_username_cnt
 
 def host_aggr(df_, host_, dict_, count_cols):
     newhosts = set(df_['LogHost'].to_pandas()).union(set(df_['Source'].to_pandas()))
