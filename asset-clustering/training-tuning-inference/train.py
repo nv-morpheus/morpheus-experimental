@@ -13,8 +13,6 @@ import pickle
 import click
 from utils import compute_chars
 
-os.environ["CUDA_VISIBLE_DEVICES"] = '0'
-
 
 def train(df_, model):
     model.fit(df_)
@@ -164,7 +162,24 @@ def experiment_clust_methods(df_, df_norm_, models_=['KMeans', 'DBScan']):
     return
 
 
-def normalize_host_data(data_fname_, norm_method='l2', preproc='minmax'):
+def normalize_host_data(data_fname_, preproc='minmax', norm_method='l2'):
+    """
+    Reads the preprocessed dataset and normalizes the individual features.
+
+    Args:
+        data_fname_ (str): full path at which the preprocessed dataset is saved
+
+        preproc (str): Valid choices are minmax and unit_norm
+
+        norm_method (str): Vald choices are l1 or l2. Applicable only when \'preproc = unit_norm
+
+    Returns:
+        df (DataFrame): cudf DataFrame with non-normalized data
+
+        df_norm (DataFrame): cudf DataFrame with normalized data
+    """
+    assert preproc in ('minmax', 'unit_norm'), "Valid choices are minmax or unit_norm"
+
     df = cudf.read_csv(data_fname_)
     print("Num. of columns:{}".format(len(df.columns)))
 
@@ -207,28 +222,37 @@ def tsneplot_util(df_, tsne_cols, color_map, title, clust):
     plt.title(title)
 
 @click.command()
+@click.option('--data_fname', default='host_agg_data_day-01_day-10.csv',\
+     help='Name of the Preprocessed csv dataset to perofrm inference.')
+@click.option('--num_days', default=10.0, help='Number of days worth of data used'\
+    'in preparing the dataset. Used to normalize the features.')
 @click.option('--model', default='dbscan', help='Clustering method to use.'\
      ' Valid choices are \'kmeans\' or \'dbscan\'. Default is \'dbscan\'')
 @click.option('--experiment', is_flag=True,
     help='Boolean flag. If provided, script experiments by iterating over values for '\
      'parameters of the respective clustering method. When not provided,'\
      'trains and saves the model.')
+@click.option('--compute_cluster_chars', is_flag=True, help='Boolean flag. If '\
+    'not provided, script just performs inference and output the cluster sizes.'\
+    'If provided, additionally analyzes for the top salient features of each cluster'\
+    'and prints the analysis to stdout.')
 def run(**kwargs):
-    model = kwargs['model']
-    experiment = kwargs['experiment']
+    dataset_path = '../datasets/'
+    model_path = '../models/'
     PCA_expl_variance = 0.9
     eps_dbsc = 0.0005
     clusters_km = 16
 
     compute_cluster_chars = False
+    num_days = kwargs['num_days']
+    model = kwargs['model']
+    experiment = kwargs['experiment']
+    compute_cluster_chars = kwargs['compute_cluster_chars']
+    assert model in ['kmeans', 'dbscan'], "Valid choices for model are kmeans or dbscan"
+    global norm_cols
 
-    global NUM_DAYS, norm_cols
-    data_fname = '../datasets/host_agg_data_day-01_day-10.csv'
-    NUM_DAYS = 10.0
-
-    assert model in ['kmeans', 'dbscan']
-
-    df, df_norm = normalize_host_data(data_fname)
+    data_path =  dataset_path + kwargs['data_fname']
+    df, df_norm = normalize_host_data(data_path)
 
     # Perform PCA and do dimensionality reduction
     pca = cuml.PCA().fit(df_norm)
@@ -246,7 +270,7 @@ def run(**kwargs):
         if experiment:
             experiment_clust_methods(df, df_pca, models_=['DBScan'])
         else:
-            fname = "../models/dbscan_eps{}.pkl".format(eps_dbsc)
+            fname = model_path + "dbscan_eps{}.pkl".format(eps_dbsc)
             df, dbsc_model = predict_dbscan(df, df_pca,  eps_=eps_dbsc, metric_p=1)
             pickle.dump((dbsc_model, pca, pca_dims), open(fname, "wb"))
             clust_ = 'cluster_dbscan_eps{}_minkp1'.format(eps_dbsc)
@@ -254,13 +278,13 @@ def run(**kwargs):
         if experiment:
             experiment_clust_methods(df, df_pca, models_=['KMeans'])
         else:
-            fname = "../models/kmeans_{}clusts.pkl".format(clusters_km)
+            fname = model_path + "kmeans_{}clusts.pkl".format(clusters_km)
             df, kmeans_model = predict_kmeans(clusters_km, df, df_pca)
             pickle.dump((kmeans_model, pca, pca_dims), open(fname, "wb"))
             clust_ = 'cluster_KM_{}'.format(clusters_km)
 
     if not experiment and compute_cluster_chars:
-        cluster_chars = compute_chars(df, clust_, cluster_id=0, NUM_DAYS=NUM_DAYS)
+        cluster_chars = compute_chars(df, clust_, cluster_id=0, num_days=num_days)
 
     return
 
