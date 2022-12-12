@@ -1,20 +1,30 @@
-import os
 import datetime
 import logging
 import numpy as np
 import cudf
-import cuml
 import cuml.preprocessing as cupreproc
-import pandas as pd
 import pickle
 import click
-import pdb
 from utils import compute_chars
 
-os.environ["CUDA_VISIBLE_DEVICES"] = '0'
 
+def normalize_host_data(data_fname_, preproc='minmax', norm_method='l2'):
+    """
+    Reads the preprocessed dataset and normalizes the individual features.
 
-def normalize_host_data(data_fname_, norm_method='l2', preproc='minmax'):
+    Args:
+        data_fname_ (str): full path at which the preprocessed dataset is saved
+
+        preproc (str): Valid choices are minmax and unit_norm
+
+        norm_method (str): Vald choices are l1 or l2. Applicable only when \'preproc = unit_norm
+
+    Returns:
+        df (DataFrame): cudf DataFrame with non-normalized data
+
+        df_norm (DataFrame): cudf DataFrame with normalized data
+    """
+
     df = cudf.read_csv(data_fname_)
     print("Num. of columns:{}".format(len(df.columns)))
 
@@ -39,18 +49,29 @@ def normalize_host_data(data_fname_, norm_method='l2', preproc='minmax'):
 @click.command()
 @click.option('--model', default='dbscan', help='Clustering method to use.'\
      ' Valid choices are \'kmeans\' or \'dbscan\'. Default is \'dbscan\'')
+@click.option('--data_fname', default='host_agg_data_day-11_day-15.csv',\
+     help='Name of the Preprocessed csv dataset to perofrm inference.')
+@click.option('--num_days', default=5.0, help='Number of days worth of data used'\
+    'in preparing the dataset. Used to normalize the features.')
+@click.option('--compute_cluster_chars', is_flag=True, help='Boolean flag. If '\
+    'not provided, script just performs inference and output the cluster sizes.'\
+    'If provided, additionally analyzes for the top salient features of each cluster'\
+    'and prints the analysis to stdout.')
 def run(**kwargs):
-    model = kwargs['model']
-    compute_cluster_chars = True
-    assert model in ['kmeans', 'dbscan']
+    dataset_path = '../datasets/'
+    model_path = '../models/'
 
-    global NUM_DAYS, norm_cols
-    data_fname = '../datasets/host_agg_data_day-11_day-15.csv'
-    NUM_DAYS = 5.0
-    df, df_norm = normalize_host_data(data_fname)
+    model = kwargs['model']
+    num_days = kwargs['num_days']
+    compute_cluster_chars = kwargs['compute_cluster_chars']
+    assert model in ['kmeans', 'dbscan'], \
+        "Valid choices for model are kmeans or dbscan"
+
+    data_path =  dataset_path + kwargs['data_fname']
+    df, df_norm = normalize_host_data(data_path)
 
     if model=='dbscan':
-        fname = '../models/dbscan_eps0.0005.pkl'
+        fname = model_path + 'dbscan_eps0.0005.pkl'
         clust_ = "cluster_dbscan_eps0.0005_minkp1"
 
         dbsc_model, pca, pca_dims = pickle.load(open(fname, "rb"))
@@ -58,7 +79,7 @@ def run(**kwargs):
         df[clust_] = dbsc_model.fit_predict(df_pca)
 
     elif model=='kmeans':
-        fname = "../models/kmeans_16clusts.pkl"
+        fname = model_path + 'kmeans_16clusts.pkl'
         clust_ = "cluster_KM_16"
 
         kmeans_model, pca, pca_dims = pickle.load(open(fname, "rb"))
@@ -68,7 +89,7 @@ def run(**kwargs):
     print("Cluster Size:\n{}".format(df[clust_].value_counts()))
 
     if compute_cluster_chars:
-        cluster_chars = compute_chars(df, clust_, cluster_id=0, NUM_DAYS=NUM_DAYS)
+        cluster_chars = compute_chars(df, clust_, cluster_id=0, num_days=num_days)
 
     return
 

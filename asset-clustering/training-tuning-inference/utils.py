@@ -5,7 +5,6 @@ import pandas as pd
 import cudf
 import cupy as cp
 
-
 def read_netflow(fname, nrows=None):
     df = cudf.read_csv(fname, nrows=nrows)
     netflow_header = [
@@ -74,6 +73,7 @@ def compute_username_domain_cnt(df_, host_, srcdict_):
     udomain_cnt_df= cudf.DataFrame({
         'LogHost': srcdict_['UserDomains'].keys(),
         'DomainName_cnt':[len(v) for v in srcdict_['UserDomains'].values()]})
+    udomain_cnt_df = udomain_cnt_df.set_index('LogHost', drop=True)
 
     comb = cudf.merge(host_['DomainName_cnt'].reset_index(),
                       udomain_cnt_df, how='outer', on='LogHost')
@@ -81,17 +81,17 @@ def compute_username_domain_cnt(df_, host_, srcdict_):
     # DomainName_cnt_x has DomaiName counts upto prev chunk, DomainName_cnt_y has
     # updated DomaiName counts only for hosts present in new data.
     comb.loc[~comb['DomainName_cnt_y'].isna(), 'DomainName_cnt_x'] = 0
-    comb = comb.fillna({'DomainName_cnt_y':0})
+    comb = comb.fillna({'DomainName_cnt_y': 0})
 
     comb['DomainName_cnt'] = comb['DomainName_cnt_x'] + comb['DomainName_cnt_y']
     comb = comb.drop(['DomainName_cnt_x', 'DomainName_cnt_y'], axis=1).set_index('LogHost')
+
     host_ = host_.drop('DomainName_cnt', axis=1)
     host_ = cudf.merge(host_, comb, how='inner', on='LogHost')
 
     host_ = cudf.merge(host_, udomain_cnt_df, how='outer', on='LogHost')
     host_ = host_.drop(['DomainName_cnt_x'], axis=1)
     host_ = host_.rename({'DomainName_cnt_y': 'DomainName_cnt'}, axis=1)
-    host_ = host_.set_index('LogHost')
     return host_, srcdict_
 
 
@@ -211,6 +211,7 @@ def compute_eventid_cnt(df_, evid_, ev_str_, host_):
     event_cnt.index.rename('LogHost', inplace=True)
 
     if set(event_cnt.index.to_pandas())-set(host_.index.to_pandas()):
+        pdb.set_trace()
         logging.error("Found extra LogHosts. UNEXPECTED BEHAVIOR")
     host_ = cudf.merge(host_, event_cnt, how='left', on='LogHost')
     host_[ev_str_] = host_[ev_str_ + '_x'] + host_[ev_str_ + '_y']
@@ -230,6 +231,7 @@ def compute_eventid_cnt_source(df_, evid_, ev_str_, host_):
     event_cnt.index.rename('LogHost', inplace=True)
 
     if set(event_cnt.index.to_pandas())-set(host_.index.to_pandas()):
+        pdb.set_trace()
         logging.error("Found extra LogHosts. UNEXPECTED BEHAVIOR")
     host_ = cudf.merge(host_, event_cnt, how='left', on='LogHost')
     host_[ev_str_] = host_[ev_str_ + '_x'] + host_[ev_str_ + '_y']
@@ -282,7 +284,7 @@ def compute_val_counts(df_, col, clust_):
     return freqs
 
 
-def compute_chars(df_, clust_, NUM_DAYS=1, cluster_id='all',
+def compute_chars(df_, clust_, num_days=1, cluster_id='all',
                   write_differences=False, verbose=False,
                   top_diff_summary_feats=10,
                   top_diff_detail_feats=8):
@@ -292,14 +294,14 @@ def compute_chars(df_, clust_, NUM_DAYS=1, cluster_id='all',
     ignore_cols = [clust_,'LogHost', 'num_accnt_logons','num_accnt_succ_logons']
     for col in set(df_.columns)-set(ignore_cols):
         colmean = df_.groupby(clust_, as_index=False)[col].mean().rename(col+'_mean')
-        colmean /= NUM_DAYS
+        colmean /= num_days
 
         df_[col + '_nz'] =df_[col].fillna(0).astype(bool)
         colnonzero = df_.groupby(clust_, as_index=False)[col+'_nz'].sum()
         colstats = cudf.merge(colmean, colnonzero, on=clust_, how='outer')
 
         colmedian = df_.groupby(clust_, as_index=False)[col].median().rename(col+'_median')
-        colmedian /= NUM_DAYS
+        colmedian /= num_days
         colstats = cudf.merge(colstats, colmedian, on=clust_, how='outer')
         clusters = cudf.merge(clusters, colstats, on=clust_)
 
@@ -307,7 +309,7 @@ def compute_chars(df_, clust_, NUM_DAYS=1, cluster_id='all',
         clusters[col + '_mean'] = clusters[col + '_mean'] * clusters['clust_size']/ clusters[col + '_nz']
 
         clusters[col+'_nz_total'] = df_[col+'_nz'].sum()
-        clusters[col+'_mean_total'] = df_[col].sum()/(clusters[col+'_nz_total']*NUM_DAYS)
+        clusters[col+'_mean_total'] = df_[col].sum()/(clusters[col+'_nz_total']*num_days)
         clusters[col+'_median_total'] = df_[col].median()
         clusters[col+'_mean_dev'] = clusters[col+'_mean']/clusters[col+'_mean_total'] - 1
         clusters[col+'_median_dev'] = clusters[col+'_median']/clusters[col+'_median_total'] - 1
