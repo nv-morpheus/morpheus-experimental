@@ -181,7 +181,8 @@ def get_dbscan(metric_p=1, eps=0.5, min_samples=8, library='cuml'):
 
 def iterate_dbscan(df_, metric_p=1, verbose=False, library='sklearn'):
     """For DBSCAN, iterate over eps values and analyze number of clusters found
-    for each eps value.
+    for each eps value. This is the most important DBSCAN parameter to choose
+    appropriately.
 
     library parameter determines whether a DBSCAN model from cuml or sklearn
     libraries is returned.
@@ -196,12 +197,16 @@ def iterate_dbscan(df_, metric_p=1, verbose=False, library='sklearn'):
 
     labels (DataFrame): Rows: Hosts and Columns: Clusters found for iterated
         eps values
-
     """
+    # Iterates eps over a range of values from 5e-4 to 5. The range over which
+    # to iterate depends entirely on the dataset and the range of distances
+    # between different points in the dataset. Hence we iterate over a large range.
+    eps_iter = [0.0005*x for x in [1, 10, 20, 40, 100, 500, 1000, 2000, 3000, 5000, 10000]]
+
     df_dbsc = df_.copy()
     labels = cudf.DataFrame()
     clust_size = dict()
-    for eps_ in [0.0005*x for x in [1, 10, 20, 40, 100, 500, 1000, 2000, 3000, 5000, 10000]]:
+    for eps_ in eps_iter:
         dbscan = get_dbscan(metric_p=metric_p, eps_=eps_, library=library)
         if library == 'sklearn':
             df_dbsc['cluster_dbscan'] = dbscan.fit_predict(df_dbsc.to_numpy())
