@@ -13,24 +13,91 @@ import pickle
 import click
 from utils import compute_chars
 
+def normalize_host_data(data_fname_, preproc='minmax', norm_method='l2'):
+    """
+    Reads the preprocessed dataset and normalizes the individual features.
+
+    Args:
+        data_fname_ (str): full path at which the preprocessed dataset is saved
+
+        preproc (str): Valid choices are minmax and unit_norm
+
+        norm_method (str): Vald choices are l1 or l2. Applicable only when \'preproc = unit_norm
+
+    Returns:
+        df (DataFrame): cudf DataFrame with non-normalized data
+
+        df_norm (DataFrame): cudf DataFrame with normalized data
+    """
+    assert preproc in ('minmax', 'unit_norm'), "Valid choices are minmax or unit_norm"
+
+    df = cudf.read_csv(data_fname_)
+    print("Num. of columns:{}".format(len(df.columns)))
+
+    rm_assets = ['ActiveDirectory', 'EnterpriseAppServer']
+    print("\nREMOVED {} Assets from data".format(rm_assets))
+    df = df.loc[~df['LogHost'].isin(rm_assets)]
+
+    rm_cols = ['LogHost', 'uname_other_compacnt_login_frac', 'uname_that_compacnt_login_frac']
+    norm_cols = [x for x in df.columns if x not in rm_cols]
+
+    if preproc == 'unit_norm':
+        scaler = cupreproc.normalize(norm=norm_method)
+    elif preproc == 'minmax':
+        scaler = cupreproc.MinMaxScaler(feature_range=(0, 1))
+
+    df_norm = scaler.fit(df[norm_cols]).transform(df[norm_cols])
+    df_norm.columns = norm_cols
+
+    return df, df_norm
+
+
+def pca_util(df_norm, pca_expl_variance):
+    """
+    Perform PCA and do dimensionality reduction.
+
+    Returns the reduced dimension DataFrame
+    """
+    pca = cuml.PCA().fit(df_norm)
+    expl_vars = pca.explained_variance_ratio_.to_pandas().to_list()
+    cum_sum_vars = [sum(expl_vars[:idx+1]) for idx in range(len(expl_vars))]
+    pca_dims = [i for i,var in enumerate(cum_sum_vars) if var > pca_expl_variance]
+    pca_dims = pca_dims[0]
+
+    pca_cols = ['pca_'+str(x) for x in range(pca_dims)]
+    df_norm[pca_cols] = pca.transform(df_norm).iloc[:,:pca_dims]
+    return df_norm, pca, pca_dims
+
 
 def train(df_, model):
+    """Fit the model with given DataFrame using .fit()"""
     model.fit(df_)
     return model
 
 
-def get_kmeans(n_clusters_=5):
-    kmeans_model = cuml.KMeans(n_clusters=n_clusters_,
-                                    init='scalable-k-means++',
-                                    n_init=3, max_iter=300,
-                                    tol=0.0001, verbose=0)
+def get_kmeans(n_clusters=5):
+    r"""Initialize and returns a KMeans model with n_clusters as num. of clusters"""
+    kmeans_model = cuml.KMeans(n_clusters=n_clusters,
+                               init='scalable-k-means++',
+                               n_init=3, max_iter=300,
+                               tol=0.0001, verbose=0)
     return kmeans_model
 
 
-def iterate_kmeans(df_, verbose=True):
+def iterate_kmeans(df_, verbose=True, clust_min=2,clust_max=30, delta=2):
+    """For KMeans, iterate over cluster sizes- starting with clust_min, up to
+    clust_max, in increments of delta.
+    If verbose, outputs num. Clusters: inertia to stdout
+
+    Returns
+    inertia_dict(dict): dictionary with (num. of clusters, inertia)
+
+    labels (DataFrame): Rows: Hosts and Columns: Iterated "num of clusters"
+    as parameter to KMeans
+    """
     labels = cudf.DataFrame()
     inertia_dict = {}
-    for n_clusters_ in range(2, 30, 2):
+    for n_clusters_ in range(clust_min, clust_max, delta):
         model = get_kmeans(n_clusters_=n_clusters_)
         model = train(df_, model)
         inertia_dict[n_clusters_] = model.inertia_
@@ -42,6 +109,11 @@ def iterate_kmeans(df_, verbose=True):
 
 
 def predict_kmeans(clusters_, df_main, df_normed):
+    """
+    Given num. of clusters in clusters_ (int or list of ints), returns
+    df_main with clustering performed with each num.of clusters as input
+    param for KMeans
+    """
     if type(clusters_) == int:
         clusters_ = [clusters_]
     for n_clusters_ in clusters_:
@@ -52,35 +124,80 @@ def predict_kmeans(clusters_, df_main, df_normed):
     return df_main, model
 
 
-def get_dbscan(metric_p=1, eps_=0.5, min_samples=8, library='cuml'):
+def final_pass_kmeans(n_clusters_, df_main, df_normed, clusters_touse=5):
+    """
+    Perform clustering using KMeans with n_clusters_ as number of clusters.
+
+    One pass to keep only top 'clusters_touse' clusters and assign each
+    data point to these 'clusters_touse' clusters.
+
+    For e.g., clusters_touse=5, take the top  5 clusters (by size) and keep
+    only these 5 cluster centers. In the final pass, assign each point to one
+    of these 5 clusters.
+    """
+
+    model = get_kmeans(n_clusters_=n_clusters_)
+    model = train(df_normed, model)
+    df_main['cluster_KM' + str(n_clusters_)] = model.predict(df_normed)
+
+    cluster_sizes = df_main['cluster_KM' + str(n_clusters_)].value_counts()
+    retain_clusters = cluster_sizes.iloc[:clusters_touse]
+    retain_clusters = retain_clusters.index.values
+
+    dists = model.transform(df_normed)
+    dists = dists[:, retain_clusters]
+    closest_centers = np.argmin(dists, axis=1)
+    cluster_nums = retain_clusters[closest_centers]
+    df_main['finalpas_cluster_KM' + str(n_clusters_)] = cluster_nums
+
+    print(df_main['finalpas_cluster_KM' + str(n_clusters_)].value_counts())
+    return df_main, model
+
+
+def get_dbscan(metric_p=1, eps=0.5, min_samples=8, library='cuml'):
+    """Initialize and returns a DBScan model with params eps, min_smaples.
+
+    library parameter determines whether a DBSCAN model from cuml or sklearn
+    libraries is returned.
+
+    If library=sklearn, metric_p is Minkowski ditance parameter.
+    In case of cuml, Euclidean is the default distance metric.
+    """
+
+    assert library in ('cuml', 'sklearn'), "Valid choices are cuml"
     if library == 'cuml':
         dbscan = cuml.DBSCAN(
-            eps=eps_, min_samples=min_samples,
+            eps=eps, min_samples=min_samples,
             metric='euclidean',
             verbose=0)
     else:
         dbscan = skcluster.DBSCAN(
-            eps=eps_, min_samples=min_samples,
+            eps=eps, min_samples=min_samples,
             p=metric_p,
             algorithm='auto',
             leaf_size=30)
     return dbscan
 
 
-def rename_labels(ser_):
-    csize = ser_.value_counts()
-    csize = csize.sort_values(ascending=False)
-    curr_labels = csize.index.to_arrow().to_pylist()
-    new_labels = list(range(len(csize)))
-    if -1 in curr_labels:
-        neg1_idx = curr_labels.index(-1)
-        new_labels[neg1_idx] = -1
-    label_dict = dict(zip(curr_labels, new_labels))
-    renamed_ser = cudf.Series([int(label_dict[x]) for x in ser_.to_arrow().to_pylist()])
-    return renamed_ser
-
-
 def iterate_dbscan(df_, metric_p=1, verbose=False, library='sklearn'):
+    """For DBSCAN, iterate over eps values and analyze number of clusters found
+    for each eps value.
+
+    library parameter determines whether a DBSCAN model from cuml or sklearn
+    libraries is returned.
+
+    If library=sklearn, metric_p is Minkowski ditance parameter.
+    In case of cuml, Euclidean is the default distance metric.
+
+    If verbose is True, outputs eps: num. Clusters found to stdout
+
+    Returns
+    clust_size (dict): dictionary with (epsilon value, num. of clusters foundinertia)
+
+    labels (DataFrame): Rows: Hosts and Columns: Clusters found for iterated
+        eps values
+
+    """
     df_dbsc = df_.copy()
     labels = cudf.DataFrame()
     clust_size = dict()
@@ -108,29 +225,17 @@ def predict_dbscan(df_main, df_normed, eps_, metric_p=1):
     return df_main, dbscan
 
 
-def final_pass_kmeans(n_clusters_, df_main, df_normed, clusters_touse=5):
-    """
-    e.g., clusters_touse=5
-    Take the top  5 clusters (by cluster size) and keep only these 5 cluster
-     centers. In the final pass, assign each point to one of these 5 clusters.
-    """
-
-    model = get_kmeans(n_clusters_=n_clusters_)
-    model = train(df_normed, model)
-    df_main['cluster_KM' + str(n_clusters_)] = model.predict(df_normed)
-
-    cluster_sizes = df_main['cluster_KM' + str(n_clusters_)].value_counts()
-    retain_clusters = cluster_sizes.iloc[:clusters_touse]
-    retain_clusters = retain_clusters.index.values
-
-    dists = model.transform(df_normed)
-    dists = dists[:, retain_clusters]
-    closest_centers = np.argmin(dists, axis=1)
-    cluster_nums = retain_clusters[closest_centers]
-    df_main['finalpas_cluster_KM' + str(n_clusters_)] = cluster_nums
-
-    print(df_main['finalpas_cluster_KM' + str(n_clusters_)].value_counts())
-    return df_main, model
+def rename_labels(ser_):
+    csize = ser_.value_counts()
+    csize = csize.sort_values(ascending=False)
+    curr_labels = csize.index.to_arrow().to_pylist()
+    new_labels = list(range(len(csize)))
+    if -1 in curr_labels:
+        neg1_idx = curr_labels.index(-1)
+        new_labels[neg1_idx] = -1
+    label_dict = dict(zip(curr_labels, new_labels))
+    renamed_ser = cudf.Series([int(label_dict[x]) for x in ser_.to_arrow().to_pylist()])
+    return renamed_ser
 
 
 def draw_tsne(df_, init='random'):
@@ -143,14 +248,21 @@ def draw_tsne_cuml(df_, perplexity=25.0, learning_rate=100.0):
     return tsne.fit_transform(df_)
 
 
-def experiment_clust_methods(df_, df_norm_, models_=['KMeans', 'DBScan']):
+def experiment_clust_methods(df_,
+                            df_norm_,
+                            models_=['KMeans', 'DBScan'],
+                            km_clust_min=2,
+                            km_clust_max=30,
+                            km_clust_delta=2):
+
     if 'KMeans' in models_:
-        clust_nums = [8, 10, 12, 16]
-        inertia_dict = iterate_kmeans(df_norm_)
-        df_ = predict_kmeans(clust_nums, df_, df_norm_)
-        df_, KM_model = final_pass_kmeans(18, df_, df_norm_, clusters_touse=5)
+        _ = iterate_kmeans(df_norm_,
+                        clust_min=km_clust_min,
+                        clust_max=km_clust_max,
+                        delta=km_clust_delta)
 
     if 'DBScan' in models_:
+        print("Iterating for DBScan method using distance metrics:Minkowski Param= 1/2, 1, 2")
         print("\nMinkowski Param 1/2")
         iterate_dbscan(df_norm_, metric_p=0.5, verbose=True)
 
@@ -159,46 +271,6 @@ def experiment_clust_methods(df_, df_norm_, models_=['KMeans', 'DBScan']):
 
         print("\nEuclidean Distance-Minkowski Param 2")
         iterate_dbscan(df_norm_, metric_p=2, verbose=True)
-    return
-
-
-def normalize_host_data(data_fname_, preproc='minmax', norm_method='l2'):
-    """
-    Reads the preprocessed dataset and normalizes the individual features.
-
-    Args:
-        data_fname_ (str): full path at which the preprocessed dataset is saved
-
-        preproc (str): Valid choices are minmax and unit_norm
-
-        norm_method (str): Vald choices are l1 or l2. Applicable only when \'preproc = unit_norm
-
-    Returns:
-        df (DataFrame): cudf DataFrame with non-normalized data
-
-        df_norm (DataFrame): cudf DataFrame with normalized data
-    """
-    assert preproc in ('minmax', 'unit_norm'), "Valid choices are minmax or unit_norm"
-
-    df = cudf.read_csv(data_fname_)
-    print("Num. of columns:{}".format(len(df.columns)))
-
-    rm_assets = ['ActiveDirectory', 'EnterpriseAppServer']
-    print("\nREMOVED {} Assets from data".format(rm_assets))
-    df = df.loc[~df['LogHost'].isin(rm_assets)]
-
-    rm_cols = ['LogHost', 'uname_other_compacnt_login_frac', 'uname_that_compacnt_login_frac']
-    norm_cols_ = [x for x in df.columns if x not in rm_cols]
-
-    if preproc == 'unit_norm':
-        scaler = cupreproc.normalize(norm=norm_method)
-    elif preproc == 'minmax':
-        scaler = cupreproc.MinMaxScaler(feature_range=(0, 1))
-
-    df_norm = scaler.fit(df[norm_cols_]).transform(df[norm_cols_])
-    df_norm.columns = norm_cols_
-
-    return df, df_norm
 
 
 def get_silhouette_scores(df_, labels_,metric='euclidean', verbose=True):
@@ -239,30 +311,23 @@ def tsneplot_util(df_, tsne_cols, color_map, title, clust):
 def run(**kwargs):
     dataset_path = '../datasets/'
     model_path = '../models/'
-    PCA_expl_variance = 0.9
+    pca_expl_variance = 0.9
     eps_dbsc = 0.0005
     clusters_km = 16
 
-    compute_cluster_chars = False
+    data_fname = kwargs['data_fname']
     num_days = kwargs['num_days']
     model = kwargs['model']
     experiment = kwargs['experiment']
     compute_cluster_chars = kwargs['compute_cluster_chars']
-    assert model in ['kmeans', 'dbscan'], "Valid choices for model are kmeans or dbscan"
-    global norm_cols
 
-    data_path =  dataset_path + kwargs['data_fname']
+    assert model in ['kmeans', 'dbscan'], "Valid choices for model are kmeans or dbscan"
+
+    data_path =  dataset_path + data_fname
     df, df_norm = normalize_host_data(data_path)
 
-    # Perform PCA and do dimensionality reduction
-    pca = cuml.PCA().fit(df_norm)
-    expl_vars = pca.explained_variance_ratio_.to_pandas().to_list()
-    cum_sum_vars = [sum(expl_vars[:idx+1]) for idx in range(len(expl_vars))]
-    pca_dims = [i for i,var in enumerate(cum_sum_vars) if var > PCA_expl_variance]
-    pca_dims = pca_dims[0]
-
+    df_norm, pca, pca_dims = pca_util(df_norm, pca_expl_variance)
     pca_cols = ['pca_'+str(x) for x in range(pca_dims)]
-    df_norm[pca_cols] = pca.transform(df_norm).iloc[:,:pca_dims]
     df_pca = df_norm[pca_cols].copy()
 
     # Experiment or Training for the given clustering method

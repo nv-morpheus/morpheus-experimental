@@ -1,49 +1,9 @@
 import datetime
 import logging
-import numpy as np
-import cudf
-import cuml.preprocessing as cupreproc
 import pickle
 import click
 from utils import compute_chars
-
-
-def normalize_host_data(data_fname_, preproc='minmax', norm_method='l2'):
-    """
-    Reads the preprocessed dataset and normalizes the individual features.
-
-    Args:
-        data_fname_ (str): full path at which the preprocessed dataset is saved
-
-        preproc (str): Valid choices are minmax and unit_norm
-
-        norm_method (str): Vald choices are l1 or l2. Applicable only when \'preproc = unit_norm
-
-    Returns:
-        df (DataFrame): cudf DataFrame with non-normalized data
-
-        df_norm (DataFrame): cudf DataFrame with normalized data
-    """
-
-    df = cudf.read_csv(data_fname_)
-    print("Num. of columns:{}".format(len(df.columns)))
-
-    rm_assets = ['ActiveDirectory', 'EnterpriseAppServer']
-    print("\nREMOVED {} Assets from data".format(rm_assets))
-    df = df.loc[~df['LogHost'].isin(rm_assets)]
-
-    rm_cols = ['LogHost', 'uname_other_compacnt_login_frac', 'uname_that_compacnt_login_frac']
-    norm_cols_ = [x for x in df.columns if x not in rm_cols]
-
-    if preproc == 'unit_norm':
-        scaler = cupreproc.normalize(norm=norm_method)
-    elif preproc == 'minmax':
-        scaler = cupreproc.MinMaxScaler(feature_range=(0, 1))
-
-    df_norm = scaler.fit(df[norm_cols_]).transform(df[norm_cols_])
-    df_norm.columns = norm_cols_
-
-    return df, df_norm
+from train import normalize_host_data
 
 
 @click.command()
