@@ -1,24 +1,14 @@
-# SPDX-FileCopyrightText: Copyright (c) 2022 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-# SPDX-License-Identifier: Apache-2.0
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-# http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-
 import os
 import logging
 import numpy as np
 import pandas as pd
 import cudf
+import cuml
 import cupy as cp
+import cuml.preprocessing as cupreproc
+import sklearn.manifold as skmani
+import matplotlib.pyplot as plt
+
 
 def read_netflow(fname, nrows=None):
     df = cudf.read_csv(fname, nrows=nrows)
@@ -82,7 +72,7 @@ def normalize_host_data(data_fname_, preproc='minmax', norm_method='l2'):
     return df, df_norm
 
 
-def compute_username_cnt(df_, host_, srcdict_):
+def compute_username_cnt(df_, host_, srcdict):
     df_ = df_[['LogHost', 'UserName']].copy()
     df_ = df_.loc[~df_['UserName'].isna()]
 
@@ -91,11 +81,11 @@ def compute_username_cnt(df_, host_, srcdict_):
 
     for i in range(unique_usernames.shape[0]):
         hostval, unames = unique_usernames.index[i], unique_usernames.iloc[i]
-        srcdict_['Unames'][hostval] = srcdict_['Unames'][hostval].union(unames)
+        srcdict['Unames'][hostval] = srcdict['Unames'][hostval].union(unames)
 
     uname_cnt_df= cudf.DataFrame({
-        'LogHost':srcdict_['Unames'].keys(),
-        'UserName_cnt':[len(v) for v in srcdict_['Unames'].values()]})
+        'LogHost':srcdict['Unames'].keys(),
+        'UserName_cnt':[len(v) for v in srcdict['Unames'].values()]})
 
     comb = cudf.merge(host_['UserName_cnt'].reset_index(),
                       uname_cnt_df, how='outer', on='LogHost')
@@ -110,10 +100,10 @@ def compute_username_cnt(df_, host_, srcdict_):
     host_ = host_.drop('UserName_cnt', axis=1)
     host_ = cudf.merge(host_, comb, how='inner', on='LogHost')
 
-    return host_, srcdict_
+    return host_, srcdict
 
 
-def compute_username_domain_cnt(df_, host_, srcdict_):
+def compute_username_domain_cnt(df_, host_, srcdict):
     df_ = df_[['LogHost', 'DomainName']].copy()
     df_ = df_.loc[~df_['DomainName'].isna()]
 
@@ -122,11 +112,11 @@ def compute_username_domain_cnt(df_, host_, srcdict_):
 
     for i in range(unique_username_domains.shape[0]):
         hostval, unames = unique_username_domains.index[i], unique_username_domains.iloc[i]
-        srcdict_['UserDomains'][hostval] = srcdict_['UserDomains'][hostval].union(unames)
+        srcdict['UserDomains'][hostval] = srcdict['UserDomains'][hostval].union(unames)
 
     udomain_cnt_df= cudf.DataFrame({
-        'LogHost': srcdict_['UserDomains'].keys(),
-        'DomainName_cnt':[len(v) for v in srcdict_['UserDomains'].values()]})
+        'LogHost': srcdict['UserDomains'].keys(),
+        'DomainName_cnt':[len(v) for v in srcdict['UserDomains'].values()]})
     udomain_cnt_df = udomain_cnt_df.set_index('LogHost', drop=True)
 
     comb = cudf.merge(host_['DomainName_cnt'].reset_index(),
@@ -146,7 +136,7 @@ def compute_username_domain_cnt(df_, host_, srcdict_):
     host_ = cudf.merge(host_, udomain_cnt_df, how='outer', on='LogHost')
     host_ = host_.drop(['DomainName_cnt_x'], axis=1)
     host_ = host_.rename({'DomainName_cnt_y': 'DomainName_cnt'}, axis=1)
-    return host_, srcdict_
+    return host_, srcdict
 
 
 def account_logons(df_, host_):
@@ -197,7 +187,7 @@ def logon_types(df_, host_, valid_logon_types):
     return host_
 
 
-def compute_diff_source_logon_cnt(df_, host_, srcdict_):
+def compute_diff_source_logon_cnt(df_, host_, srcdict):
     """
     For each LogHost, Computes total number of unique sources with some event
     Looks at all EventTypes.
@@ -211,11 +201,11 @@ def compute_diff_source_logon_cnt(df_, host_, srcdict_):
 
     for i in range(unique_sources.shape[0]):
         hostval, srces = unique_sources.index[i], unique_sources.iloc[i]
-        srcdict_['Sources'][hostval] = srcdict_['Sources'][hostval].union(srces)
+        srcdict['Sources'][hostval] = srcdict['Sources'][hostval].union(srces)
 
     src_cnt_df= cudf.DataFrame({
-        'LogHost': srcdict_['Sources'].keys(),
-        'Source_cnt': [len(v) for v in srcdict_['Sources'].values()]})
+        'LogHost': srcdict['Sources'].keys(),
+        'Source_cnt': [len(v) for v in srcdict['Sources'].values()]})
 
     comb = cudf.merge(host_['Source_cnt'].reset_index(), src_cnt_df, how='outer', on='LogHost')
 
@@ -229,7 +219,7 @@ def compute_diff_source_logon_cnt(df_, host_, srcdict_):
     host_ = host_.drop('Source_cnt', axis=1)
     host_ = cudf.merge(host_, comb, how='inner', on='LogHost')
 
-    return host_, srcdict_
+    return host_, srcdict
 
 
 def compute_logins_with_loghostuname(df_, host_):
@@ -265,7 +255,6 @@ def compute_eventid_cnt(df_, evid_, ev_str_, host_):
     event_cnt.index.rename('LogHost', inplace=True)
 
     if set(event_cnt.index.to_pandas())-set(host_.index.to_pandas()):
-        pdb.set_trace()
         logging.error("Found extra LogHosts. UNEXPECTED BEHAVIOR")
     host_ = cudf.merge(host_, event_cnt, how='left', on='LogHost')
     host_[ev_str_] = host_[ev_str_ + '_x'] + host_[ev_str_ + '_y']
@@ -285,7 +274,6 @@ def compute_eventid_cnt_source(df_, evid_, ev_str_, host_):
     event_cnt.index.rename('LogHost', inplace=True)
 
     if set(event_cnt.index.to_pandas())-set(host_.index.to_pandas()):
-        pdb.set_trace()
         logging.error("Found extra LogHosts. UNEXPECTED BEHAVIOR")
     host_ = cudf.merge(host_, event_cnt, how='left', on='LogHost')
     host_[ev_str_] = host_[ev_str_ + '_x'] + host_[ev_str_ + '_y']
@@ -427,3 +415,36 @@ def compute_chars(df_, clust_, num_days=1, cluster_id='all',
         clusters[imp_cols].to_csv('../results/clust_chars.csv', header=True, index=False)
     return clusters
 
+
+def draw_tsne(df, init='random'):
+    """Fit a Sklearn TSNE model on the DataFrame df
+
+    Returns the TSNE transformed input.
+    """
+    tsne = skmani.TSNE(n_components=2, learning_rate=100, init=init)
+    return tsne.fit_transform(df)
+
+
+def draw_tsne_cuml(df, perplexity=25.0, learning_rate=100.0):
+    """Fit a cuml TSNE model on the DataFrame df
+
+    Returns the TSNE transformed input.
+    """
+    tsne = cuml.TSNE(n_components=2, perplexity=perplexity, learning_rate=learning_rate)
+    return tsne.fit_transform(df)
+
+
+def tsneplot_util(df_, tsne_cols, color_map, title, clust):
+    """
+    Utility to scatter in 2-dimension for datapoints in df DataFrame
+    where TSNE transformed values are given in tsne_cols. If tsne_cols
+    size is more than 2, remaining values are ignored in the scatter plot.
+    """
+    tsne1, tsne2 = tsne_cols[0], tsne_cols[1]
+    df_['color']='k'
+    for k,v  in color_map.items():
+        df_.loc[df_[clust]==k,'color']=v
+    scatter = plt.scatter(tsne1, tsne2, c='color', data=df_)
+    plt.xlabel('tSNE1')
+    plt.ylabel('tSNE2')
+    plt.title(title)

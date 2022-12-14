@@ -1,32 +1,14 @@
-# SPDX-FileCopyrightText: Copyright (c) 2022 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-# SPDX-License-Identifier: Apache-2.0
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-# http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-
-import os
 import datetime
 import logging
 import numpy as np
 import sklearn.cluster as skcluster
-import sklearn.manifold as skmani
-import matplotlib.pyplot as plt
 import cudf
 import cuml
-import cuml.preprocessing as cupreproc
 from cuml.metrics.cluster import silhouette_score
 import pickle
 import click
 from utils import compute_chars, normalize_host_data
+
 
 def pca_util(df_norm, pca_expl_variance):
     """
@@ -84,15 +66,15 @@ def iterate_kmeans(df_, verbose=True, clust_min=2,clust_max=30, delta=2):
     return inertia_dict, labels
 
 
-def predict_kmeans(clusters_, df_main, df_normed):
+def predict_kmeans(clusters, df_main, df_normed):
     """
-    Given num. of clusters in clusters_ (int or list of ints), returns
+    Given num. of clusters in clusters (int or list of ints), returns
     df_main with clustering performed with each num.of clusters as input
     param for KMeans
     """
-    if type(clusters_) == int:
-        clusters_ = [clusters_]
-    for n_clusters_ in clusters_:
+    if type(clusters) == int:
+        clusters = [clusters]
+    for n_clusters_ in clusters:
         model = get_kmeans(n_clusters_=n_clusters_)
         model = train(df_normed, model)
         df_main['cluster_KM_' + str(n_clusters_)] = model.predict(df_normed)
@@ -155,7 +137,7 @@ def get_dbscan(metric_p=1, eps=0.5, min_samples=8, library='cuml'):
     return dbscan
 
 
-def iterate_dbscan(df_, metric_p=1, verbose=False, library='sklearn'):
+def iterate_dbscan(df_, metric_p=1, verbose=True, library='sklearn'):
     """For DBSCAN, iterate over eps values and analyze number of clusters found
     for each eps value. This is the most important DBSCAN parameter to choose
     appropriately.
@@ -198,16 +180,33 @@ def iterate_dbscan(df_, metric_p=1, verbose=False, library='sklearn'):
     return clust_size, labels
 
 
-def predict_dbscan(df_main, df_normed, eps_, metric_p=1):
-    dbscan = get_dbscan(metric_p=metric_p, eps_=eps_)
-    colname = 'cluster_dbscan_eps{:.4f}_minkp{}'.format(eps_,metric_p)
+def predict_dbscan(df_main, df_normed, eps, metric_p=1):
+    """
+    Given the parameters \'eps\' and \'metric_p\', clustering is performed on
+    \'df_normed'\ and a cluster value assigned to each datapoint
+
+    Returns:
+    df_main: DataFrame with an additional column representing DBSCAN clusters
+    dbscan: Trained Clustering DBSCAN model
+    """
+    dbscan = get_dbscan(metric_p=metric_p, eps_=eps)
+    colname = 'cluster_dbscan_eps{:.4f}_minkp{}'.format(eps,metric_p)
     df_main[colname] = dbscan.fit_predict(df_normed.values)
 
     return df_main, dbscan
 
 
-def rename_labels(ser_):
-    csize = ser_.value_counts()
+def rename_labels(ser):
+    """
+    Given a CuDf Series \'ser\' as input, where the index is hosts and values
+    represent the cluster labels.
+
+    rename_labels() renames the cluster labels to 0, 1,...,n in order of
+    decreasing sizewhere n represents total number of clusters present
+    excluding -1. Returns the Series with the renamed labels assigned to the
+    hosts.
+    """
+    csize = ser.value_counts()
     csize = csize.sort_values(ascending=False)
     curr_labels = csize.index.to_arrow().to_pylist()
     new_labels = list(range(len(csize)))
@@ -215,37 +214,38 @@ def rename_labels(ser_):
         neg1_idx = curr_labels.index(-1)
         new_labels[neg1_idx] = -1
     label_dict = dict(zip(curr_labels, new_labels))
-    renamed_ser = cudf.Series([int(label_dict[x]) for x in ser_.to_arrow().to_pylist()])
+    renamed_ser = cudf.Series([int(label_dict[x]) for x in ser.to_arrow().to_pylist()])
     return renamed_ser
 
 
-def draw_tsne(df_, init='random'):
-    tsne = skmani.TSNE(n_components=2, learning_rate=100, init=init)
-    return tsne.fit_transform(df_)
-
-
-def draw_tsne_cuml(df_, perplexity=25.0, learning_rate=100.0):
-    tsne = cuml.TSNE(n_components=2, perplexity=perplexity, learning_rate=learning_rate)
-    return tsne.fit_transform(df_)
-
-
-def experiment_clust_methods(df_,
-                            df_norm_,
-                            models_=['KMeans', 'DBScan'],
+def experiment_clust_methods(df_norm_,
+                            models=['KMeans', 'DBScan'],
                             km_clust_min=2,
                             km_clust_max=30,
                             km_clust_delta=2):
+    """
+    Iterate over relevant parameters for clustering methods in models parameter.
 
-    if 'KMeans' in models_:
+    If KMeans is in models, experiment for KMeans algorithm by iterating over
+    cluster sizes - starting with clust_min, up to clust_max, in increments of delta.
+    Outputs (num. of Clusters: inertia) to stdout
+
+    If DBScan is in models, experiment for DBSCAN algorithm by iterating over
+    distance metric and eps value, analyzing number of clusters found for each
+    combination of parameter.
+    Outputs, for each metric choice, eps: num. Clusters found to stdout
+    """
+
+    if 'KMeans' in models:
         _ = iterate_kmeans(df_norm_,
                         clust_min=km_clust_min,
                         clust_max=km_clust_max,
                         delta=km_clust_delta)
 
-    if 'DBScan' in models_:
+    if 'DBScan' in models:
         print("Iterating for DBScan method using distance metrics:Minkowski Param= 1/2, 1, 2")
         print("\nMinkowski Param 1/2")
-        iterate_dbscan(df_norm_, metric_p=0.5, verbose=True)
+        iterate_dbscan(df_norm_, metric_p=0.5)
 
         print("\nManhattan Distance-Minkowski Param 1")
         iterate_dbscan(df_norm_, metric_p=1, verbose=True)
@@ -254,25 +254,20 @@ def experiment_clust_methods(df_,
         iterate_dbscan(df_norm_, metric_p=2, verbose=True)
 
 
-def get_silhouette_scores(df_, labels_,metric='euclidean', verbose=True):
+def get_silhouette_scores(df, labels, metric='euclidean', verbose=True):
+    """Given a DataFrame with shape (hosts, features), and clustering labels
+    for different clustering methods given by their column names in labels,
+    returns average Silhouette score of overall datset for each clustering
+    label/column
+    """
     sh_sc = {}
-    for label in labels_.columns:
-        sh_sc[label] = silhouette_score(df_, labels_[label], metric=metric)
+    for label in labels.columns:
+        sh_sc[label] = silhouette_score(df, labels[label], metric=metric)
         if verbose:
             print("For clustering {}, Silhouette Score is {:.3f}".format(
                 label, sh_sc[label]))
     return sh_sc
 
-
-def tsneplot_util(df_, tsne_cols, color_map, title, clust):
-    tsne1, tsne2 = tsne_cols[0], tsne_cols[1]
-    df_['color']='k'
-    for k,v  in color_map.items():
-        df_.loc[df_[clust]==k,'color']=v
-    scatter = plt.scatter(tsne1, tsne2, c='color', data=df_)
-    plt.xlabel('tSNE1')
-    plt.ylabel('tSNE2')
-    plt.title(title)
 
 @click.command()
 @click.option('--data_fname', default='host_agg_data_day-01_day-10.csv',\
