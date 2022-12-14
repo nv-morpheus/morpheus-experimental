@@ -11,6 +11,10 @@ import matplotlib.pyplot as plt
 
 
 def read_netflow(fname, nrows=None):
+    """
+    Given full path of a netflow csv file at fname, reads the data.
+    Assumes the file has columns compatible with LANL netflow dataset.
+    """
     df = cudf.read_csv(fname, nrows=nrows)
     netflow_header = [
         'time', 'Duration', 'SrcDevice','DstDevice', 'Protocol', 'SrcPort',
@@ -20,13 +24,18 @@ def read_netflow(fname, nrows=None):
     return df
 
 
-def read_wls(fname, file_path=False, nrows=None):
-    """Read the windows event log file and return a data frame with the data
+def read_wls(file_to_read, file_path=False, nrows=None):
+    """
+    Read the windows event log file.
+    If file_path is True, file_to_read is assumed to be full path
+    If file_path is False, file_to_read is assumed to be json text
+
+    Returns cudf DataFrame.
     """
     if file_path:
-        df = cudf.read_json(fname, lines=True, nrows=nrows)
+        df = cudf.read_json(file_to_read, lines=True, nrows=nrows)
     else:
-        txt = "\n".join([x.decode("utf-8") for x in fname])
+        txt = "\n".join([x.decode("utf-8") for x in file_to_read])
         df = cudf.read_json(txt, lines=True)
 
     df['time_dt'] = cudf.to_datetime(df['Time'], unit='s')  # format='%Y-%m-%d %H:%M:%S.%f')
@@ -72,11 +81,31 @@ def normalize_host_data(data_fname_, preproc='minmax', norm_method='l2'):
     return df, df_norm
 
 
-def compute_username_cnt(df_, host_, srcdict):
-    df_ = df_[['LogHost', 'UserName']].copy()
-    df_ = df_.loc[~df_['UserName'].isna()]
+def compute_username_cnt(df, host, srcdict):
+    """
+    From Windows Event Logs data, counts number of unique usernames for each
+    host and updates the count in host DataFrame and unique values in srcdict
 
-    unique_usernames = df_.groupby('LogHost')['UserName'].agg('unique')
+    Args:
+        df(DataFrame): Current block of Windows event Logs data to process
+
+        host(DataFrame): Values of features computed so far, for each host
+
+        srcdict (dict): Dictionary with (k,v) pairs being (field, dict_)
+            where dict_ represents, for the given \'field\', a dictionary of
+            (k,v) pairs of (host, Set of unique values in 'field' for that host)
+
+    Returns:
+        host(DataFrame):host with updated values 'UserName_cnt' column
+
+        srcdict (dict): srcdict with updated dictionary srcdict['Unames']
+            where the uniques UserNames seen so far for each host is updated in
+            the dict srcdict['Unames']
+    """
+    df = df[['LogHost', 'UserName']].copy()
+    df = df.loc[~df['UserName'].isna()]
+
+    unique_usernames = df.groupby('LogHost')['UserName'].agg('unique')
     unique_usernames = unique_usernames.rename('unique_usernames').to_pandas()
 
     for i in range(unique_usernames.shape[0]):
@@ -87,7 +116,7 @@ def compute_username_cnt(df_, host_, srcdict):
         'LogHost':srcdict['Unames'].keys(),
         'UserName_cnt':[len(v) for v in srcdict['Unames'].values()]})
 
-    comb = cudf.merge(host_['UserName_cnt'].reset_index(),
+    comb = cudf.merge(host['UserName_cnt'].reset_index(),
                       uname_cnt_df, how='outer', on='LogHost')
 
     # DomainName_cnt_x has DomaiName counts upto prev chunk, DomainName_cnt_y has
@@ -97,10 +126,10 @@ def compute_username_cnt(df_, host_, srcdict):
 
     comb['UserName_cnt'] = comb['UserName_cnt_x'] + comb['UserName_cnt_y']
     comb = comb.drop(['UserName_cnt_x', 'UserName_cnt_y'], axis=1).set_index('LogHost')
-    host_ = host_.drop('UserName_cnt', axis=1)
-    host_ = cudf.merge(host_, comb, how='inner', on='LogHost')
+    host = host.drop('UserName_cnt', axis=1)
+    host = cudf.merge(host, comb, how='inner', on='LogHost')
 
-    return host_, srcdict
+    return host, srcdict
 
 
 def compute_username_domain_cnt(df_, host_, srcdict):
@@ -383,8 +412,6 @@ def compute_chars(df_, clust_, num_days=1, cluster_id='all',
             sortcols.iloc[:top_diff_summary_feats]))
         if verbose:
             print(clusters.iloc[idx][cols_])
-        if not verbose:
-            return
 
         for col in cols:
             col = col[:-8]
