@@ -11,46 +11,7 @@ import cuml.preprocessing as cupreproc
 from cuml.metrics.cluster import silhouette_score
 import pickle
 import click
-from utils import compute_chars
-
-def normalize_host_data(data_fname_, preproc='minmax', norm_method='l2'):
-    """
-    Reads the preprocessed dataset and normalizes the individual features.
-
-    Args:
-        data_fname_ (str): full path at which the preprocessed dataset is saved
-
-        preproc (str): Valid choices are minmax and unit_norm
-
-        norm_method (str): Vald choices are l1 or l2. Applicable only when \'preproc = unit_norm
-
-    Returns:
-        df (DataFrame): cudf DataFrame with non-normalized data
-
-        df_norm (DataFrame): cudf DataFrame with normalized data
-    """
-    assert preproc in ('minmax', 'unit_norm'), "Valid choices are minmax or unit_norm"
-
-    df = cudf.read_csv(data_fname_)
-    print("Num. of columns:{}".format(len(df.columns)))
-
-    rm_assets = ['ActiveDirectory', 'EnterpriseAppServer']
-    print("\nREMOVED {} Assets from data".format(rm_assets))
-    df = df.loc[~df['LogHost'].isin(rm_assets)]
-
-    rm_cols = ['LogHost', 'uname_other_compacnt_login_frac', 'uname_that_compacnt_login_frac']
-    norm_cols = [x for x in df.columns if x not in rm_cols]
-
-    if preproc == 'unit_norm':
-        scaler = cupreproc.normalize(norm=norm_method)
-    elif preproc == 'minmax':
-        scaler = cupreproc.MinMaxScaler(feature_range=(0, 1))
-
-    df_norm = scaler.fit(df[norm_cols]).transform(df[norm_cols])
-    df_norm.columns = norm_cols
-
-    return df, df_norm
-
+from utils import compute_chars, normalize_host_data
 
 def pca_util(df_norm, pca_expl_variance):
     """
@@ -87,10 +48,10 @@ def get_kmeans(n_clusters=5):
 def iterate_kmeans(df_, verbose=True, clust_min=2,clust_max=30, delta=2):
     """For KMeans, iterate over cluster sizes- starting with clust_min, up to
     clust_max, in increments of delta.
-    If verbose, outputs num. Clusters: inertia to stdout
+    If verbose is True, outputs (num. of Clusters: inertia) to stdout
 
     Returns
-    inertia_dict(dict): dictionary with (num. of clusters, inertia)
+    inertia_dict(dict): dictionary with (k,v)=(num. of clusters, inertia)
 
     labels (DataFrame): Rows: Hosts and Columns: Iterated "num of clusters"
     as parameter to KMeans
@@ -155,7 +116,7 @@ def final_pass_kmeans(n_clusters_, df_main, df_normed, clusters_touse=5):
 
 
 def get_dbscan(metric_p=1, eps=0.5, min_samples=8, library='cuml'):
-    """Initialize and returns a DBScan model with params eps, min_smaples.
+    """Initialize and returns a DBScan model with params eps, min_samples.
 
     library parameter determines whether a DBSCAN model from cuml or sklearn
     libraries is returned.
@@ -185,10 +146,10 @@ def iterate_dbscan(df_, metric_p=1, verbose=False, library='sklearn'):
     appropriately.
 
     library parameter determines whether a DBSCAN model from cuml or sklearn
-    libraries is returned.
+    libraries is used. Valid choices are \'cuml\' or \'sklearn\'
 
-    If library=sklearn, metric_p is Minkowski ditance parameter.
-    In case of cuml, Euclidean is the default distance metric.
+    If library is 'sklearn', metric_p is Minkowski ditance parameter. In case of
+    cuml, Euclidean is the default distance metric.
 
     If verbose is True, outputs eps: num. Clusters found to stdout
 
@@ -200,7 +161,7 @@ def iterate_dbscan(df_, metric_p=1, verbose=False, library='sklearn'):
     """
     # Iterates eps over a range of values from 5e-4 to 5. The range over which
     # to iterate depends entirely on the dataset and the range of distances
-    # between different points in the dataset. Hence we iterate over a large range.
+    # between different points in the dataset. Here we iterate over a large range.
     eps_iter = [0.0005*x for x in [1, 10, 20, 40, 100, 500, 1000, 2000, 3000, 5000, 10000]]
 
     df_dbsc = df_.copy()
@@ -300,11 +261,14 @@ def tsneplot_util(df_, tsne_cols, color_map, title, clust):
 
 @click.command()
 @click.option('--data_fname', default='host_agg_data_day-01_day-10.csv',\
-     help='Name of the Preprocessed csv dataset to perofrm inference.')
+     help='Name of the Preprocessed csv dataset to perofrm inference. The given'\
+    'file name will be read from the relative path \'../datasets/ \'')
 @click.option('--num_days', default=10.0, help='Number of days worth of data used'\
     'in preparing the dataset. Used to normalize the features.')
 @click.option('--model', default='dbscan', help='Clustering method to use.'\
-     ' Valid choices are \'kmeans\' or \'dbscan\'. Default is \'dbscan\'')
+     ' Valid choices are \'kmeans\' or \'dbscan\'. Default is \'dbscan\'.'\
+     'The corresponding model pickle file will be read from the relative'\
+     'path \'../models/ \'.')
 @click.option('--experiment', is_flag=True,
     help='Boolean flag. If provided, script experiments by iterating over values for '\
      'parameters of the respective clustering method. When not provided,'\

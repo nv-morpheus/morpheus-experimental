@@ -8,11 +8,11 @@ from utils import *
 from collections import defaultdict
 from itertools import chain
 
-valid_logon_types = {0, 2, 3, 4, 5, 7, 8, 9, 10, 11, 12}
+VALID_LOGON_TYPES = {0, 2, 3, 4, 5, 7, 8, 9, 10, 11, 12}
 
 # List of tuples (EventID, feature name), where a feature name denotes
 # frequency of corresp. EventID, by asset appearing in LogHost field.
-evtuples = [
+EVENTID_CNTFEAT = [
     (4624, 'total_logins_cnt'),
     (4625, 'accnt_fail_logon_cnt'),
     (4634, 'total_logoff_cnt'),
@@ -25,16 +25,17 @@ evtuples = [
 # (4768, 'TGT_req_cnt'), (4769, 'TGS_req_cnt')
 # 4768 & 4769 not used since 100% of LogHost for 4768,4769 is ActiveDirectory
 
-# evtuples_src & evtuples_dst are similar to evtuples except that they corresp.
-# to frequency of an EventID, by asset, appearing in Source & Destination fields resp.
-evtuples_src = [
+# EVENTIDFORSOURCE_CNTFEAT & EVENTIDFORDEST_CNTFEAT are similar to EVENTID_CNTFEAT
+# except that they corresp. to frequency of an EventID, by asset, appearing in
+#  Source & Destination fields resp.
+EVENTIDFORSOURCE_CNTFEAT = [
     (4624, 'total_logins_src_cnt'),
     (4625, 'accnt_fail_logon_src_cnt'),
     (4768, 'TGT_req_src_cnt'),
     (4769, 'TGS_req_src_cnt'),
     (4776, 'domain_ctr_validate_src_cnt')
     ]
-evtuples_dst = [(4648, 'logon_explicit_cred_to_cnt')]
+EVENTIDFORDEST_CNTFEAT = [(4648, 'logon_explicit_cred_to_cnt')]
 
 
 def host_aggr(df_, host_, uniq_values_dict, count_cols):
@@ -57,7 +58,8 @@ def host_aggr(df_, host_, uniq_values_dict, count_cols):
     """
 
     newhosts = set(df_['LogHost'].to_pandas()).union(set(df_['Source'].to_pandas()))
-    newhosts = newhosts - set(host_.index.to_pandas()) - set([None])
+    newhosts = newhosts - set(host_.index.to_pandas())
+    newhosts.discard(None)
 
     frac_cols = ['uname_other_compacnt_login_frac','uname_that_compacnt_login_frac']
     newhost = cudf.DataFrame({'LogHost': newhosts}).set_index('LogHost')
@@ -78,16 +80,16 @@ def host_aggr(df_, host_, uniq_values_dict, count_cols):
         logging.debug("Removed {} ROWS".format(numrows-df_.shape[0]))
 
     host_ = compute_logins_with_loghostuname(df_, host_)
-    host_ = logon_types(df_, host_, valid_logon_types)
+    host_ = logon_types(df_, host_, VALID_LOGON_TYPES)
     host_, uniq_values_dict = compute_diff_source_logon_cnt(df_, host_, uniq_values_dict)
     host_, uniq_values_dict = compute_username_cnt(df_, host_, uniq_values_dict)
     host_, uniq_values_dict = compute_username_domain_cnt(df_, host_, uniq_values_dict)
 
-    for evtuple in evtuples:
+    for evtuple in EVENTID_CNTFEAT:
         evid, ev_str = evtuple
         host_ = compute_eventid_cnt(df_ , evid, ev_str, host_)
 
-    for evtuple in evtuples_src:
+    for evtuple in EVENTIDFORSOURCE_CNTFEAT:
         evid, ev_str = evtuple
         host_ = compute_eventid_cnt_source(df_ , evid, ev_str, host_)
     host_[count_cols] = host_[count_cols].fillna(value=0, inplace=False)
@@ -116,9 +118,9 @@ def initialize_hostdf():
     """
 
     count_cols = ['UserName_cnt', 'DomainName_cnt', 'Source_cnt']
-    count_cols += [x[1] for x in chain(evtuples, evtuples_src, evtuples_dst)]
-    count_cols += ['logon_type_{}'.format(int(x)) for x in valid_logon_types]
-    count_cols += ['logon_type_frm_{}'.format(int(x)) for x in valid_logon_types]
+    count_cols += [x[1] for x in chain(EVENTID_CNTFEAT, EVENTIDFORSOURCE_CNTFEAT, EVENTIDFORDEST_CNTFEAT)]
+    count_cols += ['logon_type_{}'.format(int(x)) for x in VALID_LOGON_TYPES]
+    count_cols += ['logon_type_frm_{}'.format(int(x)) for x in VALID_LOGON_TYPES]
 
     count_cols += ['uname_other_compacnt_login_cnt', 'uname_that_compacnt_login_cnt']
     host = cudf.DataFrame(columns=['LogHost']).set_index('LogHost')
