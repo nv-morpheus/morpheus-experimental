@@ -79,7 +79,7 @@ def host_aggr(df_, host_, uniq_values_dict, count_cols):
         logging.debug("Filtering Rows if SOURCE & DESTINATION neq NA")
         logging.debug("Removed {} ROWS".format(numrows-df_.shape[0]))
 
-    host_ = compute_logins_with_loghostuname(df_, host_)
+    host_ = compute_logins_with_loghostuname(df_, host_, login_eventids=[4624, 4625])
     host_ = logon_types(df_, host_, VALID_LOGON_TYPES)
     host_, uniq_values_dict = compute_diff_source_logon_cnt(df_, host_, uniq_values_dict)
     host_, uniq_values_dict = compute_username_cnt(df_, host_, uniq_values_dict)

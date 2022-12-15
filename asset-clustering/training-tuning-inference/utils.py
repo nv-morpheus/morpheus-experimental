@@ -257,13 +257,13 @@ def compute_diff_source_logon_cnt(df, host, srcdict):
     return host, srcdict
 
 
-def compute_logins_with_loghostuname(df, host):
+def compute_logins_with_loghostuname(df, host, login_eventids=[4624, 4625]):
     """
     Computes logins from the username corresponding to
     a. computer accounts corresp. to specified LogHost i.e. UserName= LogHost+'$'
     b. computer accounts corresp. to other LogHost i.e. UserName ending with $ and != LogHost+'$'
     """
-    df = df.loc[df['EventID'].isin([4624, 4625])]
+    df = df.loc[df['EventID'].isin(login_eventids)]
     df_1 = df.loc[(df['UserName'].str.endswith('$')) & (df['UserName'] != df['LogHost']+'$')]
 
     uname_other_compacnt_login_cnt = df_1['LogHost'].value_counts()\
