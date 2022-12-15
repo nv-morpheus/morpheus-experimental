@@ -42,12 +42,12 @@ def read_wls(file_to_read, file_path=False, nrows=None):
     return df
 
 
-def normalize_host_data(data_fname_, preproc='minmax', norm_method='l2'):
+def normalize_host_data(data_fname, preproc='minmax', norm_method='l2'):
     """
     Reads the preprocessed dataset and normalizes the individual features.
 
     Args:
-        data_fname_ (str): full path at which the preprocessed dataset is saved
+        data_fname (str): full path at which the preprocessed dataset is saved
 
         preproc (str): Valid choices are minmax and unit_norm
 
@@ -60,7 +60,7 @@ def normalize_host_data(data_fname_, preproc='minmax', norm_method='l2'):
     """
     assert preproc in ('minmax', 'unit_norm'), "Valid choices are minmax or unit_norm"
 
-    df = cudf.read_csv(data_fname_)
+    df = cudf.read_csv(data_fname)
     print("Num. of columns:{}".format(len(df.columns)))
 
     rm_assets = ['ActiveDirectory', 'EnterpriseAppServer']
@@ -83,20 +83,20 @@ def normalize_host_data(data_fname_, preproc='minmax', norm_method='l2'):
 
 def compute_username_cnt(df, host, srcdict):
     """
-    From Windows Event Logs data, counts number of unique usernames for each
+    From Windows Event Logs data, counts number of unique UserNames for each
     host and updates the count in host DataFrame and unique values in srcdict
 
     Args:
-        df(DataFrame): Current block of Windows event Logs data to process
+        df(DataFrame): Current block of Windows Event Logs data to process
 
         host(DataFrame): Values of features computed so far, for each host
 
         srcdict (dict): Dictionary with (k,v) pairs being (field, dict_)
-            where dict_ represents, for the given \'field\', a dictionary of
+            where dict_ represents, for any given 'field', a dictionary of
             (k,v) pairs of (host, Set of unique values in 'field' for that host)
 
     Returns:
-        host(DataFrame):host with updated values 'UserName_cnt' column
+        host(DataFrame):host with updated values in 'UserName_cnt' column
 
         srcdict (dict): srcdict with updated dictionary srcdict['Unames']
             where the uniques UserNames seen so far for each host is updated in
@@ -132,11 +132,32 @@ def compute_username_cnt(df, host, srcdict):
     return host, srcdict
 
 
-def compute_username_domain_cnt(df_, host_, srcdict):
-    df_ = df_[['LogHost', 'DomainName']].copy()
-    df_ = df_.loc[~df_['DomainName'].isna()]
+def compute_username_domain_cnt(df, host, srcdict):
+    """
+    From Windows Event Logs data, counts number of unique DomainName for each
+    host and updates a. count in host DataFrame and b. unique values in srcdict
 
-    unique_username_domains = df_.groupby('LogHost')['DomainName'].agg('unique')
+    Args:
+        df(DataFrame): Current block of Windows Event Logs data to process
+
+        host(DataFrame): Values of features computed so far, for each host
+
+        srcdict (dict): Dictionary with (k,v) pairs being (field, dict_)
+            where dict_ represents, for any given 'field', a dictionary of
+            (k,v) pairs of (host, Set of unique values in 'field' for that host)
+
+    Returns:
+        host(DataFrame):host with updated values in 'DomainName_cnt' column
+
+        srcdict (dict): srcdict with updated dictionary srcdict['UserDomains']
+            where the uniques DomainNames seen so far for each host is updated in
+            the dict srcdict['UserDomains']
+    """
+
+    df = df[['LogHost', 'DomainName']].copy()
+    df = df.loc[~df['DomainName'].isna()]
+
+    unique_username_domains = df.groupby('LogHost')['DomainName'].agg('unique')
     unique_username_domains = unique_username_domains.rename('unique_username_domains').to_pandas()
 
     for i in range(unique_username_domains.shape[0]):
@@ -148,7 +169,7 @@ def compute_username_domain_cnt(df_, host_, srcdict):
         'DomainName_cnt':[len(v) for v in srcdict['UserDomains'].values()]})
     udomain_cnt_df = udomain_cnt_df.set_index('LogHost', drop=True)
 
-    comb = cudf.merge(host_['DomainName_cnt'].reset_index(),
+    comb = cudf.merge(host['DomainName_cnt'].reset_index(),
                       udomain_cnt_df, how='outer', on='LogHost')
 
     # DomainName_cnt_x has DomaiName counts upto prev chunk, DomainName_cnt_y has
@@ -159,73 +180,58 @@ def compute_username_domain_cnt(df_, host_, srcdict):
     comb['DomainName_cnt'] = comb['DomainName_cnt_x'] + comb['DomainName_cnt_y']
     comb = comb.drop(['DomainName_cnt_x', 'DomainName_cnt_y'], axis=1).set_index('LogHost')
 
-    host_ = host_.drop('DomainName_cnt', axis=1)
-    host_ = cudf.merge(host_, comb, how='inner', on='LogHost')
+    host = host.drop('DomainName_cnt', axis=1)
+    host = cudf.merge(host, comb, how='inner', on='LogHost')
 
-    host_ = cudf.merge(host_, udomain_cnt_df, how='outer', on='LogHost')
-    host_ = host_.drop(['DomainName_cnt_x'], axis=1)
-    host_ = host_.rename({'DomainName_cnt_y': 'DomainName_cnt'}, axis=1)
-    return host_, srcdict
-
-
-def account_logons(df_, host_):
-    df_4634 = df_.loc[df_['EventID'] == 4634]
-    num_logons = df_4634['LogHost'].value_counts().rename_axis('LogHost').rename('num_accnt_logons')
-
-    df_4624 = df_.loc[df_['EventID'] == 4624]
-    num_succ_logons = df_4624['LogHost'].value_counts().rename_axis('LogHost').rename('num_accnt_succ_logons')
-
-    num_logons = pd.merge(num_logons, num_succ_logons, on='LogHost', how='outer')
-    num_logons = num_logons.fillna(0)
-    if set(num_logons.index)-set(host_.index):
-        logging.error("Found extra LogHosts. UNEXPECTED BEHAVIOR")
-
-    host_ = pd.merge(host_, num_logons, how='outer', on='LogHost', )
-    host_['num_accnt_succ_logons'] = host_['num_accnt_succ_logons_x'] + host_['num_accnt_succ_logons_y']
-    host_['num_accnt_logons'] = host_['num_accnt_logons_x'] + host_['num_accnt_logons_y']
-    host_.drop(['num_accnt_logons_x', 'num_accnt_logons_y',
-                'num_accnt_succ_logons_x', 'num_accnt_succ_logons_y'], axis=1, inplace=True)
-    return host_
+    host = cudf.merge(host, udomain_cnt_df, how='outer', on='LogHost')
+    host = host.drop(['DomainName_cnt_x'], axis=1)
+    host = host.rename({'DomainName_cnt_y': 'DomainName_cnt'}, axis=1)
+    return host, srcdict
 
 
-def logon_types(df_, host_, valid_logon_types):
+def logon_types(df, host, valid_logon_types):
     """
-    Computes number of logins by each LogonType
+    Computes number of logins by each LogonType present in valid_logon_types.
+    Counts separately for each host present in LogHost and Source columns.
+
+    Returns:
+        host(DataFrame): host with updated values in 'logon_type_x' and
+             'logon_type_frm_x' columns
     """
-    def cnt_logontypes(df_touse, logon_types, host_, suffix=''):
+    def cnt_logontypes(df_touse, logon_types, host, suffix=''):
         for ltype in logon_types:
             col_name = 'logon_type_{}{}'.format(suffix, int(ltype))
             df_ltype = df_touse.loc[df_touse['LogonType'] == ltype]
             dfltype_cnt = df_ltype['LogHost'].value_counts().rename(col_name)
             dfltype_cnt.index.rename('LogHost', inplace=True)
-            host_ = cudf.merge(host_, dfltype_cnt, on='LogHost', how='left')
-            host_[col_name] = host_[col_name + '_x'] + host_[col_name + '_y']
-            host_.drop([col_name + '_x', col_name + '_y'], axis=1, inplace=True)
-        return host_
+            host = cudf.merge(host, dfltype_cnt, on='LogHost', how='left')
+            host[col_name] = host[col_name + '_x'] + host[col_name + '_y']
+            host.drop([col_name + '_x', col_name + '_y'], axis=1, inplace=True)
+        return host
 
-    df_ = df_.loc[df_['EventID'].isin([4624, 4625])]
-    ltype_indf = df_['LogonType'].unique()
+    df = df.loc[df['EventID'].isin([4624, 4625])]
+    ltype_indf = df['LogonType'].unique()
     logon_types_ = ltype_indf.loc[ltype_indf.isin(valid_logon_types)].to_pandas().to_list()
-    host_ = cnt_logontypes(df_, logon_types_, host_)
+    host = cnt_logontypes(df, logon_types_, host)
 
-    df_src = df_.loc[~df_['Source'].isna()]
+    df_src = df.loc[~df['Source'].isna()]
     ltype_indf = df_src['LogonType'].unique()
     logon_types_ = ltype_indf.loc[ltype_indf.isin(valid_logon_types)].to_pandas().to_list()
-    host_ = cnt_logontypes(df_src, logon_types_, host_, suffix='frm_')
+    host = cnt_logontypes(df_src, logon_types_, host, suffix='frm_')
 
-    return host_
+    return host
 
 
-def compute_diff_source_logon_cnt(df_, host_, srcdict):
+def compute_diff_source_logon_cnt(df, host, srcdict):
     """
     For each LogHost, Computes total number of unique sources with some event
     Looks at all EventTypes.
     """
 
-    df_ = df_[['LogHost', 'Source']].copy()
-    df_ = df_.loc[~df_['Source'].isna()]
+    df = df[['LogHost', 'Source']].copy()
+    df = df.loc[~df['Source'].isna()]
 
-    unique_sources = df_.groupby('LogHost')['Source'].agg('unique')
+    unique_sources = df.groupby('LogHost')['Source'].agg('unique')
     unique_sources = unique_sources.rename('unique_sources').to_pandas()
 
     for i in range(unique_sources.shape[0]):
@@ -236,7 +242,7 @@ def compute_diff_source_logon_cnt(df_, host_, srcdict):
         'LogHost': srcdict['Sources'].keys(),
         'Source_cnt': [len(v) for v in srcdict['Sources'].values()]})
 
-    comb = cudf.merge(host_['Source_cnt'].reset_index(), src_cnt_df, how='outer', on='LogHost')
+    comb = cudf.merge(host['Source_cnt'].reset_index(), src_cnt_df, how='outer', on='LogHost')
 
     # Source_cnt_x has source counts from prev, Source_cnt_y has updated source
     #  counts only for hosts present in new data.
@@ -245,70 +251,77 @@ def compute_diff_source_logon_cnt(df_, host_, srcdict):
 
     comb['Source_cnt'] = comb['Source_cnt_x'] + comb['Source_cnt_y']
     comb = comb.drop(['Source_cnt_x', 'Source_cnt_y'], axis=1).set_index('LogHost')
-    host_ = host_.drop('Source_cnt', axis=1)
-    host_ = cudf.merge(host_, comb, how='inner', on='LogHost')
+    host = host.drop('Source_cnt', axis=1)
+    host = cudf.merge(host, comb, how='inner', on='LogHost')
 
-    return host_, srcdict
+    return host, srcdict
 
 
-def compute_logins_with_loghostuname(df_, host_):
+def compute_logins_with_loghostuname(df, host):
     """
     Computes logins from the username corresponding to
     a. computer accounts corresp. to specified LogHost i.e. UserName= LogHost+'$'
     b. computer accounts corresp. to other LogHost i.e. UserName ending with $ and != LogHost+'$'
     """
-    df_ = df_.loc[df_['EventID'].isin([4624, 4625])]
-    df_1 = df_.loc[(df_['UserName'].str.endswith('$')) & (df_['UserName'] != df_['LogHost']+'$')]
+    df = df.loc[df['EventID'].isin([4624, 4625])]
+    df_1 = df.loc[(df['UserName'].str.endswith('$')) & (df['UserName'] != df['LogHost']+'$')]
 
     uname_other_compacnt_login_cnt = df_1['LogHost'].value_counts()\
                                                  .rename('uname_other_compacnt_login_cnt')
 
     uname_other_compacnt_login_cnt.index.rename('LogHost', inplace=True)
-    host_ = cudf.merge(host_, uname_other_compacnt_login_cnt, how='outer', on='LogHost')
+    host = cudf.merge(host, uname_other_compacnt_login_cnt, how='outer', on='LogHost')
 
-    df_2 = df_.loc[df_['UserName'] == df_['LogHost']+'$']
+    df_2 = df.loc[df['UserName'] == df['LogHost']+'$']
     uname_that_compacnt_login_cnt = df_2['LogHost'].value_counts()\
                                                  .rename('uname_that_compacnt_login_cnt')
     uname_that_compacnt_login_cnt.index.rename('LogHost', inplace=True)
-    host_ = cudf.merge(host_, uname_that_compacnt_login_cnt, how='outer', on='LogHost')
+    host = cudf.merge(host, uname_that_compacnt_login_cnt, how='outer', on='LogHost')
 
     for col in ['uname_other_compacnt_login_cnt', 'uname_that_compacnt_login_cnt']:
-        host_[col] = host_[col+'_x'] + host_[col+'_y']
-        host_.drop([col + '_x', col + '_y'], axis=1, inplace=True)
-    return host_
+        host[col] = host[col+'_x'] + host[col+'_y']
+        host.drop([col + '_x', col + '_y'], axis=1, inplace=True)
+    return host
 
 
-def compute_eventid_cnt(df_, evid_, ev_str_, host_):
-    df_evid = df_.loc[df_['EventID'] == evid_]
-    event_cnt = df_evid['LogHost'].value_counts().rename(ev_str_)
-    event_cnt.index.rename('LogHost', inplace=True)
-
-    if set(event_cnt.index.to_pandas())-set(host_.index.to_pandas()):
-        logging.error("Found extra LogHosts. UNEXPECTED BEHAVIOR")
-    host_ = cudf.merge(host_, event_cnt, how='left', on='LogHost')
-    host_[ev_str_] = host_[ev_str_ + '_x'] + host_[ev_str_ + '_y']
-    host_.drop([ev_str_ + '_y', ev_str_ + '_x'], axis=1, inplace=True)
-
-    return host_
-
-
-def compute_eventid_cnt_source(df_, evid_, ev_str_, host_):
-    """For each asset=i, Counts the number of rows with
-     EventID == evid_ &
-     Source == i
-    and assigns host_[i][ev_str_] += count
+def compute_eventid_cnt(df, evid, ev_str, host):
     """
-    df_evid = df_.loc[df_['EventID'] == evid_]
-    event_cnt = df_evid['Source'].value_counts().rename(ev_str_)
+    For each asset=i, Counts the number of rows with
+     EventID == evid &
+     LogHost == i
+    and updates as follows: host[i][ev_str] += count
+    """
+    df_evid = df.loc[df['EventID'] == evid]
+    event_cnt = df_evid['LogHost'].value_counts().rename(ev_str)
     event_cnt.index.rename('LogHost', inplace=True)
 
-    if set(event_cnt.index.to_pandas())-set(host_.index.to_pandas()):
+    if set(event_cnt.index.to_pandas())-set(host.index.to_pandas()):
         logging.error("Found extra LogHosts. UNEXPECTED BEHAVIOR")
-    host_ = cudf.merge(host_, event_cnt, how='left', on='LogHost')
-    host_[ev_str_] = host_[ev_str_ + '_x'] + host_[ev_str_ + '_y']
-    host_.drop([ev_str_ + '_y', ev_str_ + '_x'], axis=1, inplace=True)
+    host = cudf.merge(host, event_cnt, how='left', on='LogHost')
+    host[ev_str] = host[ev_str + '_x'] + host[ev_str + '_y']
+    host.drop([ev_str + '_y', ev_str + '_x'], axis=1, inplace=True)
 
-    return host_
+    return host
+
+
+def compute_eventid_cnt_source(df, evid, ev_str, host):
+    """
+    For each asset=i, counts the number of rows with
+     EventID == evid &
+     Source == i
+    and updates as follows: host[i][ev_str] += count
+    """
+    df_evid = df.loc[df['EventID'] == evid]
+    event_cnt = df_evid['Source'].value_counts().rename(ev_str)
+    event_cnt.index.rename('LogHost', inplace=True)
+
+    if set(event_cnt.index.to_pandas())-set(host.index.to_pandas()):
+        logging.error("Found extra LogHosts. UNEXPECTED BEHAVIOR")
+    host = cudf.merge(host, event_cnt, how='left', on='LogHost')
+    host[ev_str] = host[ev_str + '_x'] + host[ev_str + '_y']
+    host.drop([ev_str + '_y', ev_str + '_x'], axis=1, inplace=True)
+
+    return host
 
 
 def get_fnames(path, day_range):
@@ -344,9 +357,9 @@ def hist_util(df0, col, clust_, num_bins=8):
     return clust0_hist, clustrem_hist, bins
 
 
-def compute_val_counts(df_, col, clust_):
-    freq_0 = df_.loc[df_[clust_] == 0][col].value_counts()
-    freq_rem = df_.loc[df_[clust_] != 0][col].value_counts()
+def compute_val_counts(df, col, clust_):
+    freq_0 = df.loc[df[clust_] == 0][col].value_counts()
+    freq_rem = df.loc[df[clust_] != 0][col].value_counts()
 
     freq_0, freq_rem = 100*freq_0/freq_0.sum(), 100*freq_rem/freq_rem.sum()
     freqs =  pd.merge(freq_0, freq_rem, left_index=True,
@@ -355,23 +368,23 @@ def compute_val_counts(df_, col, clust_):
     return freqs
 
 
-def compute_chars(df_, clust_, num_days=1, cluster_id='all',
+def compute_chars(df, clust_, num_days=1, cluster_id='all',
                   write_differences=False, verbose=False,
                   top_diff_summary_feats=10,
                   top_diff_detail_feats=8):
-    pddf = df_.to_pandas()
-    clusters = df_[clust_].value_counts().rename('clust_size')
+    pddf = df.to_pandas()
+    clusters = df[clust_].value_counts().rename('clust_size')
     clusters = clusters.reset_index().rename({'index':clust_}, axis=1)
     ignore_cols = [clust_,'LogHost', 'num_accnt_logons','num_accnt_succ_logons']
-    for col in set(df_.columns)-set(ignore_cols):
-        colmean = df_.groupby(clust_, as_index=False)[col].mean().rename(col+'_mean')
+    for col in set(df.columns)-set(ignore_cols):
+        colmean = df.groupby(clust_, as_index=False)[col].mean().rename(col+'_mean')
         colmean /= num_days
 
-        df_[col + '_nz'] =df_[col].fillna(0).astype(bool)
-        colnonzero = df_.groupby(clust_, as_index=False)[col+'_nz'].sum()
+        df[col + '_nz'] =df[col].fillna(0).astype(bool)
+        colnonzero = df.groupby(clust_, as_index=False)[col+'_nz'].sum()
         colstats = cudf.merge(colmean, colnonzero, on=clust_, how='outer')
 
-        colmedian = df_.groupby(clust_, as_index=False)[col].median().rename(col+'_median')
+        colmedian = df.groupby(clust_, as_index=False)[col].median().rename(col+'_median')
         colmedian /= num_days
         colstats = cudf.merge(colstats, colmedian, on=clust_, how='outer')
         clusters = cudf.merge(clusters, colstats, on=clust_)
@@ -379,14 +392,14 @@ def compute_chars(df_, clust_, num_days=1, cluster_id='all',
         #Compute mean only using non-zero values
         clusters[col + '_mean'] = clusters[col + '_mean'] * clusters['clust_size']/ clusters[col + '_nz']
 
-        clusters[col+'_nz_total'] = df_[col+'_nz'].sum()
-        clusters[col+'_mean_total'] = df_[col].sum()/(clusters[col+'_nz_total']*num_days)
-        clusters[col+'_median_total'] = df_[col].median()
+        clusters[col+'_nz_total'] = df[col+'_nz'].sum()
+        clusters[col+'_mean_total'] = df[col].sum()/(clusters[col+'_nz_total']*num_days)
+        clusters[col+'_median_total'] = df[col].median()
         clusters[col+'_mean_dev'] = clusters[col+'_mean']/clusters[col+'_mean_total'] - 1
         clusters[col+'_median_dev'] = clusters[col+'_median']/clusters[col+'_median_total'] - 1
         clusters[col+'_nz_frac'] = 100*clusters[col+'_nz']/clusters['clust_size']
-        clusters[col+'_nz_frac_total'] = 100*clusters[col+'_nz_total']/df_.shape[0]
-        clusters[col+'_nz_frac_rem'] = 100*(clusters[col+'_nz_total']-clusters[col+'_nz'])/(df_.shape[0]-clusters['clust_size'])
+        clusters[col+'_nz_frac_total'] = 100*clusters[col+'_nz_total']/df.shape[0]
+        clusters[col+'_nz_frac_rem'] = 100*(clusters[col+'_nz_total']-clusters[col+'_nz'])/(df.shape[0]-clusters['clust_size'])
 
     devcols = [col for col in clusters.columns if col.endswith('_mean_dev')]
     clusters[devcols] = clusters[devcols].fillna(0)
@@ -461,17 +474,17 @@ def draw_tsne_cuml(df, perplexity=25.0, learning_rate=100.0):
     return tsne.fit_transform(df)
 
 
-def tsneplot_util(df_, tsne_cols, color_map, title, clust):
+def tsneplot_util(df, tsne_cols, color_map, title, clust):
     """
     Utility to scatter in 2-dimension for datapoints in df DataFrame
     where TSNE transformed values are given in tsne_cols. If tsne_cols
     size is more than 2, remaining values are ignored in the scatter plot.
     """
     tsne1, tsne2 = tsne_cols[0], tsne_cols[1]
-    df_['color']='k'
+    df['color']='k'
     for k,v  in color_map.items():
-        df_.loc[df_[clust]==k,'color']=v
-    scatter = plt.scatter(tsne1, tsne2, c='color', data=df_)
+        df.loc[df[clust]==k,'color']=v
+    scatter = plt.scatter(tsne1, tsne2, c='color', data=df)
     plt.xlabel('tSNE1')
     plt.ylabel('tSNE2')
     plt.title(title)
