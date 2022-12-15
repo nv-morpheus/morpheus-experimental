@@ -192,7 +192,8 @@ def compute_username_domain_cnt(df, host, srcdict):
 def logon_types(df, host, valid_logon_types):
     """
     Computes number of logins by each LogonType present in valid_logon_types.
-    Counts separately for each host present in LogHost and Source columns.
+
+    Counts for each host present in LogHost and Source columns separately.
 
     Returns:
         host(DataFrame): host with updated values in 'logon_type_x' and
@@ -224,8 +225,8 @@ def logon_types(df, host, valid_logon_types):
 
 def compute_diff_source_logon_cnt(df, host, srcdict):
     """
-    For each LogHost, Computes total number of unique sources with some event
-    Looks at all EventTypes.
+    For each LogHost, compute total number of unique hosts in 'Source'
+    Does not filter by EventID, considers all EventTypes.
     """
 
     df = df[['LogHost', 'Source']].copy()
@@ -242,10 +243,11 @@ def compute_diff_source_logon_cnt(df, host, srcdict):
         'LogHost': srcdict['Sources'].keys(),
         'Source_cnt': [len(v) for v in srcdict['Sources'].values()]})
 
-    comb = cudf.merge(host['Source_cnt'].reset_index(), src_cnt_df, how='outer', on='LogHost')
+    comb = cudf.merge(
+        host['Source_cnt'].reset_index(), src_cnt_df, how='outer', on='LogHost')
 
     # Source_cnt_x has source counts from prev, Source_cnt_y has updated source
-    #  counts only for hosts present in new data.
+    # counts only for hosts present in new data.
     comb.loc[~comb['Source_cnt_y'].isna(), 'Source_cnt_x'] = 0
     comb = comb.fillna({'Source_cnt_y':0})
 

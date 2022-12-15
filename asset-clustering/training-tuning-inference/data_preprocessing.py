@@ -38,12 +38,12 @@ EVENTIDFORSOURCE_CNTFEAT = [
 EVENTIDFORDEST_CNTFEAT = [(4648, 'logon_explicit_cred_to_cnt')]
 
 
-def host_aggr(df_, host_, uniq_values_dict, count_cols):
+def host_aggr(df, host, uniq_values_dict, count_cols):
     """
     Args:
-        df_: cudf DataFrame with the data read from windows event logs file
+        df: cudf DataFrame with the data read from windows event logs file
 
-        host_: DataFrame of hosts seen so far, with aggregated features
+        host: DataFrame of hosts seen so far, with aggregated features
 
         uniq_values_dict: Dictionary with (k,v) pairs being (field, dict_)
             where dict_ represents, for the given 'field', a dictionary of (k,v)
@@ -52,13 +52,13 @@ def host_aggr(df_, host_, uniq_values_dict, count_cols):
         count_cols: List of features that represents counts
 
     Returns:
-        host_: Updated host_ with data from df_
+        host: Updated host with data from df
 
-        uniq_values_dict: Updated uniq_values_dict with data from df_
+        uniq_values_dict: Updated uniq_values_dict with data from df
     """
 
-    newhosts = set(df_['LogHost'].to_pandas()).union(set(df_['Source'].to_pandas()))
-    newhosts = newhosts - set(host_.index.to_pandas())
+    newhosts = set(df['LogHost'].to_pandas()).union(set(df['Source'].to_pandas()))
+    newhosts = newhosts - set(host.index.to_pandas())
     newhosts.discard(None)
 
     frac_cols = ['uname_other_compacnt_login_frac','uname_that_compacnt_login_frac']
@@ -66,40 +66,40 @@ def host_aggr(df_, host_, uniq_values_dict, count_cols):
     newhost[count_cols] = 0
     newhost[frac_cols] = 0.0
 
-    if host_.shape[0] == 0:
-        host_ = newhost.copy()
+    if host.shape[0] == 0:
+        host = newhost.copy()
     else:
-        host_ = cudf.concat([host_, newhost], axis=0)
+        host = cudf.concat([host, newhost], axis=0)
 
-    numrows = df_.shape[0]
+    numrows = df.shape[0]
     # Remove rows if Both SOURCE & DESTINATION neq NA since LogHost is meaningless
     # in a directed authentication event with both SOURCE & DESTINATION present.
-    df_ = df_.loc[(df_['Source'].isna()) | (df_['Destination'].isna())]
-    if numrows < df_.shape[0]:
+    df = df.loc[(df['Source'].isna()) | (df['Destination'].isna())]
+    if numrows < df.shape[0]:
         logging.debug("Filtering Rows if SOURCE & DESTINATION neq NA")
-        logging.debug("Removed {} ROWS".format(numrows-df_.shape[0]))
+        logging.debug("Removed {} ROWS".format(numrows-df.shape[0]))
 
-    host_ = compute_logins_with_loghostuname(df_, host_, login_eventids=[4624, 4625])
-    host_ = logon_types(df_, host_, VALID_LOGON_TYPES)
-    host_, uniq_values_dict = compute_diff_source_logon_cnt(df_, host_, uniq_values_dict)
-    host_, uniq_values_dict = compute_username_cnt(df_, host_, uniq_values_dict)
-    host_, uniq_values_dict = compute_username_domain_cnt(df_, host_, uniq_values_dict)
+    host = compute_logins_with_loghostuname(df, host, login_eventids=[4624,])
+    host = logon_types(df, host, VALID_LOGON_TYPES)
+    host, uniq_values_dict = compute_diff_source_logon_cnt(df, host, uniq_values_dict)
+    host, uniq_values_dict = compute_username_cnt(df, host, uniq_values_dict)
+    host, uniq_values_dict = compute_username_domain_cnt(df, host, uniq_values_dict)
 
     for evtuple in EVENTID_CNTFEAT:
         evid, ev_str = evtuple
-        host_ = compute_eventid_cnt(df_ , evid, ev_str, host_)
+        host = compute_eventid_cnt(df , evid, ev_str, host)
 
     for evtuple in EVENTIDFORSOURCE_CNTFEAT:
         evid, ev_str = evtuple
-        host_ = compute_eventid_cnt_source(df_ , evid, ev_str, host_)
-    host_[count_cols] = host_[count_cols].fillna(value=0, inplace=False)
-    host_['uname_other_compacnt_login_frac'] = host_['uname_other_compacnt_login_cnt']/host_['total_logins_cnt']
-    host_['uname_other_compacnt_login_frac'] = host_['uname_other_compacnt_login_frac'].replace(np.inf, -1.)
+        host = compute_eventid_cnt_source(df , evid, ev_str, host)
+    host[count_cols] = host[count_cols].fillna(value=0, inplace=False)
+    host['uname_other_compacnt_login_frac'] = host['uname_other_compacnt_login_cnt']/host['total_logins_cnt']
+    host['uname_other_compacnt_login_frac'] = host['uname_other_compacnt_login_frac'].replace(np.inf, -1.)
 
-    host_['uname_that_compacnt_login_frac'] = host_['uname_that_compacnt_login_cnt']/host_['total_logins_cnt']
-    host_['uname_that_compacnt_login_frac'] = host_['uname_that_compacnt_login_frac'].replace(np.inf, -1.)
+    host['uname_that_compacnt_login_frac'] = host['uname_that_compacnt_login_cnt']/host['total_logins_cnt']
+    host['uname_that_compacnt_login_frac'] = host['uname_that_compacnt_login_frac'].replace(np.inf, -1.)
 
-    return host_, uniq_values_dict
+    return host, uniq_values_dict
 
 
 def initialize_hostdf():
@@ -171,12 +171,12 @@ def read_process_data(wls_files, readsize=1000000, max_lines=1e15):
                 proc_speed = 1000.0*total_lines / (time.time() - t0)
                 logging.info(
                     '{:.3f}M Lines, {:.2f}K/sec'.format(total_lines, proc_speed))
-                logging.debug('host shape:{}'.format(host_df.shape))
+                logging.debug('host shape:{}'.format(hostdf.shape))
             if total_lines*1e6 > max_lines:
                     logging.info("Breaking for loop. total_lines={}>{}".format(total_lines, max_lines))
                     break
         fi.close()
-    return host_df
+    return hostdf
 
 
 @click.command()
