@@ -343,9 +343,9 @@ def get_fnames(path, day_range):
     return wls_files
 
 
-def hist_util(df0, col, clust_, num_bins=8):
+def hist_util(df0, col, clust, num_bins=8):
     coldf = df0.dropna(axis=0, subset=[col])
-    col_clust0, col_clustrest = coldf.loc[coldf[clust_] == 0, col], coldf.loc[coldf[clust_] != 0, col]
+    col_clust0, col_clustrest = coldf.loc[coldf[clust] == 0, col], coldf.loc[coldf[clust] != 0, col]
 
     val_25pct, val_75pct = np.percentile(col_clust0.loc[col_clust0!=0], [25, 75])
 
@@ -359,9 +359,9 @@ def hist_util(df0, col, clust_, num_bins=8):
     return clust0_hist, clustrem_hist, bins
 
 
-def compute_val_counts(df, col, clust_):
-    freq_0 = df.loc[df[clust_] == 0][col].value_counts()
-    freq_rem = df.loc[df[clust_] != 0][col].value_counts()
+def compute_val_counts(df, col, clust):
+    freq_0 = df.loc[df[clust] == 0][col].value_counts()
+    freq_rem = df.loc[df[clust] != 0][col].value_counts()
 
     freq_0, freq_rem = 100*freq_0/freq_0.sum(), 100*freq_rem/freq_rem.sum()
     freqs =  pd.merge(freq_0, freq_rem, left_index=True,
@@ -370,26 +370,26 @@ def compute_val_counts(df, col, clust_):
     return freqs
 
 
-def compute_chars(df, clust_, num_days=1, cluster_id='all',
+def compute_chars(df, clust, num_days=1, cluster_id='all',
                   write_differences=False, verbose=False,
                   top_diff_summary_feats=10,
                   top_diff_detail_feats=8):
     pddf = df.to_pandas()
-    clusters = df[clust_].value_counts().rename('clust_size')
-    clusters = clusters.reset_index().rename({'index':clust_}, axis=1)
-    ignore_cols = [clust_,'LogHost', 'num_accnt_logons','num_accnt_succ_logons']
+    clusters = df[clust].value_counts().rename('clust_size')
+    clusters = clusters.reset_index().rename({'index':clust}, axis=1)
+    ignore_cols = [clust,'LogHost', 'num_accnt_logons','num_accnt_succ_logons']
     for col in set(df.columns)-set(ignore_cols):
-        colmean = df.groupby(clust_, as_index=False)[col].mean().rename(col+'_mean')
+        colmean = df.groupby(clust, as_index=False)[col].mean().rename(col+'_mean')
         colmean /= num_days
 
         df[col + '_nz'] =df[col].fillna(0).astype(bool)
-        colnonzero = df.groupby(clust_, as_index=False)[col+'_nz'].sum()
-        colstats = cudf.merge(colmean, colnonzero, on=clust_, how='outer')
+        colnonzero = df.groupby(clust, as_index=False)[col+'_nz'].sum()
+        colstats = cudf.merge(colmean, colnonzero, on=clust, how='outer')
 
-        colmedian = df.groupby(clust_, as_index=False)[col].median().rename(col+'_median')
+        colmedian = df.groupby(clust, as_index=False)[col].median().rename(col+'_median')
         colmedian /= num_days
-        colstats = cudf.merge(colstats, colmedian, on=clust_, how='outer')
-        clusters = cudf.merge(clusters, colstats, on=clust_)
+        colstats = cudf.merge(colstats, colmedian, on=clust, how='outer')
+        clusters = cudf.merge(clusters, colstats, on=clust)
 
         #Compute mean only using non-zero values
         clusters[col + '_mean'] = clusters[col + '_mean'] * clusters['clust_size']/ clusters[col + '_nz']
@@ -406,7 +406,7 @@ def compute_chars(df, clust_, num_days=1, cluster_id='all',
     devcols = [col for col in clusters.columns if col.endswith('_mean_dev')]
     clusters[devcols] = clusters[devcols].fillna(0)
     for idx in range(clusters.shape[0]):
-        clust_num = clusters[clust_].iloc[idx]
+        clust_num = clusters[clust].iloc[idx]
         if cluster_id != 'all':
             if clust_num != cluster_id:
                 continue
@@ -430,8 +430,8 @@ def compute_chars(df, clust_, num_days=1, cluster_id='all',
 
         for col in cols:
             col = col[:-8]
-            freq_0 = pddf.loc[pddf[clust_]==0][col].value_counts()
-            freq_rem = pddf.loc[pddf[clust_]!=0][col].value_counts()
+            freq_0 = pddf.loc[pddf[clust]==0][col].value_counts()
+            freq_rem = pddf.loc[pddf[clust]!=0][col].value_counts()
             freq_0, freq_rem = 100*freq_0/freq_0.sum(), 100*freq_rem/freq_rem.sum()
             freqs =  cudf.merge(freq_0, freq_rem, left_index=True, right_index=True, how='outer')
             freqs.fillna(0, inplace=True)

@@ -218,7 +218,7 @@ def rename_labels(ser):
     return renamed_ser
 
 
-def experiment_clust_methods(df_norm_,
+def experiment_clust_methods(df_norm,
                             models=['KMeans', 'DBScan'],
                             km_clust_min=2,
                             km_clust_max=30,
@@ -237,7 +237,7 @@ def experiment_clust_methods(df_norm_,
     """
 
     if 'KMeans' in models:
-        _ = iterate_kmeans(df_norm_,
+        _ = iterate_kmeans(df_norm,
                         clust_min=km_clust_min,
                         clust_max=km_clust_max,
                         delta=km_clust_delta)
@@ -245,13 +245,13 @@ def experiment_clust_methods(df_norm_,
     if 'DBScan' in models:
         print("Iterating for DBScan method using distance metrics:Minkowski Param= 1/2, 1, 2")
         print("\nMinkowski Param 1/2")
-        iterate_dbscan(df_norm_, metric_p=0.5)
+        iterate_dbscan(df_norm, metric_p=0.5)
 
         print("\nManhattan Distance-Minkowski Param 1")
-        iterate_dbscan(df_norm_, metric_p=1, verbose=True)
+        iterate_dbscan(df_norm, metric_p=1, verbose=True)
 
         print("\nEuclidean Distance-Minkowski Param 2")
-        iterate_dbscan(df_norm_, metric_p=2, verbose=True)
+        iterate_dbscan(df_norm, metric_p=2, verbose=True)
 
 
 def get_silhouette_scores(df, labels, metric='euclidean', verbose=True):
