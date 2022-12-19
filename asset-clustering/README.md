@@ -26,7 +26,7 @@ pip install -r requirements.txt
 
 #### Training data
 In this project we use the publicly available __[**Unified Host and Network Data Set**](https://csr.lanl.gov/data/2017/)__[1] dataset from the Advanced Research team in Cyber Systems of the Los Alamos National Laboratory (lanl) to demonstrate various aspects involved in clustering assets in a given network.
-The lanl dataset consists of netflow and windows event log (wls) files for 90 days. For this project we focus solely on the windows event log files which use the naming convention wls_day-01.bz2, wls_day-02.bz2,..., wls_day-90.bz2. The training data uses first ten days of data i.e. wls_day-01.bz2,..., wls_day-10.bz2. These ten days' data is pre-processed and the features are aggregated. The resulting dataset contains 14044 hosts and is saved in datasets/host_agg_data_day-01_day-10.csv.
+The lanl dataset consists of netflow and windows event log (wls) files for 90 days. For this project we focus solely on the windows event log files which use the naming convention wls_day-01.bz2, wls_day-02.bz2,..., wls_day-90.bz2. The training data uses first ten days of data i.e. wls_day-01.bz2,..., wls_day-10.bz2. Note that for purposes of scale and quick reproducibility, we use only first ten days of data to experiment. One can easily use more data by changing the input file suffix. Refer to experiment.ipynb for more details. These ten days' data is pre-processed and the features are aggregated. The resulting dataset contains 14044 hosts and is saved in datasets/host_agg_data_day-01_day-10.csv.
 
 
 #### Training parameters
@@ -54,7 +54,10 @@ This saves trained model files under `../models` directory. Then the inference s
 ```
 python inference.py --model dbscan
 ```
-When the above command is executed, dbscan clustering is performed on the windows event logs data from days 11 to 15. This data is pre-processed and aggregated to a validation dataset which can be found at datasets/host_agg_data_day-11_day-15.csv. This contains a total of 12606 hosts.
+When the above command is executed, dbscan clustering is performed on the windows event logs data from days 11 to 15. This data is pre-processed and aggregated to a validation dataset which can be found at datasets/host_agg_data_day-11_day-15.csv. This contains a total of 12606 hosts. One can similarly run inference using KMeans clustering model.
+```
+python inference.py --model kmeans
+```
 
 
 ### Inference Output
