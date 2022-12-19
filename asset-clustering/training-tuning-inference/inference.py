@@ -35,24 +35,24 @@ def run(**kwargs):
 
     if model=='dbscan':
         fname = model_path + 'dbscan_eps0.0005.pkl'
-        clust_ = "cluster_dbscan_eps0.0005_minkp1"
+        clust = "cluster_dbscan_eps0.0005_minkp1"
 
         dbsc_model, pca, pca_dims = pickle.load(open(fname, "rb"))
         df_pca = pca.transform(df_norm).iloc[:,:pca_dims]
-        df[clust_] = dbsc_model.fit_predict(df_pca)
+        df[clust] = dbsc_model.fit_predict(df_pca)
 
     elif model=='kmeans':
         fname = model_path + 'kmeans_16clusts.pkl'
-        clust_ = "cluster_KM_16"
+        clust = "cluster_KM_16"
 
         kmeans_model, pca, pca_dims = pickle.load(open(fname, "rb"))
         df_pca = pca.transform(df_norm).iloc[:,:pca_dims]
-        df[clust_] = kmeans_model.predict(df_pca)
+        df[clust] = kmeans_model.predict(df_pca)
 
-    print("Cluster Size:\n{}".format(df[clust_].value_counts()))
+    print("Cluster Size:\n{}".format(df[clust].value_counts()))
 
     if compute_cluster_chars:
-        cluster_chars = compute_chars(df, clust_, cluster_id=0, num_days=num_days)
+        cluster_chars = compute_chars(df, clust, cluster_id=0, num_days=num_days)
 
     return
 

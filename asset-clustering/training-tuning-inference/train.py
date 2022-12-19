@@ -324,7 +324,7 @@ def run(**kwargs):
             fname = model_path + "dbscan_eps{}.pkl".format(eps_dbsc)
             df, dbsc_model = predict_dbscan(df, df_pca,  eps=eps_dbsc, metric_p=1)
             pickle.dump((dbsc_model, pca, pca_dims), open(fname, "wb"))
-            clust_ = 'cluster_dbscan_eps{}_minkp1'.format(eps_dbsc)
+            clust = 'cluster_dbscan_eps{}_minkp1'.format(eps_dbsc)
     elif model=='kmeans':
         if experiment:
             experiment_clust_methods(df, df_pca, models=['KMeans'])
@@ -332,10 +332,10 @@ def run(**kwargs):
             fname = model_path + "kmeans_{}clusts.pkl".format(clusters_km)
             df, kmeans_model = predict_kmeans(clusters_km, df, df_pca)
             pickle.dump((kmeans_model, pca, pca_dims), open(fname, "wb"))
-            clust_ = 'cluster_KM_{}'.format(clusters_km)
+            clust = 'cluster_KM_{}'.format(clusters_km)
 
     if not experiment and compute_cluster_chars:
-        cluster_chars = compute_chars(df, clust_, cluster_id=0, num_days=num_days)
+        cluster_chars = compute_chars(df, clust, cluster_id=0, num_days=num_days)
 
     return
 
