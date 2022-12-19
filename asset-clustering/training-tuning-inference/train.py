@@ -5,6 +5,7 @@ import sklearn.cluster as skcluster
 import cudf
 import cuml
 from cuml.metrics.cluster import silhouette_score
+from sklearn.metrics import silhouette_score as sk_silhouette_score
 import pickle
 import click
 from utils import compute_chars, normalize_host_data
@@ -42,8 +43,8 @@ def get_kmeans(n_clusters=5):
     return kmeans_model
 
 
-def iterate_kmeans(df_, verbose=True, clust_min=2,clust_max=30, delta=2):
-    """For KMeans, iterate over cluster sizes- starting with clust_min, up to
+def iterate_kmeans(df, verbose=True, clust_min=2,clust_max=30, delta=2):
+    """For KMeans, iterate over cluster sizes  - starting with clust_min, up to
     clust_max, in increments of delta.
     If verbose is True, outputs (num. of Clusters: inertia) to stdout
 
@@ -55,14 +56,14 @@ def iterate_kmeans(df_, verbose=True, clust_min=2,clust_max=30, delta=2):
     """
     labels = cudf.DataFrame()
     inertia_dict = {}
-    for n_clusters_ in range(clust_min, clust_max, delta):
-        model = get_kmeans(n_clusters_=n_clusters_)
-        model = train(df_, model)
-        inertia_dict[n_clusters_] = model.inertia_
-        labels['KMeans_'+str(n_clusters_)] = model.predict(df_)
+    for n_clusters in range(clust_min, clust_max, delta):
+        model = get_kmeans(n_clusters=n_clusters)
+        model = train(df, model)
+        inertia_dict[n_clusters] = model.inertia_
+        labels['KMeans_'+str(n_clusters)] = model.predict(df)
         if verbose:
-            print("Clusters:{}, Inertia:{}".format(n_clusters_,
-                                               inertia_dict[n_clusters_]))
+            print("Clusters:{}, Inertia:{}".format(n_clusters,
+                                               inertia_dict[n_clusters]))
     return inertia_dict, labels
 
 
@@ -122,7 +123,7 @@ def get_dbscan(metric_p=1, eps=0.5, min_samples=8, library='cuml'):
     In case of cuml, Euclidean is the default distance metric.
     """
 
-    assert library in ('cuml', 'sklearn'), "Valid choices are cuml"
+    assert library in ('cuml', 'sklearn'), "Valid choices are cuml or sklearn"
     if library == 'cuml':
         dbscan = cuml.DBSCAN(
             eps=eps, min_samples=min_samples,
@@ -137,7 +138,7 @@ def get_dbscan(metric_p=1, eps=0.5, min_samples=8, library='cuml'):
     return dbscan
 
 
-def iterate_dbscan(df_, metric_p=1, verbose=True, library='sklearn'):
+def iterate_dbscan(df, metric_p=1, verbose=True, library='sklearn'):
     """For DBSCAN, iterate over eps values and analyze number of clusters found
     for each eps value. This is the most important DBSCAN parameter to choose
     appropriately.
@@ -161,21 +162,21 @@ def iterate_dbscan(df_, metric_p=1, verbose=True, library='sklearn'):
     # between different points in the dataset. Here we iterate over a large range.
     eps_iter = [0.0005*x for x in [1, 10, 20, 40, 100, 500, 1000, 2000, 3000, 5000, 10000]]
 
-    df_dbsc = df_.copy()
+    df_dbsc = df.copy()
     labels = cudf.DataFrame()
     clust_size = dict()
-    for eps_ in eps_iter:
-        dbscan = get_dbscan(metric_p=metric_p, eps_=eps_, library=library)
+    for eps in eps_iter:
+        dbscan = get_dbscan(metric_p=metric_p, eps=eps, library=library)
         if library == 'sklearn':
             df_dbsc['cluster_dbscan'] = dbscan.fit_predict(df_dbsc.to_numpy())
         elif library == 'cuml':
             df_dbsc['cluster_dbscan'] = dbscan.fit_predict(df_dbsc)
         cluster_preds = df_dbsc['cluster_dbscan']
         if verbose:
-            print("eps_value:{:.4f}, Found {} clusters".format(eps_, cluster_preds.nunique()))
+            print("eps_value:{:.4f}, Found {} clusters".format(eps, cluster_preds.nunique()))
         cluster_preds = rename_labels(cluster_preds)
-        clust_size[eps_] = cluster_preds.value_counts()
-        labels['eps_' + str(eps_)] = cluster_preds
+        clust_size[eps] = cluster_preds.value_counts()
+        labels['eps_' + str(eps)] = cluster_preds
 
     return clust_size, labels
 
@@ -189,7 +190,7 @@ def predict_dbscan(df_main, df_normed, eps, metric_p=1):
     df_main: DataFrame with an additional column representing DBSCAN clusters
     dbscan: Trained Clustering DBSCAN model
     """
-    dbscan = get_dbscan(metric_p=metric_p, eps_=eps)
+    dbscan = get_dbscan(metric_p=metric_p, eps=eps)
     colname = 'cluster_dbscan_eps{:.4f}_minkp{}'.format(eps,metric_p)
     df_main[colname] = dbscan.fit_predict(df_normed.values)
 
@@ -254,15 +255,21 @@ def experiment_clust_methods(df_norm,
         iterate_dbscan(df_norm, metric_p=2, verbose=True)
 
 
-def get_silhouette_scores(df, labels, metric='euclidean', verbose=True):
+def get_silhouette_scores(df, labels, metric='euclidean', verbose=True, library='sklearn'):
     """Given a DataFrame with shape (hosts, features), and clustering labels
     for different clustering methods given by their column names in labels,
     returns average Silhouette score of overall datset for each clustering
     label/column
     """
+    assert library in ('cuml', 'sklearn'), "Valid choices are cuml or sklearn"
     sh_sc = {}
     for label in labels.columns:
-        sh_sc[label] = silhouette_score(df, labels[label], metric=metric)
+        if library == 'cuml':
+            sh_sc[label] = silhouette_score(df, labels[label], metric=metric)
+        else:
+            dfpd = df.to_pandas()
+            labelspd = labels.to_pandas()
+            sh_sc[label] = sk_silhouette_score(dfpd, labelspd[label], metric=metric)
         if verbose:
             print("For clustering {}, Silhouette Score is {:.3f}".format(
                 label, sh_sc[label]))
@@ -312,15 +319,15 @@ def run(**kwargs):
     # Experiment or Training for the given clustering method
     if model=='dbscan':
         if experiment:
-            experiment_clust_methods(df, df_pca, models_=['DBScan'])
+            experiment_clust_methods(df, df_pca, models=['DBScan'])
         else:
             fname = model_path + "dbscan_eps{}.pkl".format(eps_dbsc)
-            df, dbsc_model = predict_dbscan(df, df_pca,  eps_=eps_dbsc, metric_p=1)
+            df, dbsc_model = predict_dbscan(df, df_pca,  eps=eps_dbsc, metric_p=1)
             pickle.dump((dbsc_model, pca, pca_dims), open(fname, "wb"))
             clust_ = 'cluster_dbscan_eps{}_minkp1'.format(eps_dbsc)
     elif model=='kmeans':
         if experiment:
-            experiment_clust_methods(df, df_pca, models_=['KMeans'])
+            experiment_clust_methods(df, df_pca, models=['KMeans'])
         else:
             fname = model_path + "kmeans_{}clusts.pkl".format(clusters_km)
             df, kmeans_model = predict_kmeans(clusters_km, df, df_pca)

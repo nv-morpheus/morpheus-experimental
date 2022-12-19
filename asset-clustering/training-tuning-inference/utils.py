@@ -373,13 +373,14 @@ def compute_val_counts(df, col, clust):
 def compute_chars(df, clust, num_days=1, cluster_id='all',
                   write_differences=False, verbose=False,
                   top_diff_summary_feats=10,
-                  top_diff_detail_feats=8):
-    pddf = df.to_pandas()
+                   top_diff_detail_feats=8):
     clusters = df[clust].value_counts().rename('clust_size')
     clusters = clusters.reset_index().rename({'index':clust}, axis=1)
     ignore_cols = [clust,'LogHost', 'num_accnt_logons','num_accnt_succ_logons']
+
+    groupby_clust = df.groupby(clust, as_index=False)
     for col in set(df.columns)-set(ignore_cols):
-        colmean = df.groupby(clust, as_index=False)[col].mean().rename(col+'_mean')
+        colmean = groupby_clust[col].mean().rename(col+'_mean')
         colmean /= num_days
 
         df[col + '_nz'] =df[col].fillna(0).astype(bool)
@@ -391,7 +392,7 @@ def compute_chars(df, clust, num_days=1, cluster_id='all',
         colstats = cudf.merge(colstats, colmedian, on=clust, how='outer')
         clusters = cudf.merge(clusters, colstats, on=clust)
 
-        #Compute mean only using non-zero values
+        # Compute mean only using non-zero values
         clusters[col + '_mean'] = clusters[col + '_mean'] * clusters['clust_size']/ clusters[col + '_nz']
 
         clusters[col+'_nz_total'] = df[col+'_nz'].sum()
@@ -430,8 +431,8 @@ def compute_chars(df, clust, num_days=1, cluster_id='all',
 
         for col in cols:
             col = col[:-8]
-            freq_0 = pddf.loc[pddf[clust]==0][col].value_counts()
-            freq_rem = pddf.loc[pddf[clust]!=0][col].value_counts()
+            freq_0 = df.loc[df[clust]==0][col].value_counts()
+            freq_rem = df.loc[df[clust]!=0][col].value_counts()
             freq_0, freq_rem = 100*freq_0/freq_0.sum(), 100*freq_rem/freq_rem.sum()
             freqs =  cudf.merge(freq_0, freq_rem, left_index=True, right_index=True, how='outer')
             freqs.fillna(0, inplace=True)
@@ -458,7 +459,7 @@ def compute_chars(df, clust, num_days=1, cluster_id='all',
     return clusters
 
 
-def draw_tsne(df, init='random'):
+def fit_tsne(df, init='random'):
     """Fit a Sklearn TSNE model on the DataFrame df
 
     Returns the TSNE transformed input.
@@ -467,7 +468,7 @@ def draw_tsne(df, init='random'):
     return tsne.fit_transform(df)
 
 
-def draw_tsne_cuml(df, perplexity=25.0, learning_rate=100.0):
+def fit_tsne_cuml(df, perplexity=25.0, learning_rate=100.0):
     """Fit a cuml TSNE model on the DataFrame df
 
     Returns the TSNE transformed input.
