@@ -22,6 +22,28 @@ git clone https://github.com/nv-morpheus/morpheus-experimental $MORPHEUS_EXPERIM
 cd $MORPHEUS_EXPERIMENTAL_ROOT
 ```
 
+### Build Morpheus Experimental Container
+
+To assist in building a Morpheus Experimental container, several scripts have been provided in the `./docker` directory. To build the "release" container, run the following:
+
+```bash
+./docker/build_container.sh
+```
+
+This will create an image named `nvcr.io/nvidia/morpheus/mor_exp:${MORPHEUS_EXPERIMENTAL_VERSION}-runtime` where `$MORPHEUS_EXPERIMENTAL_VERSION` is replaced by the output of `git describe --tags --abbrev=0`.
+
+To run the built "release" container, use the following:
+
+```bash
+./docker/run_container.sh
+```
+
+You can specify different Docker images and tags by passing the script the `DOCKER_IMAGE_TAG`, and `DOCKER_IMAGE_TAG` variables respectively. For example, to run version `v22.09.00a` use the following:
+
+```bash
+DOCKER_IMAGE_TAG="v22.09.00a-runtime" ./docker/run_container.sh
+```
+
 ### Prototype Specific Requirements
 To get started with a specific prototype additional requirements must be installed into your environment. Each prototype directory contains its own `requirements.txt` file. 
 
