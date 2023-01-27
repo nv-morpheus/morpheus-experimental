@@ -69,6 +69,9 @@ This technique syntactically groups system log messages and finds group represen
 ## [Detection of Anomalous  authentication using Relational Graph Neural Network (RGCN)](/anomalous-auth-detection)
 This model shows an application of a graph neural network for anomalous authentication detection in Azure-AD signon heterogeneous graph. An Azure-AD signon dataset  includes four types of nodes, authentication, user, device and service application nodes are used for modeling. A relational graph neural network (RGCN)is used to identify anomalous authentications from azure-ad signon input.
 
+## [Asset Clustering using Windows Event Logs](/asset-clustering)
+This model is a clustering algorithm to assign each host present in the dataset to a cluster based on aggregated and derived features from Windows Event Logs of that particular host.
+
 # Repo Structure
 Each prototype has its own directory that contains everything belonging to the specific prototype. Directories can include the following subfolders and documentation:
 
