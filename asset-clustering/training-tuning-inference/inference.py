@@ -24,22 +24,22 @@ from utils import normalize_host_data
 
 
 @click.command()
-@click.option('--model', 
-              default='dbscan', 
+@click.option('--model',
+              default='dbscan',
               help=('Clustering method to use. '
                     'Valid choices are \'kmeans\' or \'dbscan\'. Default is \'dbscan\'. '
                     'The corresponding model pickle file will be read from the relative '
                     'path \'../models/ \'.'))
-@click.option('--data_fname', 
+@click.option('--data_fname',
               default='host_agg_data_day-11_day-15.csv',
               help=('Name of the Preprocessed csv dataset to perofrm inference. The given '
                     'file name will be read from the relative path \'../datasets/ \''))
-@click.option('--num_days', 
-              default=5.0, 
+@click.option('--num_days',
+              default=5.0,
               help=('Number of days worth of data used '
                     'in preparing the dataset. Used to normalize the features.'))
-@click.option('--compute_cluster_chars', 
-              is_flag=True, 
+@click.option('--compute_cluster_chars',
+              is_flag=True,
               help=('Boolean flag. If '
                     'not provided, script just performs inference and output the cluster sizes. '
                     'If provided, additionally analyzes for the top salient features of each cluster '
@@ -76,14 +76,14 @@ def run(**kwargs):
     print("Cluster Size:\n{}".format(df[clust].value_counts()))
 
     if compute_cluster_chars:
-        cluster_chars = compute_chars(df, clust, cluster_id=0, num_days=num_days)
+        compute_chars(df, clust, cluster_id=0, num_days=num_days)
 
     return
 
 
 if __name__ == '__main__':
     dt = datetime.date.today()
-    logger_fname = 'logs/inference.log'.format(dt.strftime('%d%m%y'))
+    logger_fname = 'logs/inference.log'
     print("Logging in {}".format(logger_fname))
     logging.basicConfig(level=logging.DEBUG,
                         filename=logger_fname,

@@ -191,7 +191,7 @@ def read_process_data(wls_files, readsize=1000000, max_lines=1e15):
 
 @click.command()
 @click.option('--debug', is_flag=True)
-@click.option('--data_range', 
+@click.option('--data_range',
               default='day-01-day-01',
               help=('Range of dates for which wls files need to be read and preprocessed. '
                     'For example, data_range=day-01-day_03 reads wls_day-01.bz2, wls_day-02.bz2 '

@@ -355,7 +355,7 @@ def run(**kwargs):
 if __name__ == '__main__':
 
     dt = datetime.date.today()
-    logger_fname = 'logs/modeling.log'.format(dt.strftime('%d%m%y'))
+    logger_fname = 'logs/modeling.log'
     print("Logging in {}".format(logger_fname))
     logging.basicConfig(level=logging.DEBUG,
                         filename=logger_fname,
