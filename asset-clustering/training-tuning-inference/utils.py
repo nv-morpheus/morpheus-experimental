@@ -293,15 +293,13 @@ def compute_logins_with_loghostuname(df, host, login_eventids=[4624, 4625]):
     df = df.loc[df['EventID'].isin(login_eventids)]
     df_1 = df.loc[(df['UserName'].str.endswith('$')) & (df['UserName'] != df['LogHost'] + '$')]
 
-    uname_other_compacnt_login_cnt = df_1['LogHost'].value_counts()\
-                                                 .rename('uname_other_compacnt_login_cnt')
+    uname_other_compacnt_login_cnt = df_1['LogHost'].value_counts().rename('uname_other_compacnt_login_cnt')
 
     uname_other_compacnt_login_cnt.index.rename('LogHost', inplace=True)
     host = cudf.merge(host, uname_other_compacnt_login_cnt, how='outer', on='LogHost')
 
     df_2 = df.loc[df['UserName'] == df['LogHost'] + '$']
-    uname_that_compacnt_login_cnt = df_2['LogHost'].value_counts()\
-                                                 .rename('uname_that_compacnt_login_cnt')
+    uname_that_compacnt_login_cnt = df_2['LogHost'].value_counts().rename('uname_that_compacnt_login_cnt')
     uname_that_compacnt_login_cnt.index.rename('LogHost', inplace=True)
     host = cudf.merge(host, uname_that_compacnt_login_cnt, how='outer', on='LogHost')
 
@@ -527,7 +525,7 @@ def tsneplot_util(df, tsne_cols, color_map, title, clust):
     df['color'] = 'k'
     for k, v in color_map.items():
         df.loc[df[clust] == k, 'color'] = v
-    scatter = plt.scatter(tsne1, tsne2, c='color', data=df)
+    plt.scatter(tsne1, tsne2, c='color', data=df)
     plt.xlabel('tSNE1')
     plt.ylabel('tSNE2')
     plt.title(title)
