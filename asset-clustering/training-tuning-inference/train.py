@@ -18,15 +18,15 @@ import logging
 import pickle
 
 import click
-import cudf
-import cuml
 import numpy as np
 import sklearn.cluster as skcluster
-from cuml.metrics.cluster import silhouette_score
 from sklearn.metrics import silhouette_score as sk_silhouette_score
-
 from utils import compute_chars
 from utils import normalize_host_data
+
+import cudf
+import cuml
+from cuml.metrics.cluster import silhouette_score
 
 
 def pca_util(df_norm, pca_expl_variance):

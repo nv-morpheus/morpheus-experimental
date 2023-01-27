@@ -18,7 +18,6 @@ import logging
 import pickle
 
 import click
-
 from utils import compute_chars
 from utils import normalize_host_data
 
