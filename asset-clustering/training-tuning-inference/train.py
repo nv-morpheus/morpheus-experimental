@@ -18,15 +18,15 @@ import logging
 import pickle
 
 import click
-import numpy as np
-import sklearn.cluster as skcluster
-from sklearn.metrics import silhouette_score as sk_silhouette_score
-from utils import compute_chars
-from utils import normalize_host_data
-
 import cudf
 import cuml
+import numpy as np
+import sklearn.cluster as skcluster
 from cuml.metrics.cluster import silhouette_score
+from sklearn.metrics import silhouette_score as sk_silhouette_score
+
+from utils import compute_chars
+from utils import normalize_host_data
 
 
 def pca_util(df_norm, pca_expl_variance):
@@ -195,8 +195,8 @@ def iterate_dbscan(df, metric_p=1, verbose=True, library='sklearn'):
 
 def predict_dbscan(df_main, df_normed, eps, metric_p=1):
     """
-    Given the parameters \'eps\' and \'metric_p\', clustering is performed on
-    \'df_normed'\ and a cluster value assigned to each datapoint
+    Given the parameters 'eps' and 'metric_p', clustering is performed on
+    'df_normed' and a cluster value assigned to each datapoint
 
     Returns:
     df_main: DataFrame with an additional column representing DBSCAN clusters
@@ -211,7 +211,7 @@ def predict_dbscan(df_main, df_normed, eps, metric_p=1):
 
 def rename_labels(ser):
     """
-    Given a CuDf Series \'ser\' as input, where the index is hosts and values
+    Given a CuDf Series 'ser' as input, where the index is hosts and values
     represent the cluster labels.
 
     rename_labels() renames the cluster labels to 0, 1,...,n in order of
@@ -281,23 +281,31 @@ def get_silhouette_scores(df, labels, metric='euclidean', verbose=True, library=
 
 
 @click.command()
-@click.option('--data_fname', default='host_agg_data_day-01_day-10.csv',\
-     help='Name of the Preprocessed csv dataset to perofrm inference. The given'\
-    'file name will be read from the relative path \'../datasets/ \'')
-@click.option('--num_days', default=10.0, help='Number of days worth of data used'\
-    'in preparing the dataset. Used to normalize the features.')
-@click.option('--model', default='dbscan', help='Clustering method to use.'\
-     ' Valid choices are \'kmeans\' or \'dbscan\'. Default is \'dbscan\'.'\
-     'The corresponding model pickle file will be read from the relative'\
-     'path \'../models/ \'.')
-@click.option('--experiment', is_flag=True,
-    help='Boolean flag. If provided, script experiments by iterating over values for '\
-     'parameters of the respective clustering method. When not provided,'\
-     'trains and saves the model.')
-@click.option('--compute_cluster_chars', is_flag=True, help='Boolean flag. If '\
-    'not provided, script just performs inference and output the cluster sizes.'\
-    'If provided, additionally analyzes for the top salient features of each cluster'\
-    'and prints the analysis to stdout.')
+@click.option('--data_fname',
+              default='host_agg_data_day-01_day-10.csv',
+              help=('Name of the Preprocessed csv dataset to perofrm inference. The given '
+                    'file name will be read from the relative path \'../datasets/ \''))
+@click.option('--num_days',
+              default=10.0,
+              help=('Number of days worth of data used '
+                    'in preparing the dataset. Used to normalize the features.'))
+@click.option('--model',
+              default='dbscan',
+              help=('Clustering method to use. '
+                    'Valid choices are \'kmeans\' or \'dbscan\'. Default is \'dbscan\'. '
+                    'The corresponding model pickle file will be read from the relative '
+                    'path \'../models/ \'.'))
+@click.option('--experiment',
+              is_flag=True,
+              help=('Boolean flag. If provided, script experiments by iterating over values for '
+                    'parameters of the respective clustering method. When not provided, '
+                    'trains and saves the model.'))
+@click.option('--compute_cluster_chars',
+              is_flag=True,
+              help=('Boolean flag. If '
+                    'not provided, script just performs inference and output the cluster sizes. '
+                    'If provided, additionally analyzes for the top salient features of each cluster '
+                    'and prints the analysis to stdout.'))
 def run(**kwargs):
     dataset_path = '../datasets/'
     model_path = '../models/'
@@ -339,7 +347,7 @@ def run(**kwargs):
             clust = 'cluster_KM_{}'.format(clusters_km)
 
     if not experiment and compute_cluster_chars:
-        cluster_chars = compute_chars(df, clust, cluster_id=0, num_days=num_days)
+        compute_chars(df, clust, cluster_id=0, num_days=num_days)
 
     return
 
