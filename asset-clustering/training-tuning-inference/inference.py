@@ -16,6 +16,7 @@
 import datetime
 import logging
 import pickle
+
 import click
 from utils import compute_chars
 from utils import normalize_host_data
@@ -45,23 +46,23 @@ def run(**kwargs):
     assert model in ['kmeans', 'dbscan'], \
         "Valid choices for model are kmeans or dbscan"
 
-    data_path =  dataset_path + kwargs['data_fname']
+    data_path = dataset_path + kwargs['data_fname']
     df, df_norm = normalize_host_data(data_path)
 
-    if model=='dbscan':
+    if model == 'dbscan':
         fname = model_path + 'dbscan_eps0.0005.pkl'
         clust = "cluster_dbscan_eps0.0005_minkp1"
 
         dbsc_model, pca, pca_dims = pickle.load(open(fname, "rb"))
-        df_pca = pca.transform(df_norm).iloc[:,:pca_dims]
+        df_pca = pca.transform(df_norm).iloc[:, :pca_dims]
         df[clust] = dbsc_model.fit_predict(df_pca)
 
-    elif model=='kmeans':
+    elif model == 'kmeans':
         fname = model_path + 'kmeans_16clusts.pkl'
         clust = "cluster_KM_16"
 
         kmeans_model, pca, pca_dims = pickle.load(open(fname, "rb"))
-        df_pca = pca.transform(df_norm).iloc[:,:pca_dims]
+        df_pca = pca.transform(df_norm).iloc[:, :pca_dims]
         df[clust] = kmeans_model.predict(df_pca)
 
     print("Cluster Size:\n{}".format(df[clust].value_counts()))
@@ -76,7 +77,9 @@ if __name__ == '__main__':
     dt = datetime.date.today()
     logger_fname = 'logs/inference.log'.format(dt.strftime('%d%m%y'))
     print("Logging in {}".format(logger_fname))
-    logging.basicConfig(level=logging.DEBUG, filename=logger_fname,
-                        filemode='a', format='%(asctime)s: %(message)s',
+    logging.basicConfig(level=logging.DEBUG,
+                        filename=logger_fname,
+                        filemode='a',
+                        format='%(asctime)s: %(message)s',
                         datefmt='%m%d-%H%M')
     run()
