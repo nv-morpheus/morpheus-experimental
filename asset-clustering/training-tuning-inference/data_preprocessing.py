@@ -20,10 +20,18 @@ from collections import defaultdict
 from itertools import chain
 
 import click
-import numpy as np
-from utils import *
-
 import cudf
+import numpy as np
+
+from utils import compute_diff_source_logon_cnt
+from utils import compute_eventid_cnt
+from utils import compute_eventid_cnt_source
+from utils import compute_logins_with_loghostuname
+from utils import compute_username_cnt
+from utils import compute_username_domain_cnt
+from utils import logon_types
+from utils import read_wls
+
 
 VALID_LOGON_TYPES = {0, 2, 3, 4, 5, 7, 8, 9, 10, 11, 12}
 
@@ -173,12 +181,12 @@ def read_process_data(wls_files, readsize=1000000, max_lines=1e15):
             if iter_ % 10000 == 0:
                 proc_speed = 1000.0 * total_lines / (time.time() - t0)
                 logging.info('{:.3f}M Lines, {:.2f}K/sec'.format(total_lines, proc_speed))
-                logging.debug('host shape:{}'.format(hostdf.shape))
+                logging.debug('host shape:{}'.format(host_df.shape))
             if total_lines * 1e6 > max_lines:
                 logging.info("Breaking for loop. total_lines={}>{}".format(total_lines, max_lines))
                 break
         fi.close()
-    return hostdf
+    return host_df
 
 
 @click.command()
