@@ -1,40 +1,53 @@
-import cudf
+# SPDX-FileCopyrightText: Copyright (c) 2023 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 import bz2
 import logging
 import time
-import click
-import numpy as np
-from utils import *
 from collections import defaultdict
 from itertools import chain
+
+import click
+import numpy as np
+from utils import compute_diff_source_logon_cnt
+from utils import compute_eventid_cnt
+from utils import compute_eventid_cnt_source
+from utils import compute_logins_with_loghostuname
+from utils import compute_username_cnt
+from utils import compute_username_domain_cnt
+from utils import get_fnames
+from utils import logon_types
+from utils import read_wls
+
+import cudf
 
 VALID_LOGON_TYPES = {0, 2, 3, 4, 5, 7, 8, 9, 10, 11, 12}
 
 # List of tuples (EventID, feature name), where a feature name denotes
 # frequency of corresp. EventID, by asset appearing in LogHost field.
-EVENTID_CNTFEAT = [
-    (4624, 'total_logins_cnt'),
-    (4625, 'accnt_fail_logon_cnt'),
-    (4634, 'total_logoff_cnt'),
-    (4647, 'total_user_initi_logoff_cnt'),
-    (4648, 'logon_explicit_cred_frm_cnt'),
-    (4672, 'spl_pvlgs'),
-    (4776, 'domain_ctr_validate_cnt'),
-    (4802, 'scrnsaver_invok_cnt'),
-    (4803, 'scrnsaver_dismiss_cnt')]
+EVENTID_CNTFEAT = [(4624, 'total_logins_cnt'), (4625, 'accnt_fail_logon_cnt'), (4634, 'total_logoff_cnt'),
+                   (4647, 'total_user_initi_logoff_cnt'), (4648, 'logon_explicit_cred_frm_cnt'), (4672, 'spl_pvlgs'),
+                   (4776, 'domain_ctr_validate_cnt'), (4802, 'scrnsaver_invok_cnt'), (4803, 'scrnsaver_dismiss_cnt')]
 # (4768, 'TGT_req_cnt'), (4769, 'TGS_req_cnt')
 # 4768 & 4769 not used since 100% of LogHost for 4768,4769 is ActiveDirectory
 
 # EVENTIDFORSOURCE_CNTFEAT & EVENTIDFORDEST_CNTFEAT are similar to EVENTID_CNTFEAT
 # except that they corresp. to frequency of an EventID, by asset, appearing in
 #  Source & Destination fields resp.
-EVENTIDFORSOURCE_CNTFEAT = [
-    (4624, 'total_logins_src_cnt'),
-    (4625, 'accnt_fail_logon_src_cnt'),
-    (4768, 'TGT_req_src_cnt'),
-    (4769, 'TGS_req_src_cnt'),
-    (4776, 'domain_ctr_validate_src_cnt')
-    ]
+EVENTIDFORSOURCE_CNTFEAT = [(4624, 'total_logins_src_cnt'), (4625, 'accnt_fail_logon_src_cnt'),
+                            (4768, 'TGT_req_src_cnt'), (4769, 'TGS_req_src_cnt'), (4776, 'domain_ctr_validate_src_cnt')]
 EVENTIDFORDEST_CNTFEAT = [(4648, 'logon_explicit_cred_to_cnt')]
 
 
@@ -61,7 +74,7 @@ def host_aggr(df, host, uniq_values_dict, count_cols):
     newhosts = newhosts - set(host.index.to_pandas())
     newhosts.discard(None)
 
-    frac_cols = ['uname_other_compacnt_login_frac','uname_that_compacnt_login_frac']
+    frac_cols = ['uname_other_compacnt_login_frac', 'uname_that_compacnt_login_frac']
     newhost = cudf.DataFrame({'LogHost': newhosts}).set_index('LogHost')
     newhost[count_cols] = 0
     newhost[frac_cols] = 0.0
@@ -77,9 +90,11 @@ def host_aggr(df, host, uniq_values_dict, count_cols):
     df = df.loc[(df['Source'].isna()) | (df['Destination'].isna())]
     if numrows < df.shape[0]:
         logging.debug("Filtering Rows if SOURCE & DESTINATION neq NA")
-        logging.debug("Removed {} ROWS".format(numrows-df.shape[0]))
+        logging.debug("Removed {} ROWS".format(numrows - df.shape[0]))
 
-    host = compute_logins_with_loghostuname(df, host, login_eventids=[4624,])
+    host = compute_logins_with_loghostuname(df, host, login_eventids=[
+        4624,
+    ])
     host = logon_types(df, host, VALID_LOGON_TYPES)
     host, uniq_values_dict = compute_diff_source_logon_cnt(df, host, uniq_values_dict)
     host, uniq_values_dict = compute_username_cnt(df, host, uniq_values_dict)
@@ -87,16 +102,16 @@ def host_aggr(df, host, uniq_values_dict, count_cols):
 
     for evtuple in EVENTID_CNTFEAT:
         evid, ev_str = evtuple
-        host = compute_eventid_cnt(df , evid, ev_str, host)
+        host = compute_eventid_cnt(df, evid, ev_str, host)
 
     for evtuple in EVENTIDFORSOURCE_CNTFEAT:
         evid, ev_str = evtuple
-        host = compute_eventid_cnt_source(df , evid, ev_str, host)
+        host = compute_eventid_cnt_source(df, evid, ev_str, host)
     host[count_cols] = host[count_cols].fillna(value=0, inplace=False)
-    host['uname_other_compacnt_login_frac'] = host['uname_other_compacnt_login_cnt']/host['total_logins_cnt']
+    host['uname_other_compacnt_login_frac'] = host['uname_other_compacnt_login_cnt'] / host['total_logins_cnt']
     host['uname_other_compacnt_login_frac'] = host['uname_other_compacnt_login_frac'].replace(np.inf, -1.)
 
-    host['uname_that_compacnt_login_frac'] = host['uname_that_compacnt_login_cnt']/host['total_logins_cnt']
+    host['uname_that_compacnt_login_frac'] = host['uname_that_compacnt_login_cnt'] / host['total_logins_cnt']
     host['uname_that_compacnt_login_frac'] = host['uname_that_compacnt_login_frac'].replace(np.inf, -1.)
 
     return host, uniq_values_dict
@@ -125,11 +140,7 @@ def initialize_hostdf():
     count_cols += ['uname_other_compacnt_login_cnt', 'uname_that_compacnt_login_cnt']
     host = cudf.DataFrame(columns=['LogHost']).set_index('LogHost')
 
-    uniq_values_dict = {
-        'Sources': defaultdict(set),
-        'Unames': defaultdict(set),
-        'UserDomains': defaultdict(set)
-        }
+    uniq_values_dict = {'Sources': defaultdict(set), 'Unames': defaultdict(set), 'UserDomains': defaultdict(set)}
     return host, uniq_values_dict, count_cols
 
 
@@ -164,41 +175,40 @@ def read_process_data(wls_files, readsize=1000000, max_lines=1e15):
             df_wls = read_wls(current_block, file_path=False)
             host_df, uniq_vals_dict = host_aggr(df_wls, host_df, uniq_vals_dict, count_cols)
 
-            total_lines += len(current_block)/1000000
+            total_lines += len(current_block) / 1000000
             iter_ += 1
 
             if iter_ % 10000 == 0:
-                proc_speed = 1000.0*total_lines / (time.time() - t0)
-                logging.info(
-                    '{:.3f}M Lines, {:.2f}K/sec'.format(total_lines, proc_speed))
-                logging.debug('host shape:{}'.format(hostdf.shape))
-            if total_lines*1e6 > max_lines:
-                    logging.info("Breaking for loop. total_lines={}>{}".format(total_lines, max_lines))
-                    break
+                proc_speed = 1000.0 * total_lines / (time.time() - t0)
+                logging.info('{:.3f}M Lines, {:.2f}K/sec'.format(total_lines, proc_speed))
+                logging.debug('host shape:{}'.format(host_df.shape))
+            if total_lines * 1e6 > max_lines:
+                logging.info("Breaking for loop. total_lines={}>{}".format(total_lines, max_lines))
+                break
         fi.close()
-    return hostdf
+    return host_df
 
 
 @click.command()
 @click.option('--debug', is_flag=True)
-@click.option('--data_range', default='day-01-day-01',
-     help='Range of dates for which wls files need to be read and preprocessed. '\
-     'For example, data_range=day-01-day_03 reads wls_day-01.bz2, wls_day-02.bz2'\
-     'and wls_day-03.bz2, preprocess them and prepare a combined dataset.')
+@click.option('--data_range',
+              default='day-01-day-01',
+              help=('Range of dates for which wls files need to be read and preprocessed. '
+                    'For example, data_range=day-01-day_03 reads wls_day-01.bz2, wls_day-02.bz2 '
+                    'and wls_day-03.bz2, preprocess them and prepare a combined dataset.'))
 def run(**kwargs):
     global dataset_path
     debug_mode = kwargs['debug']
-    logging.basicConfig(level=logging.DEBUG, datefmt='%m%d-%H%M',
-                        format='%(asctime)s: %(message)s')
+    logging.basicConfig(level=logging.DEBUG, datefmt='%m%d-%H%M', format='%(asctime)s: %(message)s')
     dataset_path = '../datasets/'
     ipfile_suffix = kwargs['data_range']
     if debug_mode:
         max_lines = 5e6
-        readsize = 32768*32
+        readsize = 32768 * 32
         opfile_suffix = '_{:d}Mlines'.format(int(max_lines / 1e6))
     else:
         max_lines = 1e15
-        readsize = 32768*32*30
+        readsize = 32768 * 32 * 30
         opfile_suffix = '_' + ipfile_suffix
         logger_fname = 'logs/dataprocess_{}.log'.format(ipfile_suffix)
         fh = logging.FileHandler(filename=logger_fname, mode='a')
@@ -207,8 +217,7 @@ def run(**kwargs):
         logging.getLogger().addHandler(fh)
         print("Logging in {}".format(logger_fname))
 
-    logging.info("DataProcess for WLS files {}. Read Size:{}MB\n\n".format(
-        ipfile_suffix, readsize//2**20))
+    logging.info("DataProcess for WLS files {}. Read Size:{}MB\n\n".format(ipfile_suffix, readsize // 2**20))
     wls_files = get_fnames(dataset_path, ipfile_suffix)
     host_df = read_process_data(wls_files, readsize, max_lines)
     logging.debug("Number of hosts:{}".format(host_df.shape[0]))
@@ -217,4 +226,4 @@ def run(**kwargs):
 
 if __name__ == '__main__':
 
-   run()
+    run()
