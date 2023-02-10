@@ -12,7 +12,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
 """
 Example Usage:
 python ot-xgboost-train.py \
@@ -84,7 +83,8 @@ def train(modelname):
     X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=0)
 
     # Start an XGBoost classifier
-    xgb_clf = XGBClassifier(objective='multi:softprob', seed=42,
+    xgb_clf = XGBClassifier(objective='multi:softprob',
+                            seed=42,
                             n_estimators=1000)
 
     # Training and saving the model
