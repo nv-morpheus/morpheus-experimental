@@ -19,17 +19,18 @@ python ot-xgboost-inference.py \
     --output ot-validation-output.jsonlines
 """
 
-import glob
-import requests
-import pandas as pd
-import os.path
-import numpy as np
-import subprocess
-import pickle
 import argparse
-from xgboost import XGBClassifier
-from sklearn.model_selection import train_test_split
+import glob
+import os.path
+import pickle
+import subprocess
+
+import numpy as np
+import pandas as pd
+import requests
 from sklearn.metrics import f1_score
+from sklearn.model_selection import train_test_split
+from xgboost import XGBClassifier
 
 
 def inference(model, output):

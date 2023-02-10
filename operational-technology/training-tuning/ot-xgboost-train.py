@@ -18,16 +18,17 @@ python ot-xgboost-train.py \
     --model ../models/ot-xgboost-20230207.pkl
 """
 
-import glob
-import requests
-import pandas as pd
-import os.path
-import numpy as np
-import subprocess
-import pickle
 import argparse
-from xgboost import XGBClassifier
+import glob
+import os.path
+import pickle
+import subprocess
+
+import numpy as np
+import pandas as pd
+import requests
 from sklearn.model_selection import train_test_split
+from xgboost import XGBClassifier
 
 
 def train(modelname):
