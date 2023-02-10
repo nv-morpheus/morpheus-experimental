@@ -24,12 +24,13 @@ import os.path
 import pickle
 import subprocess
 
-import cudf
 import numpy as np
 import pandas as pd
 import requests
 from sklearn.model_selection import train_test_split
 from xgboost import XGBClassifier
+
+import cudf
 
 
 def train(modelname):
@@ -46,8 +47,7 @@ def train(modelname):
 
     if not os.path.isfile("data1.csv"):
 
-        subprocess.run(['p7zip', '-k', '-d', 'triple.7z'],
-                       stdout=subprocess.PIPE)
+        subprocess.run(['p7zip', '-k', '-d', 'triple.7z'], stdout=subprocess.PIPE)
 
     # Read the data into a dataset and save a copy of the merged dataframe
 
