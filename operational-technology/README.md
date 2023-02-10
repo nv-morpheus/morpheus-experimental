@@ -54,7 +54,7 @@ The hyperparameter set below came up as the best combination; different experime
 
 #### Model accuracy
 
-The label distribution in the dataset is not imbalanced, so we do not use the accuracy score. Instead, we use F1 weighted as the metric. The F1 score was 0.924 in a cross-validation experiment.
+The label distribution in the dataset is not imbalanced, so we do not use the accuracy score. Instead, we use F1 weighted as the metric. The F1 score was over 0.91 on a test set.
 
 
 #### Training script
@@ -65,7 +65,7 @@ To train the model, run the following script:
 python ot-xgboost-train.py \
     --model ../models/ot-xgboost-20230207.pkl
 ```
-This will download the data (if it is not present) and train a model with a training set and it will save a model under the models directory.
+This will download the data (if it is not present) and train a model with a training set, and it will save a model under the `models` directory.
 
 ### Inference
 

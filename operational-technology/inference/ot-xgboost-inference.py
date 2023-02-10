@@ -25,6 +25,7 @@ import os.path
 import pickle
 import subprocess
 
+import cudf
 import numpy as np
 import pandas as pd
 import requests
@@ -81,6 +82,8 @@ def inference(model, output):
 
     X = df.iloc[:, :-1]
     y = df.iloc[:, -1]
+    X = cudf.from_pandas(X)
+    y = cudf.from_pandas(y)
 
     # Create train and test set
     X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=0)
@@ -95,7 +98,7 @@ def inference(model, output):
 
     y_pred = xgb_clf.predict(X_test)
 
-    f1 = f1_score(y_test, y_pred, average="weighted")
+    f1 = f1_score(y_test.to_numpy(), y_pred, average="weighted")
 
     print("F1 score is ", f1)
     X_test["predictions"] = y_pred

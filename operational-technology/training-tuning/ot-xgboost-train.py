@@ -24,6 +24,7 @@ import os.path
 import pickle
 import subprocess
 
+import cudf
 import numpy as np
 import pandas as pd
 import requests
@@ -79,14 +80,14 @@ def train(modelname):
 
     X = df.iloc[:, :-1]
     y = df.iloc[:, -1]
+    X = cudf.from_pandas(X)
+    y = cudf.from_pandas(y)
 
     # Create train and test set
     X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=0)
 
     # Start an XGBoost classifier
-    xgb_clf = XGBClassifier(objective='multi:softprob',
-                            seed=42,
-                            n_estimators=1000)
+    xgb_clf = XGBClassifier(n_estimators=1000)
 
     # Training and saving the model
 
