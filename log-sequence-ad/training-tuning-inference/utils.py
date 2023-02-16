@@ -1,15 +1,32 @@
-import pandas as pd
-from torch.utils.data import DataLoader, Dataset
+# SPDX-FileCopyrightText: Copyright (c) 2023 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 import numpy as np
 import torch
-from torch.nn.utils.rnn import pad_sequence
+from torch.utils.data import DataLoader
+from torch.utils.data import Dataset
+
 
 def split(dataset, ratio):
     total = len(dataset)
-    test = int(total*ratio)
+    test = int(total * ratio)
     return dataset[:test], dataset[test:]
 
+
 class LogDataset(Dataset):
+
     def __init__(self, train_features, train_labels):
         super().__init__()
         self.train_features = train_features
@@ -23,28 +40,11 @@ class LogDataset(Dataset):
             idx = idx.tolist()
         return (self.train_features[idx], self.train_labels[idx])
 
-def get_iter(X, y, batch_size = 32, shuffle = True):
-    dataset = LogDataset(X,y)
-    if shuffle == True:
-        iter = DataLoader(dataset, batch_size, shuffle = True, worker_init_fn=np.random.seed(42))
+
+def get_iter(X, y, batch_size=32, shuffle=True):
+    dataset = LogDataset(X, y)
+    if shuffle:
+        iter = DataLoader(dataset, batch_size, shuffle=True, worker_init_fn=np.random.seed(42))
     else:
         iter = DataLoader(dataset, batch_size)
-    return iter
-
-def get_iter_hdfs(X, y, w2v_dic, train_dict, batch_size = 32, shuffle = True):
-    dataset = LogDataset(X,y)
-    PADDING_VALUE=w2v_dic[train_dict['pad']]
-
-    def pad_collate(batch):
-        (X, y) = zip(*batch)
-        X_lens = [len(x) for x in X]
-        X = [torch.LongTensor(i) for i in X]
-        X_pad = pad_sequence(X, batch_first=True, padding_value=PADDING_VALUE)
-        y = torch.Tensor(y)
-        return X_pad, X_lens, y
-
-    if shuffle == True:
-        iter = DataLoader(dataset, batch_size, shuffle = True, worker_init_fn=np.random.seed(42), collate_fn=pad_collate)
-    else:
-        iter = DataLoader(dataset, batch_size, collate_fn=pad_collate)
     return iter
