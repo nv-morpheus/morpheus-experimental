@@ -1,14 +1,31 @@
+# SPDX-FileCopyrightText: Copyright (c) 2023 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 import random
+import warnings
+
 import numpy as np
 import pandas as pd
+import torch
 from gensim.models import Word2Vec
 from nltk.util import bigrams
-import torch
-import warnings
+
 warnings.filterwarnings("ignore")
 
 
-def preprocess(df, window_size = 100, step_size = 20):
+def preprocess(df, window_size=100, step_size=20):
     '''Preprocessing structured log dataset
 
     Args:
@@ -27,11 +44,11 @@ def preprocess(df, window_size = 100, step_size = 20):
     logkey_data = df.iloc[:, 1]
     new_data = []
     index = 0
-    while index <= log_size-window_size:
+    while index <= log_size - window_size:
         new_data.append([
-            max(label_data[index:index+window_size]),
-            logkey_data[index:index+window_size].values,
-            label_data[index:index+window_size].values
+            max(label_data[index:index + window_size]),
+            logkey_data[index:index + window_size].values,
+            label_data[index:index + window_size].values
         ])
         index += step_size
     return pd.DataFrame(new_data, columns=df.columns)
@@ -58,6 +75,7 @@ def get_training_dictionary(df):
                 count += 1
     return dic
 
+
 def str_to_str_keys(df, dic):
     '''Convert original parser log keys into number version of log keys
 
@@ -66,7 +84,7 @@ def str_to_str_keys(df, dic):
         dic: reference dictionary
 
     Return:
-        df: dataframe which EventId column has been converted 
+        df: dataframe which EventId column has been converted
     '''
     for i in range(len(df)):
         lst = list(df['EventId'].iloc[i])
@@ -78,6 +96,7 @@ def str_to_str_keys(df, dic):
                 temp.append(str(len(dic)))
         df['EventId'].iloc[i] = temp
     return df
+
 
 def get_bigram(df):
     '''Get the bigram according to the input dataframe
@@ -95,7 +114,7 @@ def get_bigram(df):
         temp_lst = list(df['EventId'].iloc[i])
         if temp_lst[0] not in uni:
             uni.append(temp_lst[0])
-        for a,b in bigrams(temp_lst):
+        for a, b in bigrams(temp_lst):
             a = str(a)
             b = str(b)
             if a in bigram:
@@ -105,6 +124,7 @@ def get_bigram(df):
                 bigram[a] = [b]
     return bigram, uni
 
+
 def get_w2v_dic(w2v):
     '''Get Word2Vec dictionary
 
@@ -112,9 +132,10 @@ def get_w2v_dic(w2v):
         w2v: Word2Vec model
 
     Return:
-        dic: dictionary of Word2Vec
+        dic: dictionary of Word2Vec model
     '''
     return {i: w2v.wv.vocab.get(i).index for i in list(w2v.wv.vocab)}
+
 
 def str_key_to_w2v_index(df, dic):
     '''Chenge string number keys into Word2Vec int keys
@@ -137,10 +158,10 @@ def str_key_to_w2v_index(df, dic):
                 print('Error: key is not in the dict')
         lst_w2v.append(temp)
     df['W2V_EventId'] = lst_w2v
-    return df    
+    return df
 
 
-def sliding_window(dataset_name, window_size = 100, step_size = 20, train_size = 100000):
+def sliding_window(dataset_name, window_size=100, step_size=20, train_size=100000):
     '''Cut log data into sliding windows and train a Word2Vec model
 
     Args:
@@ -160,22 +181,20 @@ def sliding_window(dataset_name, window_size = 100, step_size = 20, train_size =
         w2v_dic: dictionary of Word2Vec
     '''
     print('Reading: ' + dataset_name)
-    df = pd.read_csv(dataset_name) 
-   
+    df = pd.read_csv(dataset_name)
+
     print('Total logs in the dataset: ', len(df))
     window_df = preprocess(df, window_size, step_size)
     df_normal = window_df[window_df["Label"] == 0]
 
     # shuffle normal data
-    df_normal = df_normal.sample(frac=1, random_state = 42).reset_index(drop=True)
+    df_normal = df_normal.sample(frac=1, random_state=42).reset_index(drop=True)
     normal_len = len(df_normal)
-    #train_size = train_size
-
     train_normal = df_normal[:train_size]
     print("training size {}".format(train_size))
 
     test_normal = df_normal[train_size:]
-    print("test normal size {}".format(normal_len -train_size))
+    print("test normal size {}".format(normal_len - train_size))
 
     test_abnormal = window_df[window_df["Label"] == 1]
     print('test abnormal size {}'.format(len(test_abnormal)))
@@ -184,7 +203,7 @@ def sliding_window(dataset_name, window_size = 100, step_size = 20, train_size =
     all_dict = get_training_dictionary(window_df)
     train_dict = get_training_dictionary(train_normal)
     print('Number of all keys:', len(all_dict))
-    print('Number of training keys:',len(train_dict))
+    print('Number of training keys:', len(train_dict))
 
     # change the original log keys into number log keys based on the training dictionary
     train_normal = str_to_str_keys(train_normal, train_dict)
@@ -237,10 +256,10 @@ def get_neg_samp(window, index, bigram, uni, vocab_dim):
             if str(window[i]) in bigram:
                 in_bag = set(bigram.get(str(window[i])))
                 out_bag = set(range(0, vocab_dim)).difference(in_bag)
-                window[i+1] = str(random.sample(out_bag, 1)[0])
+                window[i + 1] = str(random.sample(out_bag, 1)[0])
             else:
                 out_bag = set(range(0, vocab_dim))
-                window[i+1] = str(random.sample(out_bag, 1)[0])
+                window[i + 1] = str(random.sample(out_bag, 1)[0])
     return window
 
 
@@ -255,16 +274,16 @@ def negative_sampling(dataset, bigram, uni, number_times, vocab_dim):
         vocab_dim: int of vocabulary size
 
     Return:
-        list of negative samples 
+        list of negative samples
     '''
     length = len(dataset)
     re_len = int(number_times * length)
     re_list = []
     lst_keys = list(dataset['EventId'])
-    samples = list(np.random.random_integers(length-1, size=(re_len,)))
+    samples = list(np.random.random_integers(length - 1, size=(re_len, )))
     for i in map(lst_keys.__getitem__, samples):
         replace_n = random.randint(1, len(i))
-        rep_index = random.choices(range(len(i)-1), k=replace_n)
+        rep_index = random.choices(range(len(i) - 1), k=replace_n)
         temp = i[:]
         while temp in lst_keys:
             temp = get_neg_samp(temp, rep_index, bigram, uni, vocab_dim)

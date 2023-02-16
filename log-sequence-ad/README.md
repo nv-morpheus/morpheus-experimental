@@ -1,7 +1,7 @@
 ## Log Sequence Anomaly Detection
 
 ## Use Case
-Identify log anomalies from sequence of logs generated dataset.
+Identify log anomalies from sequence of logs.
 
 ### Version
 1.0
@@ -10,7 +10,7 @@ Identify log anomalies from sequence of logs generated dataset.
 The model is a sequence binary classifier trained with vector representation of log sequence. The task is to identify abnormal log sequence from sequence of normally generated logs.
 
 ### Model Architecture
-LSTM binary classifier with word2vector embedding input. 
+LSTM binary classifier with word2vector embedding of sequence input. 
 
 ### Requirements
 
