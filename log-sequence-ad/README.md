@@ -1,16 +1,16 @@
 ## Log Sequence Anomaly Detection
 
 ## Use Case
-Identify log anomalies from sequence of logs.
+Identify log anomalies from sequence of logs generated dataset.
 
 ### Version
 1.0
 
 ### Model Overview
-The model is a sequence binary classifier trained with vector representation of log sequence. The task is to identify abnormal log sequence from sequence of normally generated logs.
+The model is a sequence binary classifier trained with vector representation of log sequence of BGL dataset. The task is to identify abnormal log sequence of alerts from sequence of normally generated logs.
 
 ### Model Architecture
-LSTM binary classifier with word2vector embedding of sequence input. 
+LSTM binary classifier with word2vector embedding input. 
 
 ### Requirements
 
@@ -40,7 +40,7 @@ n_epoch = 10
 
 #### Model accuracy
 
-The label distribution in the dataset is imbalanced, the F1 score over the larger dataset is 0.97
+The label distribution in the dataset is imbalanced, the F1 score over the 1 million row dataset is 0.97.
 
 
 #### Training script
@@ -49,7 +49,12 @@ To train the model, run the code in the notebook. This will save trained model u
 
 ### Inference
 
+To run inference from trained model 
+```bash
+python inference.py --model_name model/model_BGL.pt --input_data dataset/BGL_2k.log_structured.csv
 
+```
+This will produce `result.csv` that contains binary prediction of the model.
 
 ### Ethical considerations
 N/A

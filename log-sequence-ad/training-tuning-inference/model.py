@@ -28,8 +28,7 @@ class LogLSTM(nn.Module):
                  emb_dim,
                  hid_dim,
                  n_layers,
-                 dropout,
-                 device,
+                 dropout=0.05,
                  batch_size=32):
         super().__init__()
         self.output_dim = output_dim
@@ -54,7 +53,7 @@ def count_parameters(model):
     return sum(p.numel() for p in model.parameters() if p.requires_grad)
 
 
-def train(model, iterator, optimizer, criterion, clip, epoch, device):
+def train(model, iterator, optimizer, criterion, device):
 
     model.train()
 
@@ -116,6 +115,14 @@ def epoch_time(start_time, end_time):
     elapsed_mins = int(elapsed_time / 60)
     elapsed_secs = int(elapsed_time - (elapsed_mins * 60))
     return elapsed_mins, elapsed_secs
+
+
+def model_inference(model, device, test_data):
+    model.eval()
+    dummy_label = [0 for _ in range(len(test_data))]
+    X_all = torch.tensor(test_data, requires_grad=False).long()
+    y_all = torch.tensor(dummy_label).reshape(-1, 1).long()
+    return test(model, utils.get_iter(X_all, y_all, shuffle=False), device)
 
 
 def model_precision(model, device, lst_n, lst_ab):

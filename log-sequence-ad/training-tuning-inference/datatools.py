@@ -12,6 +12,10 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+#
+# Description : This file implements portion of negative sampling & sliding windows
+# Author      : Copyright (c) 2021 Xiao Han
+# License     : MIT
 
 import random
 import warnings
@@ -52,6 +56,13 @@ def preprocess(df, window_size=100, step_size=20):
         ])
         index += step_size
     return pd.DataFrame(new_data, columns=df.columns)
+
+
+def get_dataframe(lst, label, dic):
+    df = pd.DataFrame()
+    df['EventId'] = lst
+    df['class_label'] = label
+    return str_key_to_w2v_index(df, dic)
 
 
 def get_training_dictionary(df):
@@ -200,15 +211,11 @@ def sliding_window(dataset_name, window_size=100, step_size=20, train_size=10000
     print('test abnormal size {}'.format(len(test_abnormal)))
 
     # get dictionary of training data and total data
-    all_dict = get_training_dictionary(window_df)
     train_dict = get_training_dictionary(train_normal)
-    print('Number of all keys:', len(all_dict))
     print('Number of training keys:', len(train_dict))
 
     # change the original log keys into number log keys based on the training dictionary
     train_normal = str_to_str_keys(train_normal, train_dict)
-    test_normal = str_to_str_keys(test_normal, train_dict)
-    test_abnormal = str_to_str_keys(test_abnormal, train_dict)
 
     # get the bigram dictionary and unique list from the training data
     bigram, unique = get_bigram(train_normal)
@@ -228,10 +235,20 @@ def sliding_window(dataset_name, window_size=100, step_size=20, train_size=10000
 
     # change the data with Word2Vec dictionary
     train_normal = str_key_to_w2v_index(train_normal, w2v_dic)
-    test_normal = str_key_to_w2v_index(test_normal, w2v_dic)
-    test_abnormal = str_key_to_w2v_index(test_abnormal, w2v_dic)
+
+    # train_normal = test_vector(train_normal, train_dict, w2v_dic)
+    test_normal = test_vector(test_normal, train_dict, w2v_dic)
+    test_abnormal = test_vector(test_abnormal, train_dict, w2v_dic)
 
     return train_normal, test_normal, test_abnormal, bigram, unique, weights, train_dict, w2v_dic
+
+
+def test_vector(test_normal_df, train_dict, w2v_dic):
+    # change the original log keys into number log keys based on the training dictionary
+    test_normal = str_to_str_keys(test_normal_df, train_dict)
+    # change the data with Word2Vec dictionary
+    test_normal = str_key_to_w2v_index(test_normal, w2v_dic)
+    return test_normal
 
 
 def get_neg_samp(window, index, bigram, uni, vocab_dim):
