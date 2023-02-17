@@ -22,7 +22,8 @@ pip install -r requirements.txt
 ### Training
 
 #### Training data
-
+The dataset for the example used from BlueGene/L Supercomputer System (BGL). BGL dataset contains 4,747,963 log messages that are collected
+from a [BlueGeme/L]('https://zenodo.org/record/3227177/files/BGL.tar.gz?download=1') supercomputer system at Lawrence Livermore National Labs. The log messages can be categorized into alert and not-alert messages. The log message is parsed using [Drain](https://github.com/logpai/logparser) parser for preprocessing. The model is trained and evaluated using 1 million rows of preprocessed logs. For running the workflow a preprocessed smaller set of BGL can be used from https://github.com/LogIntelligence/LogPPT
 
 #### Training parameters
 
