@@ -20,12 +20,20 @@ from torch.utils.data import Dataset
 
 
 def split(dataset, ratio):
+    # split dataset into two based on given ratio.
     total = len(dataset)
     test = int(total * ratio)
     return dataset[:test], dataset[test:]
 
 
 class LogDataset(Dataset):
+    """Create torch Dataset
+
+    Parameters
+    ----------
+    Dataset : torch.util.Dataset
+        _description_
+    """
 
     def __init__(self, train_features, train_labels):
         super().__init__()
@@ -42,6 +50,24 @@ class LogDataset(Dataset):
 
 
 def get_iter(X, y, batch_size=32, shuffle=True):
+    """Create dataloader iterator
+
+    Parameters
+    ----------
+    X : torch.tensor
+        training sample
+    y : torch.tensor
+        ground truth label
+    batch_size : int, optional
+        batch size, by default 32
+    shuffle : bool, optional
+        _description_, by default True
+
+    Returns
+    -------
+    DataLoader
+        iterator for dataloader
+    """
     dataset = LogDataset(X, y)
     if shuffle:
         iter = DataLoader(dataset, batch_size, shuffle=True, worker_init_fn=np.random.seed(42))
