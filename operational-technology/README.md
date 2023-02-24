@@ -7,7 +7,7 @@ Classify events into various categories based on power system data.
 1.0
 
 ### Model Overview
-The model is an XGBoost classifier that predicts each event on a power system based on dataset features.
+The model is a multi-class XGBoost classifier that predicts each event on a power system based on dataset features.
 
 ### Model Architecture
 XGBoost Classifier
@@ -26,8 +26,8 @@ apt install p7zip-full p7zip-rar
 ### Training
 
 #### Training data
-In this project, we use the publicly available __[**Industrial Control System (ICS) Cyber Attack Datasets**](Tommy Morris - Industrial Control System (ICS) Cyber Attack Datasets (google.com))__[1] dataset from the Oak Ridge National Laboratories (ORNL) and UAH. We use the 3-class version of the dataset. The dataset labels are Natural Events, No Events and Attack Events. 
-Dataset features contain synchrophasor measurements and data logs from Snort, a simulated control panel, and relays. There are 78377 rows in the dataset. In our notebooks and scripts, we download the compressed version from its source and then extract and merge all the rows into a dataframe.
+In this project, we use the publicly available __[**Industrial Control System (ICS) Cyber Attack Datasets**](Tommy Morris - Industrial Control System (ICS) Cyber Attack Datasets (google.com))__[1] dataset from the Oak Ridge National Laboratories (ORNL) and UAH. We use the 3-class version of the dataset. The dataset labels are Natural Events, No Events and Attack Events. All features contain numeric values, and the dataset has no timestamp or interval information.
+Dataset features contain synchrophasor measurements and data logs from Snort, a simulated control panel, and relays. There are 78377 rows in the dataset. In our notebooks and scripts, we download the compressed version from its source and then extract and merge all the rows into a dataframe. The `inf` values are replaced with `nan`, and the three labels are replaced with 0,1 and 2.
 
 #### Training parameters
 
@@ -54,7 +54,7 @@ The hyperparameter set below came up as the best combination; different experime
 
 #### Model accuracy
 
-The label distribution in the dataset is not imbalanced, so we do not use the accuracy score. Instead, we use F1 weighted as the metric. The F1 score was over 0.91 on a test set.
+The label distribution in the dataset is imbalanced, so we do not use the accuracy score. Instead, we use F1 weighted as the metric. The F1 score was over 0.91 on a test set.
 
 
 #### Training script
@@ -77,6 +77,14 @@ python ot-xgboost-inference.py \
 ```
 This will download the dataset, the prediction is performed on the test set, and the output is saved into a file.
 
+### How To Use This Model
+This model can be used to detect cyber attacks and natural faults in power systems. A training notebook is also included so that users can update the model as more labelled data is collected. 
+
+### Input
+The input for this model is the 127 features in the dataset which consist of synchrophasor measurements and data logs from Snort, a simulated control panel, and relays.
+
+### Output
+Multi-class classifier predicts one of these labels Natural Events, No Events and Attacks.
 
 ### Ethical considerations
 N/A
