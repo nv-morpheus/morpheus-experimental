@@ -7,7 +7,7 @@ Identify log anomalies from sequence of logs generated dataset.
 1.0
 
 ### Model Overview
-The model is a sequence binary classifier trained with vector representation of log sequence of BGL dataset. The task is to identify abnormal log sequence of alerts from sequence of normally generated logs.
+The model is a sequence binary classifier trained with vector representation of log sequence of BGL dataset. The task is to identify abnormal log sequence of alerts from sequence of normally generated logs. This work is based on the model developed in the works of [[2](https://ieeexplore.ieee.org/document/9671642),[3](https://github.com/hanxiao0607/InterpretableSAD)], for further detail refer the paper and associated code at the reference link.
 
 ### Model Architecture
 LSTM binary classifier with word2vector embedding input. 
@@ -74,3 +74,4 @@ N/A
 ### Reference
 1. https://arxiv.org/pdf/2202.04301.pdf
 2. https://ieeexplore.ieee.org/document/9671642
+3. https://github.com/hanxiao0607/InterpretableSAD
