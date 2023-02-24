@@ -72,6 +72,9 @@ This model shows an application of a graph neural network for anomalous authenti
 ## [Asset Clustering using Windows Event Logs](/asset-clustering)
 This model is a clustering algorithm to assign each host present in the dataset to a cluster based on aggregated and derived features from Windows Event Logs of that particular host.
 
+## [Industrial Control System (ICS) Cyber Attack Detection](/operational-technology)
+This model is an XGBoost classifier that predicts each event on a power system based on dataset features.
+
 # Repo Structure
 Each prototype has its own directory that contains everything belonging to the specific prototype. Directories can include the following subfolders and documentation:
 
