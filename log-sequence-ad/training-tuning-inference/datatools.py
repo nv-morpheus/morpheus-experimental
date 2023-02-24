@@ -57,11 +57,13 @@ def preprocess(df, window_size=100, step_size=20):
         index += step_size
     return pd.DataFrame(new_data, columns=df.columns)
 
+
 def get_dataframe(lst, label, dic):
     df = pd.DataFrame()
     df['EventId'] = lst
     df['class_label'] = label
     return str_key_to_w2v_index(df, dic)
+
 
 def get_training_dictionary(df):
     '''Get training dictionary
@@ -111,7 +113,8 @@ def get_bigram(df):
     '''Get the bigram according to the input dataframe
 
     Arg:
-        df: dataframe which is used to compute bigrams
+        df: pd.dataframe
+        dataframe used to compute bigrams
 
     Returns:
         bigram: dictionary of bigrams
@@ -233,12 +236,13 @@ def sliding_window(dataset_name, window_size=100, step_size=20, train_size=10000
 
     # change the data with Word2Vec dictionary
     train_normal = str_key_to_w2v_index(train_normal, w2v_dic)
- 
+
     # train_normal = test_vector(train_normal, train_dict, w2v_dic)
     test_normal = test_vector(test_normal, train_dict, w2v_dic)
     test_abnormal = test_vector(test_abnormal, train_dict, w2v_dic)
 
     return train_normal, test_normal, test_abnormal, bigram, unique, weights, train_dict, w2v_dic
+
 
 def test_vector(test_normal_df, train_dict, w2v_dic):
     # change the original log keys into number log keys based on the training dictionary
@@ -246,6 +250,7 @@ def test_vector(test_normal_df, train_dict, w2v_dic):
     # change the data with Word2Vec dictionary
     test_normal = str_key_to_w2v_index(test_normal, w2v_dic)
     return test_normal
+
 
 def get_neg_samp(window, index, bigram, uni, vocab_dim):
     '''Get negative sample for each given sliding window

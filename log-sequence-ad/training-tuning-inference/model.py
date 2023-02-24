@@ -25,18 +25,11 @@ class LogLSTM(nn.Module):
     Parameters
     ----------
     nn : torch.nn
-    
+
     """
 
-    def __init__(self,
-                 matrix_embeddings,
-                 vocab_dim,
-                 output_dim,
-                 emb_dim,
-                 hid_dim,
-                 n_layers,
-                 dropout=0.05):
-        """_summary_
+    def __init__(self, matrix_embeddings, vocab_dim, output_dim, emb_dim, hid_dim, n_layers, dropout=0.05):
+        """
 
         Parameters
         ----------
@@ -207,13 +200,15 @@ def epoch_time(start_time, end_time):
     elapsed_secs = int(elapsed_time - (elapsed_mins * 60))
     return elapsed_mins, elapsed_secs
 
+
 def model_inference(model, device, test_data):
     # model inference for test_data
     model.eval()
-    dummy_label = [ 0 for _ in range(len(test_data))]
+    dummy_label = [0 for _ in range(len(test_data))]
     X_all = torch.tensor(test_data, requires_grad=False).long()
     y_all = torch.tensor(dummy_label).reshape(-1, 1).long()
     return test(model, utils.get_iter(X_all, y_all, shuffle=False), device)
+
 
 def model_precision(model, device, lst_n, lst_ab):
     """Create dataloader of test data and return inference
@@ -234,7 +229,7 @@ def model_precision(model, device, lst_n, lst_ab):
     -------
     list
         prediction result
-        
+
     """
     model.eval()
     y_all = []

@@ -22,18 +22,13 @@ import torch
 
 
 def main(file_name, model_name):
-    '''Run inference script of trained model
-
-    Args:
-        file_name: input file name
-        model_name: model name
-    '''
 
     # Read input data
     df = pd.read_csv(file_name)
 
     # Load trained model and parameters
     check_point = torch.load(model_name)
+
     window_df = datatools.preprocess(df, check_point['W2V_conf']['WINDOW_SIZE'], check_point['W2V_conf']['STEP_SIZE'])
 
     # convert to input vector
@@ -59,8 +54,8 @@ def main(file_name, model_name):
 if __name__ == '__main__':
 
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--input-data", help="CSV log file", default="../dataset/BGL_2k.log_structured.csv")
-    parser.add_argument("--model-name", help="directory for model files", default="../model/model_BGL.pt")
+    parser.add_argument("--input-data", help="CSV log file", default="dataset/BGL_2k.log_structured.csv")
+    parser.add_argument("--model-name", help="directory for model files", default="model/model_BGL.pt")
     parser.add_argument("--output", required=False, help="output filename", default="result.csv")
 
     args = parser.parse_args()

@@ -66,7 +66,7 @@ def get_iter(X, y, batch_size=32, shuffle=True):
     Returns
     -------
     DataLoader
-        iterator for dataloader
+        iterator for dataset dataloader
     """
     dataset = LogDataset(X, y)
     if shuffle:
