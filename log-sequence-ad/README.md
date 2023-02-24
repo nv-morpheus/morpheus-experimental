@@ -38,24 +38,35 @@ dropout = 0.0
 batch_size = 32
 n_epoch = 10
 ```
+#### GPU Model
+Tesla V100-SXM2
 
 #### Model accuracy
-
 The label distribution in the dataset is imbalanced, the F1 score over the 1 million row dataset is 0.97.
 
 
 #### Training script
-
 To train the model, run the code in the notebook. This will save trained model under `model` directory.
 
 ### Inference
-
 To run inference from trained model 
 ```bash
 python inference.py --model_name model/model_BGL.pt --input_data dataset/BGL_2k.log_structured.csv
 
 ```
 This will produce `result.csv` that contains binary prediction of the model.
+
+### How To Use This Model
+This model is an example of sequence binary classifier. This model requires parsed log messages as input for training and inference. The model and Word2Vector embedding is trained as follows in the training notebook. During inference, trained model is loaded from `model` directory and input file in the form of parsed logs are expected to output prediction for sequences of log messages.
+
+### Input
+The input is an output of parsed system log messages represented as CSV file.
+
+### Output
+Binary classifier output assigned to each sequence log messages in the input file. The predicted output is appended at the last column of the input sequence.
+
+#### Out-of-scope use cases
+N/A
 
 ### Ethical considerations
 N/A
