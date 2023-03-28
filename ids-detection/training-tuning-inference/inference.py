@@ -25,7 +25,7 @@ from util import NetFlowFeatureProcessing
 @click.option('--model-name', help="Path to trained LODA IDS model", default="../model/loda_ids.npz")
 @click.option('--input-name', help="Input file name path", default="dataset/Friday-WorkingHours-Morning.pcap_ISCX.csv")
 @click.option('--config-path', help="Path to JSON training configuration file", default="../model/config.json")
-@click.option('--output-name', help="Path to JSON training configuration file", default="out.csv")
+@click.option('--output-name', help="path to result output", default="out.csv")
 def inference(input_name, model_name, config_path, output_name):
     # Load config file and apply feature processing
     config = json.load(open(config_path, "r"))
