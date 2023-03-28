@@ -89,7 +89,6 @@ class Loda:
         ...
         0.03943715, 0.02701243, 0.02880341, 0.04086408, 0.04365477])
         """
-
         if cp.ndim(input_data) < 2:
             input_data = input_data.reshape(1, -1)
         pred_scores = cp.zeros([input_data.shape[0], 1])
@@ -155,8 +154,8 @@ class Loda:
     def _t_test(self, with_sample, without_sample):
         """
         compute one-tailed two-sample t-test with a test statistics according to
-        t_j: \\frac{\\mu_j - \\bar{\\mu_j}}{\\sqrt{\frac{s^2_j}{\\norm{I_j}} +
-        \frac{\\bar{s^2_j}}{\norm{\\bar{I_j}}}}}
+            t_j: \frac{\\mu_j - \bar{\\mu_j}}{\\sqrt{\frac{s^2_j}{\norm{I_j}} +
+            \frac{\bar{s^2_j}}{\norm{\bar{I_j}}}}}
         """
         return (cp.mean(with_sample) - cp.mean(without_sample)) /\
             cp.sqrt(cp.var(with_sample)**2 / len(with_sample) + cp.var(without_sample)**2 / len(without_sample))
@@ -173,7 +172,7 @@ class Loda:
     def load_model(cls, file_path):
         """ This function load already saved model and sets cuda parameters.
         :param file_path: File path of a model to load.
-        :type file_path: string
+        :type filel_path: string
         """
 
         model = cp.load(file_path)
