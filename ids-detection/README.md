@@ -41,13 +41,21 @@ The label distribution in the dataset is imbalanced, Average precision of 1.0 an
 
 
 #### Training script
-To train the model, run the code in the notebook. This will save trained model under `model` directory.
+To train the model, you can run the code in the notebook or alternatively, run the script under the `training-tunining-inference` directory using 
+`$DATASET` path to extracted CIC dataset.
+```bash
+python training.py --input-name $DATASET/Monday-WorkingHours.pcap_ISCX.csv --model-name ../model/loda_ids
+```
+
+This will save trained model and config file under `model` directory.
 
 ### Inference
-To run inference from trained model, load the trained Loda model in the notebook and transform features according the feature aggregation and PCA transformation. The number of component for the PCA can be used from the variance configuration of the training parameters.
-
+To run inference from trained model, load the trained Loda model and config parameters as follows:
+```bash
+python inference.py --input-name $DATASET/Friday-WorkingHours-Morning.pcap_ISCX.csv --config-path ../model/config.json --model-name ../model/loda_ids.npz
+```
 ### How To Use This Model
-This model is an example of intrusion detection model using unsupervised anomaly detector. This model requires  an aggregated netflow activity  form of `cic_ids2017` format.
+This model is an example of intrusion detection model using unsupervised anomaly detector. This model requires  an aggregated netflow activity in the form of `cic_ids2017` format. Subset of the features used for training are described under `model/config.json`
 
 ### Input
 The input is a netflow activity data collected in the form of tabular format.
