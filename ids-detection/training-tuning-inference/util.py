@@ -307,7 +307,7 @@ class NetFlowFeatureProcessing:
             final processed dataframe
         """
 
-        df = load_dataset(self.input_name).pipe(remove_naninf).to_pandas().iloc[:1000, ]
+        df = load_dataset(self.input_name).pipe(remove_naninf).to_pandas()
         # Remove features
         cat_features = ['Source_IP', 'Destination_IP', 'Source_Port', 'Destination_Port']
 
