@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: Copyright (c) 2022, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2022-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -36,7 +36,7 @@ env:
 jobs:
   check:
     name: Check
-    runs-on: [self-hosted, linux, amd64, cpu4]
+    runs-on: linux-amd64-cpu4
     timeout-minutes: 60
     container:
       image: rapidsai/ci:cuda11.5.1-ubuntu20.04-py3.8
