@@ -1,7 +1,7 @@
 ## Log Sequence Anomaly Detection
 
 ## Use Case
-Intrusion detection using LODA
+Intrusion detection using Lightweight Online Detector of Anomalies (LODA)
 
 ### Version
 1.0
