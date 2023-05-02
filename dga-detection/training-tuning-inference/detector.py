@@ -14,9 +14,11 @@
 # limitations under the License.
 
 import logging
+from abc import ABC
+from abc import abstractmethod
+
 import torch
 import torch.nn as nn
-from abc import ABC, abstractmethod
 
 log = logging.getLogger(__name__)
 
@@ -24,6 +26,7 @@ GPU_COUNT = torch.cuda.device_count()
 
 
 class Detector(ABC):
+
     def __init__(self, lr=0.001):
         self.lr = lr
         self._model = None
@@ -89,9 +92,7 @@ class Detector(ABC):
             self._set_model2cuda()
 
     def _set_optimizer(self):
-        self._optimizer = torch.optim.RMSprop(
-            self.model.parameters(), self.lr, weight_decay=0.0
-        )
+        self._optimizer = torch.optim.RMSprop(self.model.parameters(), self.lr, weight_decay=0.0)
 
     def _set_model2cuda(self):
         if torch.cuda.is_available():

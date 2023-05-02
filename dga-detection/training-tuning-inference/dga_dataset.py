@@ -14,8 +14,9 @@
 # limitations under the License.
 
 import logging
-from dataset import Dataset
+
 import utils
+from dataset import Dataset
 
 log = logging.getLogger(__name__)
 

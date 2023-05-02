@@ -22,9 +22,8 @@ DROPOUT = 0.0
 
 
 class RNNClassifier(nn.Module):
-    def __init__(
-        self, input_size, hidden_size, output_size, n_layers, bidirectional=True
-    ):
+
+    def __init__(self, input_size, hidden_size, output_size, n_layers, bidirectional=True):
         super(RNNClassifier, self).__init__()
         self.input_size = input_size
         self.hidden_size = hidden_size
@@ -68,9 +67,7 @@ class RNNClassifier(nn.Module):
         return fc_output
 
     def _init_hidden(self, batch_size):
-        hidden = torch.zeros(
-            self.n_layers * self.n_directions, batch_size, self.hidden_size
-        )
+        hidden = torch.zeros(self.n_layers * self.n_directions, batch_size, self.hidden_size)
         # creating variable
         if torch.cuda.is_available():
             return hidden.cuda()

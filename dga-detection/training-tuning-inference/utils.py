@@ -13,15 +13,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import cudf
 import logging
+
+import cudf
 
 log = logging.getLogger(__name__)
 
 
 def str2ascii(df, col_name):
     """
-    This function sorts domain name entries in desc order based on the length of domain and converts domain name to ascii characters.
+    This function sorts domain name entries in desc order based on the length of domain and converts domain name to
+    ascii characters.
 
     :param df: Domains which requires conversion.
     :type df: cudf.DataFrame
@@ -32,9 +34,7 @@ def str2ascii(df, col_name):
     """
     df["len"] = df[col_name].str.len()
     df = df.sort_values("len", ascending=False)
-    split_df = df[col_name].str.findall("[\w\W\d\D\s\S]")
-    # split_df = split_ser.to_frame()
-    # split_df = cudf.DataFrame(split_df[col_name].to_arrow().to_pylist())
+    split_df = df[col_name].str.findall(r"[\w\W\d\D\s\S]")
     columns_cnt = len(split_df.columns)
 
     # Replace null's with ^.
