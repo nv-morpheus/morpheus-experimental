@@ -22,12 +22,15 @@ log = logging.getLogger(__name__)
 
 
 class DGADataset(Dataset):
-    """Constructor to create DGADataset instance.
+    """
+    Constructor to create DGADataset instance.
 
-        :param df: Input dataframe.
-        :type df: cudf.DataFrame
-        :param truncate: Truncate string to n number of characters.
-        :type truncate: int
+    Parameters
+    ----------
+    dataset : cudf.DataFrame
+        Input dataframe
+    truncate : int
+        Truncate string to this number of characters.
     """
 
     def __init__(self, df, truncate):

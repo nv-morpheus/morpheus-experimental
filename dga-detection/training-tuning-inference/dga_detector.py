@@ -145,12 +145,20 @@ class DGADetector(Detector):
         This function accepts cudf series of domains as an argument to classify domain names as benign/malicious
         and returns the learned label for each object in the form of cudf series.
 
-        :param domains: List of domains.
-        :type domains: cudf.Series
-        :return: Predicted results with respect to given domains.
-        :rtype: cudf.Series
-        :param truncate: Truncate string to n number of characters.
-        :type truncate: int
+        Parameters
+        ----------
+        domains : cudf.Series
+            List of domains
+        probability : bool
+            Whether to return probabilities. Default is False.
+        truncate : int
+            Truncate string to this number of characters.
+
+        Returns
+        -------
+        cudf.Series
+            Predicted results with respect to given domains.
+
         Examples
         --------
         >>> dd.predict(['nvidia.com', 'dgadomain'])
@@ -215,12 +223,22 @@ class DGADetector(Detector):
         return seq_tensor
 
     def evaluate_model(self, dataloader):
-        """This function evaluates the trained model to verify it's accuracy.
+        """
+        This function evaluates the trained model to verify it's accuracy.
 
-        :param dataloader: Instance holds preprocessed data.
-        :type dataloader: DataLoader
-        :return: Model accuracy
-        :rtype: decimal
+        Parameters
+        ----------
+        dataloader : DataLoader
+            Instance holds preprocessed data.
+        probability : bool
+            Whether to return probabilities. Default is False.
+        truncate : int
+            Truncate string to this number of characters.
+
+        Returns
+        -------
+        float
+            Model accuracy
 
         Examples
         --------

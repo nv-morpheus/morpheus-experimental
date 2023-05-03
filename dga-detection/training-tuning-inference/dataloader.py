@@ -20,17 +20,17 @@ log = logging.getLogger(__name__)
 
 class DataLoader(object):
     """
-    Wrapper class is used to return dataframe partitions based on batchsize.
+    Wrapper class is used to return dataframe partitions based on batch size.
+
+    Parameters
+    ----------
+    dataset : cudf.DataFrame
+        Input dataframe
+    batchsize : int
+        Number of records in the dataframe
     """
 
     def __init__(self, dataset, batchsize=1000):
-        """Constructor to create dataframe partitions.
-
-        :param df: Input dataframe.
-        :type df: cudf.DataFrame
-        :param batch_size: Number of records in the dataframe.
-        :type batch_size: int
-        """
         self.__dataset = dataset
         self.__batchsize = batchsize
 
@@ -43,9 +43,13 @@ class DataLoader(object):
         return self.__dataset
 
     def get_chunks(self):
-        """ A generator function that yields each chunk of original input dataframe based on batchsize
-        :return: Partitioned dataframe.
-        :rtype: cudf.DataFrame
+        """
+        A generator function that yields each chunk of original input dataframe based on batchsize
+
+        Returns
+        -------
+        cudf.DataFrame
+            Partitioned dataframe
         """
         prev_chunk_offset = 0
         while prev_chunk_offset < self.__dataset.length:
