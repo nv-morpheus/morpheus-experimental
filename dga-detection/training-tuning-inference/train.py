@@ -20,9 +20,11 @@ python train.py \
 
 import argparse
 import os
-import cudf
 from datetime import datetime
+
 from dga_detector import DGADetector
+
+import cudf
 
 N_LAYERS = 3
 CHAR_VOCAB = 128
@@ -33,6 +35,7 @@ EPOCHS = 25
 TRAIN_SIZE = 0.7
 BATCH_SIZE = 10000
 MODELS_DIR = 'models'
+
 
 def main():
     print("Load Input Dataset to GPU Dataframe...")
@@ -57,11 +60,10 @@ def main():
     model_filepath = os.path.join(MODELS_DIR, model_filename)
     dd.save_checkpoint(model_filepath)
 
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--training-data",
-                        required=True,
-                        help="CSV with `domain` and `type` with 0/1 label")
+    parser.add_argument("--training-data", required=True, help="CSV with `domain` and `type` with 0/1 label")
     args = parser.parse_args()
 
 main()
