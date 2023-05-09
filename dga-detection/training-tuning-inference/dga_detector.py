@@ -15,13 +15,13 @@
 
 import logging
 
+import cupy as cp
 import torch
 import utils
 from dataloader import DataLoader
 from detector import Detector
 from dga_dataset import DGADataset
 from rnn_classifier import RNNClassifier
-from torch.utils.dlpack import from_dlpack
 from tqdm import trange
 
 import cudf
@@ -86,7 +86,7 @@ class DGADetector(Detector):
         }
         super()._save_checkpoint(checkpoint, file_path)
 
-    def train_model(self, train_data, labels, batch_size=1000, epochs=5, train_size=0.7, truncate=100):
+    def train_model(self, train_data, labels, batch_size=1000, epochs=5, train_size=0.7, truncate=100, pad_max_len=100):
         """
         This function is used for training RNNClassifier model with a given training dataset. It returns total loss to
         determine model prediction accuracy.
@@ -126,7 +126,7 @@ class DGADetector(Detector):
                 if domains_len > 0:
                     types_tensor = self._create_types_tensor(df["type"])
                     df = df.drop(["type", "domain"], axis=1)
-                    input, seq_lengths = self._create_variables(df)
+                    input, seq_lengths = self._create_variables(df, pad_max_len)
                     model_result = self.model(input, seq_lengths)
                     loss = self._get_loss(model_result, types_tensor)
                     total_loss += loss
@@ -140,7 +140,7 @@ class DGADetector(Detector):
                         ))
             self.evaluate_model(test_dataloader)
 
-    def predict(self, domains, probability=False, truncate=100):
+    def predict(self, domains, probability=False, truncate=100, pad_max_len=100):
         """
         This function accepts cudf series of domains as an argument to classify domain names as benign/malicious
         and returns the learned label for each object in the form of cudf series.
@@ -176,7 +176,7 @@ class DGADetector(Detector):
         df.index = temp_df.index
         df["domain"] = temp_df["domain"]
         temp_df = temp_df.drop("domain", axis=1)
-        input, seq_lengths = self._create_variables(temp_df)
+        input, seq_lengths = self._create_variables(temp_df, pad_max_len)
         del temp_df
         model_result = self.model(input, seq_lengths)
         if probability:
@@ -199,14 +199,22 @@ class DGADetector(Detector):
             types_tensor = self._set_var2cuda(types_tensor)
         return types_tensor
 
-    def _create_variables(self, df):
+    def _create_variables(self, df, pad_max_len):
         """
         Creates vectorized sequence for given domains and wraps around cuda for parallel processing.
         """
         seq_len_arr = df["len"].values_host
         df = df.drop("len", axis=1)
         seq_len_tensor = torch.LongTensor(seq_len_arr)
-        seq_tensor = self._df2tensor(df)
+
+        # seq_tensor = self._df2tensor(df)
+        # seq_cp = cp.asarray(df.to_cupy()).astype("long")
+        seq_cp = df.to_cupy()
+        input = cp.zeros((seq_cp.shape[0], pad_max_len))
+        input[:seq_cp.shape[0], :seq_cp.shape[1]] = seq_cp
+        input = input.astype("long")
+        seq_tensor = torch.as_tensor(input)
+
         # Return variables
         # DataParallel requires everything to be a Variable
         if torch.cuda.is_available():
@@ -214,15 +222,29 @@ class DGADetector(Detector):
             seq_len_tensor = self._set_var2cuda(seq_len_tensor)
         return seq_tensor, seq_len_tensor
 
-    def _df2tensor(self, ascii_df):
-        """
-        Converts gdf -> dlpack tensor -> torch tensor
-        """
-        dlpack_ascii_tensor = ascii_df.to_dlpack()
-        seq_tensor = from_dlpack(dlpack_ascii_tensor).long()
-        return seq_tensor
+    # def _df2tensor(self, ascii_df):
+    #     """
+    #     Converts gdf -> dlpack tensor -> torch tensor
+    #     """
+    #     ascii_cp = cp.asarray(ascii_df.to_cupy()).astype("long")
 
-    def evaluate_model(self, dataloader):
+    #     input = cp.zeros((ascii_cp.shape[0], self._pad_max_len))
+    #     input[:ascii_cp.shape[0], :ascii_cp.shape[1]] = ascii_cp
+    #     input = input.astype("long")
+
+    #     seq_tensor = from_dlpack(input.toDlpack())
+
+    #     return seq_tensor
+
+    # def _df2tensor(self, ascii_df):
+    #     """
+    #     Converts gdf -> dlpack tensor -> torch tensor
+    #     """
+    #     dlpack_ascii_tensor = ascii_df.to_dlpack()
+    #     seq_tensor = from_dlpack(dlpack_ascii_tensor).long()
+    #     return seq_tensor
+
+    def evaluate_model(self, dataloader, pad_max_len=100):
         """
         This function evaluates the trained model to verify it's accuracy.
 
@@ -253,7 +275,7 @@ class DGADetector(Detector):
         for df in dataloader.get_chunks():
             target = self._create_types_tensor(df["type"])
             df = df.drop(["type", "domain"], axis=1)
-            input, seq_lengths = self._create_variables(df)
+            input, seq_lengths = self._create_variables(df, pad_max_len)
             output = self.model(input, seq_lengths)
             pred = output.data.max(1, keepdim=True)[1]
             correct += pred.eq(target.data.view_as(pred)).cpu().sum()
