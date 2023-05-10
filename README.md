@@ -79,6 +79,10 @@ This model is a sequence binary classifier trained with vector representation of
 ## [Industrial Control System (ICS) Cyber Attack Detection](/operational-technology)
 This model is an XGBoost classifier that predicts each event on a power system based on dataset features.
 
+## [Intrusion Detection System using LODA algorithm](/ids-detection)
+The model is a Loda anomaly detector for detecting an intrusion attack in the form of bots in a network using a netflow dataset. 
+
+
 # Repo Structure
 Each prototype has its own directory that contains everything belonging to the specific prototype. Directories can include the following subfolders and documentation:
 
