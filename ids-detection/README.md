@@ -1,4 +1,4 @@
-## Intrusion detection using Lightweight Online Detector of Anomalies (LODA)
+## Intrusion Detection Using Lightweight Online Detector of Anomalies (LODA)
 
 ## Use Case
 Intrusion detection using Lightweight Online Detector of Anomalies (LODA)
