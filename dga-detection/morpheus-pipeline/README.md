@@ -14,7 +14,7 @@
 # limitations under the License.
 -->
 
-# Example cyBERT Morpheus Pipeline for Apache Log Parsing
+# Example Morpheus Pipeline for DGA Detection
 
 Example Morpheus pipeline using Triton Inference server and Morpheus.
 
