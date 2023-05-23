@@ -116,7 +116,7 @@ class Detector(ABC):
         self._set_parallelism()
         self._set_optimizer()
 
-    def _get_unwrapped_model(self):
+    def get_unwrapped_model(self):
         if GPU_COUNT > 1:
             model = self.model.module
         else:

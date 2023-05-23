@@ -76,7 +76,7 @@ class DGADetector(Detector):
         :param file_path: File path to save model checkpoint.
         :type file_path: string
         """
-        model = self._get_unwrapped_model()
+        model = self.get_unwrapped_model()
         checkpoint = {
             "state_dict": model.state_dict(),
             "input_size": model.input_size,
