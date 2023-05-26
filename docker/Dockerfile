@@ -101,6 +101,10 @@ RUN conda clean -afy
 COPY "./docker" "./docker"
 COPY "./anomalous-auth-detection" "./anomalous-auth-detection"
 COPY "./appshield-dga-detection" "./appshield-dga-detection"
+COPY "./asset-clustering" "./asset-clustering"
+COPY "./ids-detection" "./ids-detection"
+COPY "./log-sequence-ad" "./log-sequence-ad"
+COPY "./operational-technology" "./operational-technology"
 COPY "./phishing-url-detection" "./phishing-url-detection"
 COPY "./string-resemblance-grouping" "./string-resemblance-grouping"
 COPY ["*.md", "LICENSE", "./"]
