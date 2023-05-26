@@ -15,7 +15,7 @@
 """
 Example Usage:
 python train.py \
-       --training-data ../datasets/benign_and_dga_domains.csv
+       --training-data ../datasets/dga-training-data.csv
 """
 
 import argparse
