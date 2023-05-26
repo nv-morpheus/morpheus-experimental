@@ -22,10 +22,10 @@ from dataloader import DataLoader
 from detector import Detector
 from dga_dataset import DGADataset
 from rnn_classifier import RNNClassifier
+from sklearn.model_selection import train_test_split
 from tqdm import trange
 
 import cudf
-from sklearn.model_selection import train_test_split
 
 log = logging.getLogger(__name__)
 
@@ -278,13 +278,9 @@ class DGADetector(Detector):
         train_gdf = cudf.DataFrame()
         train_gdf["domain"] = train_data
         train_gdf["type"] = labels
-        #domain_train, domain_test, type_train, type_test = train_test_split(train_gdf, "type", train_size=train_size)
-        # test_df = self._create_df(domain_test, type_test)
-        # train_df = self._create_df(domain_train, type_train)
         train, test = train_test_split(train_gdf, train_size=train_size)
         test_df = self._create_df(test, test["type"])
         train_df = self._create_df(train, train["type"])
-        
 
         test_dataset = DGADataset(test_df, truncate)
         train_dataset = DGADataset(train_df, truncate)
