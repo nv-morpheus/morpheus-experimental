@@ -28,7 +28,8 @@ from morpheus.stages.general.monitor_stage import MonitorStage
 from morpheus.stages.inference.triton_inference_stage import TritonInferenceStage
 from morpheus.stages.input.file_source_stage import FileSourceStage
 from morpheus.stages.output.write_to_file_stage import WriteToFileStage
-from morpheus.stages.postprocess.add_classifications_stage import AddClassificationsStage
+# from morpheus.stages.postprocess.add_classifications_stage import AddClassificationsStage
+from morpheus.stages.postprocess.add_scores_stage import AddScoresStage
 from morpheus.stages.postprocess.serialize_stage import SerializeStage
 from morpheus.stages.preprocess.deserialize_stage import DeserializeStage
 from morpheus.utils.logger import configure_logging
@@ -99,7 +100,7 @@ def run_pipeline(num_threads,
     config.pipeline_batch_size = pipeline_batch_size
     config.model_max_batch_size = model_max_batch_size
     config.feature_length = model_seq_length
-    config.class_labels = ["dga", "not_dga"]
+    config.class_labels = ["is_dga", "not_dga"]
 
     # Create a pipeline object.
     pipeline = LinearPipeline(config)
@@ -129,7 +130,9 @@ def run_pipeline(num_threads,
     # This stage logs the metrics (msg/sec) from the above stage.
     pipeline.add_stage(MonitorStage(config, description="Inference rate", unit="inf"))
 
-    pipeline.add_stage(AddClassificationsStage(config, threshold=0.5, prefix=""))
+    # pipeline.add_stage(AddClassificationsStage(config, threshold=0.5, prefix=""))
+
+    pipeline.add_stage(AddScoresStage(config, labels=["is_dga"]))
 
     # Add a write file stage.
     # This stage writes all messages to a file.

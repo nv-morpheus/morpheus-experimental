@@ -25,7 +25,7 @@ from rnn_classifier import RNNClassifier
 from tqdm import trange
 
 import cudf
-from cuml.model_selection import train_test_split
+from sklearn.model_selection import train_test_split
 
 log = logging.getLogger(__name__)
 
@@ -222,28 +222,6 @@ class DGADetector(Detector):
             seq_len_tensor = self._set_var2cuda(seq_len_tensor)
         return seq_tensor, seq_len_tensor
 
-    # def _df2tensor(self, ascii_df):
-    #     """
-    #     Converts gdf -> dlpack tensor -> torch tensor
-    #     """
-    #     ascii_cp = cp.asarray(ascii_df.to_cupy()).astype("long")
-
-    #     input = cp.zeros((ascii_cp.shape[0], self._pad_max_len))
-    #     input[:ascii_cp.shape[0], :ascii_cp.shape[1]] = ascii_cp
-    #     input = input.astype("long")
-
-    #     seq_tensor = from_dlpack(input.toDlpack())
-
-    #     return seq_tensor
-
-    # def _df2tensor(self, ascii_df):
-    #     """
-    #     Converts gdf -> dlpack tensor -> torch tensor
-    #     """
-    #     dlpack_ascii_tensor = ascii_df.to_dlpack()
-    #     seq_tensor = from_dlpack(dlpack_ascii_tensor).long()
-    #     return seq_tensor
-
     def evaluate_model(self, dataloader, pad_max_len=100):
         """
         This function evaluates the trained model to verify it's accuracy.
@@ -300,9 +278,13 @@ class DGADetector(Detector):
         train_gdf = cudf.DataFrame()
         train_gdf["domain"] = train_data
         train_gdf["type"] = labels
-        domain_train, domain_test, type_train, type_test = train_test_split(train_gdf, "type", train_size=train_size)
-        test_df = self._create_df(domain_test, type_test)
-        train_df = self._create_df(domain_train, type_train)
+        #domain_train, domain_test, type_train, type_test = train_test_split(train_gdf, "type", train_size=train_size)
+        # test_df = self._create_df(domain_test, type_test)
+        # train_df = self._create_df(domain_train, type_train)
+        train, test = train_test_split(train_gdf, train_size=train_size)
+        test_df = self._create_df(test, test["type"])
+        train_df = self._create_df(train, train["type"])
+        
 
         test_dataset = DGADataset(test_df, truncate)
         train_dataset = DGADataset(train_df, truncate)

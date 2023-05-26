@@ -30,7 +30,7 @@ docker pull nvcr.io/nvidia/tritonserver:23.03-py3
 ```
 
 ##### Start Triton Inference Server Container
-From the Morpheus repo root directory, run the following to launch Triton and load the `dga-detection-onnx` model:
+From the `morpheus-experimental` repo root directory, run the following to launch Triton and load the `dga-detection-onnx` model:
 
 ```bash
 docker run --rm -ti --gpus=all -p8000:8000 -p8001:8001 -p8002:8002 -v $PWD/dga-detection/models:/models nvcr.io/nvidia/tritonserver:23.03-py3 tritonserver --model-repository=/models/triton-model-repo --exit-on-error=false --model-control-mode=explicit --load-model dga-detection-onnx
