@@ -21,13 +21,13 @@ pip install -r requirements.txt
 
 ### Training
 
-Training data consists of 729K labelled as DGA domains and 1.3M labelled as not DGA domains.
+Training data consists of 116K labelled as DGA domains and 100K labelled as not DGA domains.
 
 GPU Model: V100
 Epochs = 25
 Training batch size = 10000
-Model precision = 0.98
-Model accuracy = 0.99
+Model precision = 0.997
+Model accuracy = 0.998
 
 #### Training script
 
