@@ -18,7 +18,7 @@
 
 # Args used in FROM commands must come first
 ARG FROM_IMAGE="gpuci/miniforge-cuda"
-ARG CUDA_VER=11.5
+ARG CUDA_VER=11.8
 ARG LINUX_DISTRO=ubuntu
 ARG LINUX_VER=20.04
 
@@ -29,8 +29,8 @@ FROM ${FROM_IMAGE}:${CUDA_VER}-devel-${LINUX_DISTRO}${LINUX_VER} AS base
 # Required arguments
 ARG IMAGE_TYPE=base
 ARG RAPIDS_CHANNEL=rapidsai-nightly
-ARG RAPIDS_VER=22.10
-ARG PYTHON_VER=3.8
+ARG RAPIDS_VER=23.02
+ARG PYTHON_VER=3.10
 ARG CONDA_CHANNEL=rapidsai
 
 # Temp option to set conda channel_alias property during build
@@ -101,6 +101,10 @@ RUN conda clean -afy
 COPY "./docker" "./docker"
 COPY "./anomalous-auth-detection" "./anomalous-auth-detection"
 COPY "./appshield-dga-detection" "./appshield-dga-detection"
+COPY "./asset-clustering" "./asset-clustering"
+COPY "./ids-detection" "./ids-detection"
+COPY "./log-sequence-ad" "./log-sequence-ad"
+COPY "./operational-technology" "./operational-technology"
 COPY "./phishing-url-detection" "./phishing-url-detection"
 COPY "./string-resemblance-grouping" "./string-resemblance-grouping"
 COPY ["*.md", "LICENSE", "./"]
