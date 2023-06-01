@@ -21,13 +21,24 @@ pip install -r requirements.txt
 
 ### Training
 
+#### Training data
+
 Training data consists of 116K labelled as DGA domains and 100K labelled as not DGA domains.
 
-GPU Model: V100
-Epochs = 25
-Training batch size = 10000
-Model precision = 0.997
-Model accuracy = 0.998
+Two types of DGA domains (Banjori, Chinad) were generated based on the implementations on https://github.com/baderj/domain_generation_algorithms. 100000 benign domains were taken from https://www.domcop.com/files/top/top10milliondomains.csv.zip.
+
+#### Training epochs
+25
+
+#### Training batch size
+10000
+
+#### GPU model
+V100
+
+#### Model accuracy
+precision = 0.995 
+ccuracy = 0.998
 
 #### Training script
 
