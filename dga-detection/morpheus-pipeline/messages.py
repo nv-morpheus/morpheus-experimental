@@ -16,36 +16,9 @@
 import dataclasses
 import typing
 
-import cupy as cp
-
-from morpheus.messages import InferenceMemory
 from morpheus.messages import MultiInferenceMessage
-from morpheus.messages.data_class_prop import DataClassProp
 from morpheus.messages.memory.tensor_memory import TensorMemory
 from morpheus.messages.message_meta import MessageMeta
-
-
-@dataclasses.dataclass(init=False)
-class InferenceMemoryDGA(InferenceMemory, cpp_class=None):
-    """
-    This is a container class for data that needs to be submitted to the inference server for DGA
-    use cases.
-
-    Parameters
-    ----------
-    domains : cupy.ndarray
-        The token-ids for each string padded with 0s to max_length.
-    seq_lengths : cupy.ndarray
-        Sequence lengths
-
-    """
-    domains: dataclasses.InitVar[cp.ndarray] = DataClassProp(InferenceMemory._get_tensor_prop,
-                                                             InferenceMemory.set_input)
-    seq_ids: dataclasses.InitVar[cp.ndarray] = DataClassProp(InferenceMemory._get_tensor_prop,
-                                                             InferenceMemory.set_input)
-
-    def __init__(self, *, count: int, domains: cp.ndarray, seq_ids: cp.ndarray):
-        super().__init__(count=count, tensors={'domains': domains, 'seq_ids': seq_ids})
 
 
 @dataclasses.dataclass

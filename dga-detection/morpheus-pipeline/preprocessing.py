@@ -17,7 +17,7 @@ from functools import partial
 
 import cupy as cp
 import mrc
-from messages import InferenceMemoryDGA
+# from messages import InferenceMemoryDGA
 from messages import MultiInferenceDGAMessage
 
 import cudf
@@ -26,6 +26,7 @@ from morpheus.config import Config
 from morpheus.messages import MultiInferenceMessage
 from morpheus.messages import MultiInferenceNLPMessage
 from morpheus.messages import MultiMessage
+from morpheus.messages.memory.tensor_memory import TensorMemory
 from morpheus.stages.preprocess.preprocess_base_stage import PreprocessBaseStage
 
 
@@ -75,7 +76,7 @@ class PreprocessDGAStage(PreprocessBaseStage):
     @staticmethod
     def pre_process_batch(x: MultiMessage, fea_len: int, column: str, truncate_len: int) -> MultiInferenceNLPMessage:
 
-        df = x.get_meta()[[column]]
+        df = x.get_meta([column])
         df[column] = df[column].str.slice_replace(truncate_len, repl='')
 
         split_ser = df[column].str.findall(r"[\w\W\d\D\s\S]")
@@ -113,7 +114,7 @@ class PreprocessDGAStage(PreprocessBaseStage):
         seg_ids[:, 2] = fea_len - 1
 
         # Create the inference memory. Keep in mind count here could be > than input count
-        memory = InferenceMemoryDGA(count=input.shape[0], domains=input, seq_ids=seg_ids)
+        memory = TensorMemory(count=input.shape[0], tensors={'domains': input, 'seq_ids': seg_ids})
 
         infer_message = MultiInferenceDGAMessage.from_message(x, memory=memory)
 
