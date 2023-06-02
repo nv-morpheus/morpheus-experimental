@@ -17,7 +17,6 @@ from functools import partial
 
 import cupy as cp
 import mrc
-# from messages import InferenceMemoryDGA
 from messages import MultiInferenceDGAMessage
 
 import cudf
