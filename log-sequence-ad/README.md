@@ -47,17 +47,17 @@ Binary classifier output is assigned to each sequence log message in the input f
 
 ## Training Dataset:
 
-**Link:** [BlueGeme/L]('https://zenodo.org/record/3227177/files/BGL.tar.gz?download=1') <br>
+**Link:** [BlueGeme/L](https://zenodo.org/record/3227177/files/BGL.tar.gz?download=1) <br>
 **Properties (Quantity, Dataset Descriptions, Sensor(s)):** The dataset for the example used is from BlueGene/L Supercomputer System (BGL). BGL dataset contains 4,747,963 log messages from supercomputer system at Lawrence Livermore National Labs. The model is trained and evaluated using 1 million rows of preprocessed logs using [Drain](https://github.com/logpai/logparser) parser<br>
 **Dataset License:**  Apache 2.0 <br>
 
 ## Evaluation Dataset:
 **Link:**  [BGL-evaluation sample](https://github.com/LogIntelligence/LogPPT/blob/master/logs/BGL/BGL_2k.log_structured.csv)  <br>
-**Properties (Quantity, Dataset Descriptions, Sensor(s)):** Processed 39K BGL log dataset. 
+**Properties (Quantity, Dataset Descriptions, Sensor(s)):** Processed 39K BGL log dataset. <br>
 **Dataset License:** Apache 2.0<br>
 
 ## Inference:
-**Engine:** Pytorch
+**Engine:** Pytorch <br>
 **Test Hardware:** <br>
 * Other (Not Listed)  <br>
 
@@ -122,7 +122,7 @@ Binary classifier output is assigned to each sequence log message in the input f
 ## Model Card ++ Saftey & Security Subcard
 
 ### Link the location of the training dataset's repository (if able to share).
-* [BlueGeme/L]('https://zenodo.org/record/3227177/files/BGL.tar.gz?download=1')
+* [BlueGeme/L](https://zenodo.org/record/3227177/files/BGL.tar.gz?download=1)
 
 ### Is the model used in an application with physical safety impact?
 * No

@@ -32,8 +32,8 @@ or "fraudulent" authentication.<br>
 **Output Parameters:** None <br>
 ## Software Integration:
 **Runtime(s):** 
-* pytorch
-* dgl  <br>
+* Pytorch
+* DGL  <br>
 
 
 **Supported Hardware Platform(s):** <br>
@@ -49,14 +49,14 @@ or "fraudulent" authentication.<br>
 
 ## Training Dataset:
 
-**Properties (Quantity, Dataset Descriptions, Sensor(s)):** A training data consists of 1992 authentication event, with a label indicating either failure or success. The dataset is simulated to resemble Azure-AD sign on events.
-**Dataset License:**  N/A
+**Properties (Quantity, Dataset Descriptions, Sensor(s)):** A training data consists of 1992 authentication event, with a label indicating either failure or success. The dataset is simulated to resemble Azure-AD sign on events. <br>
+**Dataset License:**  N/A <br>
 ## Evaluation Dataset:
-**Properties (Quantity, Dataset Descriptions, Sensor(s)):** A evaluation data consists of 235 authentication event, with a label indicating either failure or success. 
+**Properties (Quantity, Dataset Descriptions, Sensor(s)):** A evaluation data consists of 235 authentication event, with a label indicating either failure or success. <br>
 **Dataset License:**  N/A
 
 ## Inference:
-**Engine:** pytorch
+**Engine:** Pytorch <br>
 **Test Hardware:** <br>
 * Other (Not Listed)  <br>
 
@@ -147,7 +147,7 @@ Accuracy = 0.85
 ### Name target quality Key Performance Indicators (KPIs) for which this has been tested.  
 * Not Applicable
 ### Technical robustness and model security validated?
-No
+* Not Applicable
 ### Is the model and dataset compliant with National Classification Management Society (NCMS)?
 * Not Applicable
 ### Are there explicit model and dataset restrictions?
@@ -166,7 +166,7 @@ No
 * Neither
 
 ### Was consent obtained for any PII used?
-* No
+* Not Applicable
 
 ### Protected classes used to create this model? (The following were used in model the model's training:)
 
@@ -192,4 +192,4 @@ No
 * Not Applicable
 
 ### Is data compliant with data subject requests for data correction or removal, if such a request was made?
-* Not Applicable
+* Not Applicable (Data is generated synthetically)

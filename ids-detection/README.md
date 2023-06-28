@@ -41,13 +41,13 @@ The Unsupervised anomaly detector produces negative log-likelihood as the anomal
 
 ## Training Dataset:
  
-**Link:** [CICIDS2017]('(https://www.unb.ca/cic/datasets/ids-2017.html)) <br>
+**Link:** [CICIDS2017](https://www.unb.ca/cic/datasets/ids-2017.html)<br>
 **Properties (Quantity, Dataset Descriptions, Sensor(s)):** The dataset is from Canadian Institute for Cybersecurity (CIC). The CICIDS2017  dataset contains benign and the most up-to-date common attacks, which resembles the true real-world data (PCAPs). It also includes the results of the network traffic analysis using CICFlowMeter with labeled flows based on the time stamp, source, and destination IPs, source and destination ports, protocols, and attack (CSV files). Also available is the extracted features definition.<br>
 **Dataset License:** N/A  <br>
 
 ## Evaluation Dataset:
-**Link:**  [CICIDS2017]('(https://www.unb.ca/cic/datasets/ids-2017.html))  <br>
-**Properties (Quantity, Dataset Descriptions, Sensor(s)):** Subset of CICIDS2017 with only botnet attacks. 
+**Link:** [CICIDS2017](https://www.unb.ca/cic/datasets/ids-2017.html)  <br>
+**Properties (Quantity, Dataset Descriptions, Sensor(s)):** Subset of CICIDS2017 with only botnet attacks. <br>
 **Dataset License:** N/A<br>
 
 ## Inference:
@@ -115,7 +115,7 @@ The Unsupervised anomaly detector produces negative log-likelihood as the anomal
 ## Model Card ++ Saftey & Security Subcard
 
 ### Link the location of the training dataset's repository (if able to share).
-* [CICIDS2017]('(https://www.unb.ca/cic/datasets/ids-2017.html))
+* [CICIDS2017](https://www.unb.ca/cic/datasets/ids-2017.html)
 
 ### Is the model used in an application with physical safety impact?
 * No
