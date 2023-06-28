@@ -48,10 +48,11 @@ or "fraudulent" authentication.<br>
 # Training & Evaluation: 
 
 ## Training Dataset:
-
+**Link:**  [training data subset](dataset/azure_synthetic/azure_ad_logs_sample_with_anomaly_all.json) <br>
 **Properties (Quantity, Dataset Descriptions, Sensor(s)):** A training data consists of 1992 authentication event, with a label indicating either failure or success. The dataset is simulated to resemble Azure-AD sign on events. <br>
 **Dataset License:**  N/A <br>
 ## Evaluation Dataset:
+**Link:**  [evaluation data subset](dataset/azure_synthetic/azure_ad_logs_sample_with_anomaly_all.json) <br>
 **Properties (Quantity, Dataset Descriptions, Sensor(s)):** A evaluation data consists of 235 authentication event, with a label indicating either failure or success. <br>
 **Dataset License:**  N/A
 
