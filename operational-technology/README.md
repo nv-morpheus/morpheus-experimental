@@ -1,94 +1,233 @@
-## Industrial Control System (ICS) Cyber Attack Detection
+# Industrial Control System (ICS) Cyber Attack Detection
 
-## Use Case
-Classify events into various categories based on power system data.
+# Model Overview
 
-### Version
-1.0
+## Description:
+The model is a multi-class XGBoost classifier that predicts each event on a power system based on dataset features. <br>
 
-### Model Overview
-The model is a multi-class XGBoost classifier that predicts each event on a power system based on dataset features.
+## References(s):
+1. https://sites.google.com/a/uah.edu/tommy-morris-uah/ics-data-sets <br>
+2. http://www.ece.uah.edu/~thm0009/icsdatasets/PowerSystem_Dataset_README.pdf <br>
 
-### Model Architecture
-XGBoost Classifier
+## Model Architecture: 
+**Architecture Type:** Gradient Boosting <br>
+**Network Architecture:** XGBOOST <br>
 
-### Requirements
-Requirements can be installed with 
-```
-pip install -r requirements.txt
-```
+## Input: (Enter "None" As Needed)
+**Input Format:** Dataset features contain synchrophasor measurements and data logs from Snort, a simulated control panel, and relays.  <br>
+**Input Parameters:**  <br>
+**Other Properties Related to Output:** N/A <br>
+
+## Output: (Enter "None" As Needed)
+**Output Format:** Natural Events, No Events and Attack Events <br>
+**Output Parameters:**  <br>
+**Other Properties Related to Output:** N/A <br> 
+
+## Requirements
+Requirements can be installed with
+
+`pip install -r requirements.txt`
 and for `p7zip`
-```
-apt update
-apt install p7zip-full p7zip-rar
-```
 
-### Training
+`apt update`
+`apt install p7zip-full p7zip-rar`
 
-#### Training data
-In this project, we use the publicly available __[**Industrial Control System (ICS) Cyber Attack Datasets**](Tommy Morris - Industrial Control System (ICS) Cyber Attack Datasets (google.com))__[1] dataset from the Oak Ridge National Laboratories (ORNL) and UAH. We use the 3-class version of the dataset. The dataset labels are Natural Events, No Events and Attack Events. All features contain numeric values, and the dataset has no timestamp or interval information.
-Dataset features contain synchrophasor measurements and data logs from Snort, a simulated control panel, and relays. There are 78377 rows in the dataset. In our notebooks and scripts, we download the compressed version from its source and then extract and merge all the rows into a dataframe. The `inf` values are replaced with `nan`, and the three labels are replaced with 0,1 and 2.
+## Software Integration:
+**Runtime(s):** Morpheus  <br>
 
-#### Training parameters
+**Supported Hardware Platform(s):** <br>
+* Ampere/Turing <br>
 
-Most of the default XGBoost parameters are used in training code. The performance could be improved by finding better hyperparameters. We experimented with a random search but excluded that part from the notebook for brevity.
-i.e.
-```
-params = { 'max_depth': [2,3,6,10,20],
-           'learning_rate': [0.05,0.1, 0.15,0.2,0.25,0.3],
-           'n_estimators': [500, 750, 1000,1200],
-           'colsample_bytree': [0.1,0.3,0.5, 0.7,0.9],
-           'min_child_weight': [1, 2, 5,8, 10,12,15,20],
-           'gamma': [0.5, 0.75,1, 1.5, 2, 5 , 7,8, 10,12],
-           'subsample': [0.05,0.1,0.3,0.6, 0.8, 1.0],
-           'colsample_bytree': [0.05,0.1,0.3,0.6, 0.8, 1.0],
-         }
-scorer={'f1_score' : make_scorer(f1_score, average='weighted')}
-grid=RandomizedSearchCV(xgb_clf,params,cv=kfold,random_state=2,scoring=scorer,refit=False,n_iter=40)
-```
+**Supported Operating System(s):** <br>
+* Linux <br>
 
-The hyperparameter set below came up as the best combination; different experiments may give different results.
-```
-{'subsample': 0.8, 'n_estimators': 1200, 'min_child_weight': 2, 'max_depth': 20, 'learning_rate': 0.15, 'gamma': 0.5, 'colsample_bytree': 0.1}
-```
+## Model Version(s): 
+[v1]  <br>
 
-#### Model accuracy
+# Training & Evaluation: 
 
-The label distribution in the dataset is imbalanced, so we do not use the accuracy score. Instead, we use F1 weighted as the metric. The F1 score was over 0.91 on a test set.
+## Training Dataset:
+
+**Link:** http://www.ece.uah.edu/~thm0009/icsdatasets/triple.7z <br>
+**Properties (Quantity, Dataset Descriptions, Sensor(s)):** There are 78377 rows in the dataset. <br>
+**Dataset License:** N/A <br>
+
+## Evaluation Dataset:
+**Link:** http://www.ece.uah.edu/~thm0009/icsdatasets/triple.7z <br>
+**Properties (Quantity, Dataset Descriptions, Sensor(s)):** There are 78377 rows in the dataset. <br>
+**Dataset License:** N/A <br>
+
+## Inference:
+**Engine:** Triton <br>
+**Test Hardware:** <br>
+* Other  <br>
+
+# Subcards
+
+## Model Card ++ Bias Subcard
+
+### What is the gender balance of the model validation data?  
+
+Not Applicable
+
+### What is the racial/ethnicity balance of the model validation data?
+
+Not Applicable
+
+### What is the age balance of the model validation data?
+
+Not Applicable
+
+### What is the language balance of the model validation data?
+
+Not Applicable
+
+### What is the geographic origin language balance of the model validation data?
+
+Not Applicable
+
+### What is the educational background balance of the model validation data?
+
+Not Applicable
+
+### What is the accent balance of the model validation data?
+
+Not Applicable
+
+### What is the face/key point balance of the model validation data? 
+
+Not Applicable
+
+### What is the skin/tone balance of the model validation data?
+
+Not Applicable
+
+### What is the religion balance of the model validation data?
+
+Not Applicable
+
+### Individuals from the following adversely impacted (protected classes) groups participate in model design and testing.
+
+Not Applicable
+
+### Describe measures taken to mitigate against unwanted bias.
+
+Not Applicable
+
+## Model Card ++ Explainability Subcard
+
+### Name example applications and use cases for this model. 
+*  Natural Events, No Events and Attack Events can be detected in an Industrial Control System
+
+### Fill in the blank for the model technique.
+
+* This model is intended for developers who want to use XGBoost to detect different events in an Operational Technologies dataset.
+
+### Name who is intended to benefit from this model. 
+
+* This model is intended for users who want to differentiate Natural Events, No Events and Attack Events.
+
+### Describe the model output. 
+* This model outputs one of these results: Natural Events, No Events and Attack Events
+
+### List the steps explaining how this model works.  
+* An XGBoost model gets trained with the dataset and in inference the model predicts one of the multiple classes for each row.
+
+### Name the adversely impacted groups (protected classes) this has been tested to deliver comparable outcomes regardless of:
+* Not Applicable
+
+### List the technical limitations of the model. 
+* Further training is needed for different data types.
+
+### What performance metrics were used to affirm the model's performance?
+* F1
+
+### What are the potential known risks to users and stakeholders?
+* N/A
+
+### What training is recommended for developers working with this model?
+* None
+
+### Link the relevant end user license agreement 
+* [LICENSE](../LICENSE)
 
 
-#### Training script
+## Model Card ++ Saftey & Security Subcard
 
-To train the model, run the following script:
+### Link the location of the training dataset's repository.
+* http://www.ece.uah.edu/~thm0009/icsdatasets/triple.7z
 
-```
-python ot-xgboost-train.py \
-    --model ../models/ot-xgboost-20230207.pkl
-```
-This will download the data (if it is not present) and train a model with a training set, and it will save a model under the `models` directory.
+### Is the model used in an application with physical safety impact?
+* No
 
-### Inference
+### Describe physical safety impact (if present).
+* N/A
 
-Inference script can be run as:
-```
-python ot-xgboost-inference.py \
-    --model ../models/ot-xgboost-20230207.pkl \
-    --output ot-validation-output.jsonlines
-```
-This will download the dataset, the prediction is performed on the test set, and the output is saved into a file.
+### Was model and dataset assessed for vulnerability for potential form of attack?
+* No
 
-### How To Use This Model
-This model can be used to detect cyber attacks and natural faults in power systems. A training notebook is also included so that users can update the model as more labelled data is collected. 
+### Name applications for the model.
 
-### Input
-The input for this model is the 127 features in the dataset which consist of synchrophasor measurements and data logs from Snort, a simulated control panel, and relays.
+*  Industrial Control System (ICS) Cyber Attack Detection
 
-### Output
-Multi-class classifier predicts one of these labels Natural Events, No Events and Attacks.
+### Name use case restrictions for the model.
+* Different models need to be trained for different types of data
 
-### Ethical considerations
-N/A
+### Has this been verified to have met prescribed quality standards?
+* No
 
-### References
-1. https://sites.google.com/a/uah.edu/tommy-morris-uah/ics-data-sets
-2. http://www.ece.uah.edu/~thm0009/icsdatasets/PowerSystem_Dataset_README.pdf
+### Name target quality Key Performance Indicators (KPIs) for which this has been tested.  
+* N/A
+
+### Technical robustness and model security validated?
+* No
+
+### Is the model and dataset compliant with National Classification Management Society (NCMS)?
+* No
+
+### Are there explicit model and dataset restrictions?
+* No
+
+### Are there access restrictions to systems, model, and data?
+* N/A
+
+### Is there a digital signature?
+
+* No
+
+## Model Card ++ Privacy Subcard
+
+
+### Generatable or reverse engineerable personally-identifiable information (PII)?
+* Neither
+
+### Was consent obtained for any PII used?
+* N/A
+
+### Protected classes used to create this model? (The following were used in model the model's training:)
+* N/A
+
+### How often is dataset reviewed?
+* N/A
+
+### Is a mechanism in place to honor data subject right of access or deletion of personal data?
+
+* N/A
+
+### If PII collected for the development of this AI model, was it minimized to only what was required? 
+* N/A
+
+### Is data in dataset traceable?
+* N/A
+
+### Scanned for malware?
+* N/A
+
+### Are we able to identify and trace source of dataset?
+* N/A
+
+### Does data labeling (annotation, metadata) comply with privacy laws?
+* N/A
+
+### Is data compliant with data subject requests for data correction or removal, if such a request was made?
+* N/A
