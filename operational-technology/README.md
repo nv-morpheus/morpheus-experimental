@@ -3,37 +3,46 @@
 # Model Overview
 
 ## Description:
-The model is a multi-class XGBoost classifier that predicts each event on a power system based on dataset features. <br>
+* The model is a multi-class XGBoost classifier that predicts each event on a power system based on dataset features. <br>
 
 ## References(s):
-1. https://sites.google.com/a/uah.edu/tommy-morris-uah/ics-data-sets <br>
-2. http://www.ece.uah.edu/~thm0009/icsdatasets/PowerSystem_Dataset_README.pdf <br>
+* https://sites.google.com/a/uah.edu/tommy-morris-uah/ics-data-sets <br>
+* http://www.ece.uah.edu/~thm0009/icsdatasets/PowerSystem_Dataset_README.pdf <br>
 
 ## Model Architecture: 
-**Architecture Type:** Gradient Boosting <br>
-**Network Architecture:** XGBOOST <br>
+**Architecture Type:** 
+* Gradient Boosting <br>
+**Network Architecture:**
+* XGBOOST <br>
 
 ## Input: (Enter "None" As Needed)
-**Input Format:** Dataset features contain synchrophasor measurements and data logs from Snort, a simulated control panel, and relays.  <br>
-**Input Parameters:**  <br>
-**Other Properties Related to Output:** N/A <br>
+**Input Format:** 
+* Dataset features contain synchrophasor measurements and data logs from Snort, a simulated control panel, and relays.  <br>
+**Input Parameters:**
+* N/A <br>
+**Other Properties Related to Output:**
+* N/A <br>
 
 ## Output: (Enter "None" As Needed)
-**Output Format:** Natural Events, No Events and Attack Events <br>
-**Output Parameters:**  <br>
-**Other Properties Related to Output:** N/A <br> 
+**Output Format:** 
+* Natural Events, No Events or Attack Events <br>
+**Output Parameters:**
+* N/A  <br>
+**Other Properties Related to Output:**
+* N/A <br> 
 
 ## Requirements
-Requirements can be installed with
+* Requirements can be installed with
 
 `pip install -r requirements.txt`
-and for `p7zip`
+* and for `p7zip`
 
 `apt update`
 `apt install p7zip-full p7zip-rar`
 
 ## Software Integration:
-**Runtime(s):** Morpheus  <br>
+**Runtime(s):** 
+* Morpheus  <br>
 
 **Supported Hardware Platform(s):** <br>
 * Ampere/Turing <br>
@@ -42,23 +51,30 @@ and for `p7zip`
 * Linux <br>
 
 ## Model Version(s): 
-[v1]  <br>
+* [v1]  <br>
 
 # Training & Evaluation: 
 
 ## Training Dataset:
 
-**Link:** http://www.ece.uah.edu/~thm0009/icsdatasets/triple.7z <br>
-**Properties (Quantity, Dataset Descriptions, Sensor(s)):** There are 78377 rows in the dataset. <br>
-**Dataset License:** N/A <br>
+**Link:** 
+* http://www.ece.uah.edu/~thm0009/icsdatasets/triple.7z <br>
+**Properties (Quantity, Dataset Descriptions, Sensor(s)):**
+* There are 78377 rows in the dataset. <br>
+**Dataset License:**
+* N/A <br>
 
 ## Evaluation Dataset:
-**Link:** http://www.ece.uah.edu/~thm0009/icsdatasets/triple.7z <br>
-**Properties (Quantity, Dataset Descriptions, Sensor(s)):** There are 78377 rows in the dataset. <br>
-**Dataset License:** N/A <br>
+**Link:** 
+* http://www.ece.uah.edu/~thm0009/icsdatasets/triple.7z <br>
+**Properties (Quantity, Dataset Descriptions, Sensor(s)):**
+* There are 78377 rows in the dataset. <br>
+**Dataset License:**
+* N/A <br>
 
 ## Inference:
-**Engine:** Triton <br>
+**Engine:** 
+* Triton <br>
 **Test Hardware:** <br>
 * Other  <br>
 
@@ -68,51 +84,51 @@ and for `p7zip`
 
 ### What is the gender balance of the model validation data?  
 
-Not Applicable
+* Not Applicable
 
 ### What is the racial/ethnicity balance of the model validation data?
 
-Not Applicable
+* Not Applicable
 
 ### What is the age balance of the model validation data?
 
-Not Applicable
+* Not Applicable
 
 ### What is the language balance of the model validation data?
 
-Not Applicable
+* Not Applicable
 
 ### What is the geographic origin language balance of the model validation data?
 
-Not Applicable
+* Not Applicable
 
 ### What is the educational background balance of the model validation data?
 
-Not Applicable
+* Not Applicable
 
 ### What is the accent balance of the model validation data?
 
-Not Applicable
+* Not Applicable
 
 ### What is the face/key point balance of the model validation data? 
 
-Not Applicable
+* Not Applicable
 
 ### What is the skin/tone balance of the model validation data?
 
-Not Applicable
+* Not Applicable
 
 ### What is the religion balance of the model validation data?
 
-Not Applicable
+* Not Applicable
 
 ### Individuals from the following adversely impacted (protected classes) groups participate in model design and testing.
 
-Not Applicable
+* Not Applicable
 
 ### Describe measures taken to mitigate against unwanted bias.
 
-Not Applicable
+* Not Applicable
 
 ## Model Card ++ Explainability Subcard
 
@@ -131,7 +147,7 @@ Not Applicable
 * This model outputs one of these results: Natural Events, No Events and Attack Events
 
 ### List the steps explaining how this model works.  
-* An XGBoost model gets trained with the dataset and in inference the model predicts one of the multiple classes for each row.
+* An XGBoost model gets trained with the dataset, and in inference, the model predicts one of the multiple classes for each row.
 
 ### Name the adversely impacted groups (protected classes) this has been tested to deliver comparable outcomes regardless of:
 * Not Applicable
@@ -149,7 +165,7 @@ Not Applicable
 * None
 
 ### Link the relevant end user license agreement 
-* [LICENSE](../LICENSE)
+* [Apache 2.0](http://www.apache.org/licenses/LICENSE-2.0)<br>
 
 
 ## Model Card ++ Saftey & Security Subcard
