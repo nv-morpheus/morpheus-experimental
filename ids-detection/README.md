@@ -1,6 +1,21 @@
-# Intrusion Detection Using Lightweight Online Detector of Anomalies (LODA)
+<!--
+SPDX-FileCopyrightText: Copyright (c) 2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+SPDX-License-Identifier: Apache-2.0
 
-## Model Overview
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+-->
+
+# Model Overview
 
 ### Description:
 The model is  a Lightweight Online Detector of Anomalies (Loda) anomaly detector for intrusion detection use cases. Loda is trained to identify attacks in the form of bots from Netflow data. We used `cic_ids2017` benchmark dataset for testing the performance of the model.
@@ -10,11 +25,15 @@ The model is  a Lightweight Online Detector of Anomalies (Loda) anomaly detector
 
 ## Model Architecture:
 Loda (lightweight online detector of anomalies), an ensemble of 1-D fixed histograms, where each histogram are built using random projection of features. The model is an unsupervised anomaly detector where detection is scored using a negative log-likelihood score.
-**Architecture Type:** LODA <br>
-**Network Architecture:** N/A<br>
+**Architecture Type:** 
+* LODA <br>
+
+**Network Architecture:** 
+* N/A<br>
 
 ## Input
-The input is Netflow activity data collected in the form of a tabular format.<br>
+* The input is Netflow activity data collected in the form of a tabular format.<br>
+
 **Input Parameters:**
 ```
 number_random_cuts = 1000
@@ -22,11 +41,23 @@ variance = 0.99
 ```
 <br>
 
+**Input Format:** 
+* CSV format<br>
+
+**Other Properties Related to Output:** 
+* None<br>
 ## Output
-The Unsupervised anomaly detector produces negative log-likelihood as the anomaly score of each data point. A large score indicates anomalousness of data points <br>
-**Output Parameters:** None <br>
+* The Unsupervised anomaly detector produces negative log-likelihood as the anomaly score of each data point. A large score indicates anomalousness of data points <br>
+
+**Output Parameters:**  
+* None <br>
+
+**Output Format:** 
+* CSV<br>
+
 ## Software Integration:
-**Runtime(s):** cupy <br>
+**Runtime(s):** 
+* cupy <br>
 
 **Supported Hardware Platform(s):** <br>
 * Ampere/Turing <br>
@@ -41,20 +72,32 @@ The Unsupervised anomaly detector produces negative log-likelihood as the anomal
 
 ## Training Dataset:
  
-**Link:** [CICIDS2017](https://www.unb.ca/cic/datasets/ids-2017.html)<br>
-**Properties (Quantity, Dataset Descriptions, Sensor(s)):** The dataset is from Canadian Institute for Cybersecurity (CIC). The CICIDS2017  dataset contains benign and the most up-to-date common attacks, which resembles the true real-world data (PCAPs). It also includes the results of the network traffic analysis using CICFlowMeter with labeled flows based on the time stamp, source, and destination IPs, source and destination ports, protocols, and attack (CSV files). Also available is the extracted features definition.<br>
-**Dataset License:** N/A  <br>
+**Link:** 
+* [CICIDS2017](https://www.unb.ca/cic/datasets/ids-2017.html)<br>
+
+**Properties (Quantity, Dataset Descriptions, Sensor(s)):** 
+* The dataset is from Canadian Institute for Cybersecurity (CIC). The CICIDS2017  dataset contains benign and the most up-to-date common attacks, which resembles the true real-world data (PCAPs). It also includes the results of the network traffic analysis using CICFlowMeter with labeled flows based on the time stamp, source, and destination IPs, source and destination ports, protocols, and attack (CSV files). Also available is the extracted features definition.<br>
+
+**Dataset License:** 
+* [LICENSE](https://www.unb.ca/cic/datasets/ids-2017.html) <br>
 
 ## Evaluation Dataset:
-**Link:** [CICIDS2017](https://www.unb.ca/cic/datasets/ids-2017.html)  <br>
-**Properties (Quantity, Dataset Descriptions, Sensor(s)):** Subset of CICIDS2017 with only botnet attacks. <br>
-**Dataset License:** N/A<br>
+**Link:** 
+* [CICIDS2017](https://www.unb.ca/cic/datasets/ids-2017.html)  <br>
+
+**Properties (Quantity, Dataset Descriptions, Sensor(s)):** 
+* Subset of CICIDS2017 with only botnet attacks. <br>
+
+**Dataset License:** 
+* [LICENSE](https://www.unb.ca/cic/datasets/ids-2017.html)<br>
 
 ## Inference:
-**Engine:** cupy
-**Test Hardware:** <br>
-* Other (Not Listed)  <br>
+**Engine:** 
+* python/cupy
 
+**Test Hardware:** <br>
+* Other <br>
+# Subcards
 ## Model Card ++ Bias Subcard
 
 ### What is the gender balance of the model validation data?  
@@ -67,7 +110,7 @@ The Unsupervised anomaly detector produces negative log-likelihood as the anomal
 * Not Applicable
 
 ### What is the language balance of the model validation data?
-* Not Applicable
+* English (100%)
 
 ### What is the geographic origin language balance of the model validation data?
 * Not Applicable
@@ -83,7 +126,8 @@ The Unsupervised anomaly detector produces negative log-likelihood as the anomal
 ## Model Card ++ Explainability Subcard
 
 ### Name example applications and use cases for this model. 
-* This model is intended to be used for IDS application.
+* The model is primarily designed for testing purposes and serves as a small pretrained model specifically used to evaluate and validate  IDS application.
+
 ### Fill in the blank for the model technique.
 * This model is intended for developers that want to build IDS system.
 
@@ -99,7 +143,7 @@ The Unsupervised anomaly detector produces negative log-likelihood as the anomal
 * Not Applicable
 
 ### List the technical limitations of the model.
-* This model requires feature engineered netflow activity data in the format of CIC dataset.
+* This model requires feature engineered netflow activity data in the format of CICIDS processed dataset format.
 
 ### What performance metrics were used to affirm the model's performance?
 * AUC & average precision score
@@ -108,7 +152,8 @@ The Unsupervised anomaly detector produces negative log-likelihood as the anomal
 * Not Applicable
 
 ### What training is recommended for developers working with this model?  If none, please state "none."
-* none
+* None
+
 ### Link the relevant end user license agreement 
 * [Apache 2.0](https://github.com/nv-morpheus/Morpheus/blob/branch-23.07/LICENSE)
 
@@ -121,14 +166,14 @@ The Unsupervised anomaly detector produces negative log-likelihood as the anomal
 * No
 
 ### Describe physical safety impact (if present).
-* Not Applicable
+* None
 
 ### Was model and dataset assessed for vulnerability for potential form of attack?
 * No
 ### Name applications for the model.
-* Typically used to identify abnormality out of Netflow activities
+* Typically used to test identify abnormality out of Netflow activities
 ### Name use case restrictions for the model.
-* The model is trained in the format of CIC dataset schema, however LODA is generic anomaly detector and can be used for any type of numeric dataset.
+* The model is trained in the format of CICIDS dataset schema, the model might not be suitable for other applications.
 ### Has this been verified to have met prescribed quality standards?
 * No
 
@@ -155,18 +200,17 @@ The Unsupervised anomaly detector produces negative log-likelihood as the anomal
 * Neither
 
 ### Was consent obtained for any PII used?
-* Not Applicable
+* Not Applicable, the data is obtained from simulated lab environment, for more information refer to the source of the dataset at [CICIDS2017](https://www.unb.ca/cic/datasets/ids-2017.html)
 
 ### Protected classes used to create this model? (The following were used in model the model's training:)
 
-* None of the Above
+* Not applicable
 
 
 ### How often is dataset reviewed?
-* Other: Not Applicable
-
+* The dataset is initially reviewed upon addition, and subsequent reviews are conducted as needed or upon request for any changes.
 ### Is a mechanism in place to honor data
-* Yes
+* No (data is from external source)
 ### If PII collected for the development of this AI model, was it minimized to only what was required? 
 * Not applicable
 
@@ -176,8 +220,8 @@ The Unsupervised anomaly detector produces negative log-likelihood as the anomal
 ### Scanned for malware?
 * No
 ### Are we able to identify and trace source of dataset?
-* Yes
+* Yes at ([CICIDS2017](https://www.unb.ca/cic/datasets/ids-2017.html))
 ### Does data labeling (annotation, metadata) comply with privacy laws?
 * Not applicable
 ### Is data compliant with data subject requests for data correction or removal, if such a request was made?
-* Yes, for data collected by NVIDIA.  No, for all externally-sourced data.
+* Not applicable
