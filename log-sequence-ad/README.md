@@ -154,7 +154,7 @@ Binary classifier output is assigned to each sequence log message in the input f
 
 ### Name who is intended to benefit from this model. 
 * The intended beneficiaries of this model are developers who aim to test the performance and functionality of the log sequence detector using public log datasets.
-
+ It may not be suitable or provide significant value for real-world logs analysis.
 ### Describe the model output.
 * This model outputs binary prediction of being anomaly or not.
 

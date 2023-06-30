@@ -132,7 +132,7 @@ variance = 0.99
 * This model is intended for developers that want to build IDS system.
 
 ### Name who is intended to benefit from this model. 
-* Intended for users that use netflow activities to defend against intrusion detection attack.
+* The intended beneficiaries of this model are developers who aim to test the performance and functionality of the IDS pipeline using public netflow datasets. It may not be suitable or provide significant value for real-world IDS.
 
 ### Describe the model output.
 * This model outputs anomalous score of netflow activities, with large score indicate as suspicious attack.
@@ -152,7 +152,7 @@ variance = 0.99
 * Not Applicable
 
 ### What training is recommended for developers working with this model?  If none, please state "none."
-* None
+* None 
 
 ### Link the relevant end user license agreement 
 * [Apache 2.0](https://github.com/nv-morpheus/Morpheus/blob/branch-23.07/LICENSE)
