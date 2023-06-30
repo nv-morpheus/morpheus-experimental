@@ -11,25 +11,27 @@
 
 `pip install -r requirements.txt`
 
-## References(s):
+## References(s): <br>
+
 * Cho et al. 2014 https://arxiv.org/abs/1406.1078 <br> 
 
-## Model Architecture: 
-**Architecture Type:** 
+## Model Architecture: <br>
+**Architecture Type:** <br>
 * Recurrent Neural Network <br>
 **Network Architecture:**
 * GRU <br>
 
-## Input: (Enter "None" As Needed)
-**Input Format:** 
+## Input: (Enter "None" As Needed) <br>
+
+**Input Format:** <br>
 * CSV <br>
-**Input Parameters:**
+**Input Parameters:** <br>
 * domain names <br>
-**Other Properties Related to Output:**
+**Other Properties Related to Output:** <br>
 * N/A <br>
 
-## Output: (Enter "None" As Needed)
-**Output Format:** 
+## Output: (Enter "None" As Needed) <br>
+**Output Format:** <br>
 * Binary Results, DGA or Benign <br>
 **Output Parameters:**
 * N/A <br>
