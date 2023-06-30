@@ -11,7 +11,9 @@
 
 * http://www.ece.uah.edu/~thm0009/icsdatasets/PowerSystem_Dataset_README.pdf <br>
 
-* Morris, T., Thornton, Z., Turnipseed, I.,  Industrial Control System Simulation and Data Logging for Intrusion Detection System Research. 7th Annual Southeastern Cyber Security Summit. Huntsvile, AL. June 3 - 4, 2015.  
+* Morris, T., Thornton, Z., Turnipseed, I.,  Industrial Control System Simulation and Data Logging for Intrusion Detection System Research. 7th Annual Southeastern Cyber Security Summit. Huntsvile, AL. June 3 - 4, 2015.
+
+* Beaver, Justin M., Borges-Hink, Raymond C., Buckner, Mark A., "An Evaluation of Machine Learning Methods to Detect Malicious SCADA Communications," in the Proceedings of 2013 12th International Conference on Machine Learning and Applications (ICMLA), vol.2, pp.54-59, 2013. doi: 10.1109/ICMLA.2013.105 http://www.google.com/url?q=http%3A%2F%2Fieeexplore.ieee.org%2Fstamp%2Fstamp.jsp%3Ftp%3D%26arnumber%3D6786081%26isnumber%3D6786067&sa=D&sntz=1&usg=AOvVaw2358QIW3gbS8nsykJ3DFgl
 
 ## Model Architecture: 
 
