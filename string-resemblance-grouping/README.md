@@ -125,7 +125,7 @@ String Resemblance Grouping (SRG) is designed to find a subset of representative
 * A collection of 114535 Windows logs <br>
 
 **Dataset License:**  
-* None <br>
+* Owned and hosted by Zenodo <br>
 
 ## Evaluation Dataset:
 **Link:** 
@@ -135,7 +135,7 @@ String Resemblance Grouping (SRG) is designed to find a subset of representative
 * A collection of 114535 Windows logs <br>
 
 **Dataset License:** 
-* None <br>
+* Owned and hosted by Zenodo <br>
 
 ## Inference:
 **Engine:** 
