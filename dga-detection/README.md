@@ -248,11 +248,11 @@ limitations under the License.
 
 ### Name applications for the model.
 
-* DGA detection 
+* This model is provided as an example of DGA detection. It's been trained on a very small dataset. It's mainly for testing purposes.
 
 ### Name use case restrictions for the model.
 
-* Different models need to be trained for different types of DGAs
+* It's for testing purposes. 
 
 ### Has this been verified to have met prescribed quality standards?
 
