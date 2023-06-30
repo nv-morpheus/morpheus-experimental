@@ -51,7 +51,7 @@ limitations under the License.
 
 **Input Parameters:** <br>
 
-* domain names <br>
+* Domain names <br>
 
 **Other Properties Related to Output:** <br>
 
@@ -60,6 +60,7 @@ limitations under the License.
 ## Output: (Enter "None" As Needed) <br>
 
 **Output Format:** <br>
+
 * Binary Results, DGA or Benign <br>
 
 **Output Parameters:** <br>
@@ -85,6 +86,7 @@ limitations under the License.
 * Linux <br>
 
 ## Model Version(s): 
+
 * v1  <br>
 
 # Training & Evaluation: 
@@ -183,15 +185,15 @@ limitations under the License.
 
 ### Name example applications and use cases for this model. 
 
-* Domain names in DNS queries can be used as input to this model. 
+* This model is provided for testing purposes. Domain names in DNS queries can be used as input to this model. 
 
 ### Fill in the blank for the model technique.
 
-* This model is intended for developers who want to build GRU based DGA detectors.
+* This model is designed for developers seeking to test the DGA functionality with a model trained on a small dataset
 
 ### Name who is intended to benefit from this model. 
 
-* This model is intended for users who want to detect DGAs.
+* This model is intended for developers who want to test the functionality of a GRU-based DGA detector.
 
 ### Describe the model output. 
 
