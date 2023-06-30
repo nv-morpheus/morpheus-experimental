@@ -75,48 +75,74 @@ String Resemblance Grouping (SRG) is designed to find a subset of representative
 * https://repository.upenn.edu/cgi/viewcontent.cgi?article=1615&context=statistics_papers  <br> 
 
 ## Model Architecture: 
-**Architecture Type:** Not Applicable (N/A)  <br>
-**Network Architecture:** None <br>
+**Architecture Type:** 
+* Not Applicable (N/A)  <br>
+
+**Network Architecture:**
+* None <br>
 
 ## Input: (Enter "None" As Needed)
-**Input Format:** String <br>
-**Input Parameters:** None <br>
-**Other Properties Related to Output:** None <br>
+**Input Format:** 
+* String <br>
+
+**Input Parameters:** 
+* None <br>
+
+**Other Properties Related to Output:** 
+* None <br>
 
 ## Output: (Enter "None" As Needed)
-**Output Format:** Cluster label and cluster representative <br>
-**Output Parameters:** None <br>
-**Other Properties Related to Output:** None <br> 
+**Output Format:** 
+* Cluster label and cluster representative <br>
+
+**Output Parameters:** 
+* None <br>
+
+**Other Properties Related to Output:** 
+* None <br> 
 
 ## Software Integration:
-**Runtime(s):** Not Applicable (N/A) <br>
+**Runtime(s):** 
+* Not Applicable (N/A) <br>
 
 **Supported Hardware Platform(s):** <br>
-* [All] <br>
+* All <br>
 
 **Supported Operating System(s):** <br>
-* [Linux] <br>
+* Linux <br>
 
 ## Model Version(s): 
-20230627  <br>
+* 20230627  <br>
 
 # Training & Evaluation: 
 
 ## Training Dataset:
 
-**Link:** https://zenodo.org/record/3227177/files/Windows.tar.gz <br>
-**Properties (Quantity, Dataset Descriptions, Sensor(s)):** A collection of Windows logs <br>
-**Dataset License:** None <br>
+**Link:** 
+* https://zenodo.org/record/3227177/files/Windows.tar.gz <br>
+
+**Properties (Quantity, Dataset Descriptions, Sensor(s)):** 
+* A collection of 114535 Windows logs <br>
+
+**Dataset License:**  
+* None <br>
 
 ## Evaluation Dataset:
-**Link:** https://zenodo.org/record/3227177/files/Windows.tar.gz <br>
-**Properties (Quantity, Dataset Descriptions, Sensor(s)):** A collection of Windows logs <br>
-**Dataset License:** None <br>
+**Link:** 
+* https://zenodo.org/record/3227177/files/Windows.tar.gz <br>
+
+**Properties (Quantity, Dataset Descriptions, Sensor(s)):** 
+* A collection of 114535 Windows logs <br>
+
+**Dataset License:** 
+* None <br>
 
 ## Inference:
-**Engine:** Other (Not Listed) <br>
+**Engine:** 
+* Other (Not Listed) <br>
+
 **Test Hardware:** <br>
-* [Other (Not Listed)]  <br>
+* Other (Not Listed)  <br>
 
 # Subcards
 
@@ -170,10 +196,10 @@ String Resemblance Grouping (SRG) is designed to find a subset of representative
 * This model is intended for anyone that wants to syntactically cluster Windows logs for data insight or triage.
 
 
-### Describe the model output. (e.g., This model _____________.)
+### Describe the model output.
 * This model outputs a cluster label and the corresponding cluster representative.
 
-### List the steps explaining how this model works. (e.g., )  
+### List the steps explaining how this model works.
 ---
 The breadth of literature on string resemblance provides a good starting point to solve the problem at hand. So the primary focuses of the problem become the time complexity and hyperparameter selection as discussed in the [Problem Background](#problem-background). This means that the approach explored tries to balance time complexity with data driven hyperparameter selection. For a large number of clustering algorithms, the number of clusters, $k$, must be chosen *a priori*. A search can be performed for an optimal $k$, but this can drastically increase the time complexity.
 
@@ -190,25 +216,26 @@ A benefit to this approach is that instead of fixing the number of groups, $k$, 
 ### Name the adversely impacted groups (protected classes) this has been tested to deliver comparable outcomes regardless of:
 * Not Applicable
 
-### List the technical limitations of the model. (e.g., Technical limitations include: ______________________ (Only If Given))
+### List the technical limitations of the model.
+* Windows log files that are too syntactically different from the training data or from different versions of Windows from the training set.
 
-### What performance metrics were used to affirm the model's performance? (e.g., _______________ (Only the Measure If Given- No Numbers))
+### What performance metrics were used to affirm the model's performance?
 * Cluster spread (mean and standard deviation)
 
-### What are the potential known risks to users and stakeholders? (e.g., Potential risks may include ________________ (fill in the blank)) 
-* Potential risks may include Windows log files that are too syntactically different from the training data.
+### What are the potential known risks to users and stakeholders?
+* None
 
 ### What training is recommended for developers working with this model?  If none, please state "none."
 * Familiarty with clustering techniques
 
 ### Link the relevant end user license agreement 
-*
+* [Apache 2.0](http://www.apache.org/licenses/LICENSE-2.0) <br>
 
 
 ## Model Card ++ Saftey & Security Subcard
 
 ### Link the location of the training dataset's repository (if able to share).
-*
+* https://zenodo.org/record/3227177/files/Windows.tar.gz
 
 ### Is the model used in an application with physical safety impact?
 * No
@@ -220,6 +247,7 @@ A benefit to this approach is that instead of fixing the number of groups, $k$, 
 * No
 
 ### Name applications for the model.
+* This model is intended to be used to syntactically cluster Windows logs for data insight and triage.
 
 ### Name use case restrictions for the model.
 * The model can only be used with Windows log data.
@@ -228,6 +256,7 @@ A benefit to this approach is that instead of fixing the number of groups, $k$, 
 * No
 
 ### Name target quality Key Performance Indicators (KPIs) for which this has been tested.  
+* None
 
 ### Technical robustness and model security validated?
 * No
@@ -282,4 +311,4 @@ A benefit to this approach is that instead of fixing the number of groups, $k$, 
 * Yes
 
 ### Is data compliant with data subject requests for data correction or removal, if such a request was made?
-* Yes, for data collected by NVIDIA.  No, for all externally-sourced data.
+* No
