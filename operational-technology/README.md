@@ -11,6 +11,8 @@
 
 * http://www.ece.uah.edu/~thm0009/icsdatasets/PowerSystem_Dataset_README.pdf <br>
 
+* Morris, T., Thornton, Z., Turnipseed, I.,  Industrial Control System Simulation and Data Logging for Intrusion Detection System Research. 7th Annual Southeastern Cyber Security Summit. Huntsvile, AL. June 3 - 4, 2015.  
+
 ## Model Architecture: 
 
 **Architecture Type:** 
@@ -22,22 +24,35 @@
 * XGBOOST <br>
 
 ## Input: (Enter "None" As Needed)
+
 **Input Format:** 
+
 * Dataset features contain synchrophasor measurements and data logs from Snort, a simulated control panel, and relays.  <br>
+
 **Input Parameters:**
+
 * N/A <br>
+
 **Other Properties Related to Output:**
+
 * N/A <br>
 
 ## Output: (Enter "None" As Needed)
+
 **Output Format:** 
+
 * Natural Events, No Events or Attack Events <br>
+
 **Output Parameters:**
+
 * N/A  <br>
+
 **Other Properties Related to Output:**
+
 * N/A <br> 
 
 ## Requirements
+
 * Requirements can be installed with
 
 `pip install -r requirements.txt`
@@ -48,40 +63,58 @@
 
 ## Software Integration:
 **Runtime(s):** 
+
 * Morpheus  <br>
 
 **Supported Hardware Platform(s):** <br>
+
 * Ampere/Turing <br>
 
 **Supported Operating System(s):** <br>
+
 * Linux <br>
 
 ## Model Version(s): 
-* [v1]  <br>
+
+* v1  <br>
 
 # Training & Evaluation: 
 
 ## Training Dataset:
 
 **Link:** 
+
 * http://www.ece.uah.edu/~thm0009/icsdatasets/triple.7z <br>
+
 **Properties (Quantity, Dataset Descriptions, Sensor(s)):**
+
 * There are 78377 rows in the dataset. <br>
+
 **Dataset License:**
-* N/A <br>
+
+* https://sites.google.com/a/uah.edu/tommy-morris-uah/ics-data-sets <br>
 
 ## Evaluation Dataset:
 **Link:** 
+
 * http://www.ece.uah.edu/~thm0009/icsdatasets/triple.7z <br>
+
 **Properties (Quantity, Dataset Descriptions, Sensor(s)):**
+
 * There are 78377 rows in the dataset. <br>
+
 **Dataset License:**
-* N/A <br>
+
+* https://sites.google.com/a/uah.edu/tommy-morris-uah/ics-data-sets <br>
 
 ## Inference:
+
 **Engine:** 
+
 * Triton <br>
+
 **Test Hardware:** <br>
+
 * Other  <br>
 
 # Subcards
@@ -139,6 +172,7 @@
 ## Model Card ++ Explainability Subcard
 
 ### Name example applications and use cases for this model. 
+
 *  Natural Events, No Events and Attack Events can be detected in an Industrial Control System
 
 ### Fill in the blank for the model technique.
@@ -150,42 +184,53 @@
 * This model is intended for users who want to differentiate Natural Events, No Events and Attack Events.
 
 ### Describe the model output. 
+
 * This model outputs one of these results: Natural Events, No Events and Attack Events
 
-### List the steps explaining how this model works.  
+### List the steps explaining how this model works. 
+
 * An XGBoost model gets trained with the dataset, and in inference, the model predicts one of the multiple classes for each row.
 
 ### Name the adversely impacted groups (protected classes) this has been tested to deliver comparable outcomes regardless of:
 * Not Applicable
 
 ### List the technical limitations of the model. 
+
 * Further training is needed for different data types.
 
 ### What performance metrics were used to affirm the model's performance?
+
 * F1
 
 ### What are the potential known risks to users and stakeholders?
+
 * N/A
 
 ### What training is recommended for developers working with this model?
+
 * None
 
 ### Link the relevant end user license agreement 
+
 * [Apache 2.0](http://www.apache.org/licenses/LICENSE-2.0)<br>
 
 
 ## Model Card ++ Saftey & Security Subcard
 
 ### Link the location of the training dataset's repository.
+
 * http://www.ece.uah.edu/~thm0009/icsdatasets/triple.7z
 
 ### Is the model used in an application with physical safety impact?
+
 * No
 
 ### Describe physical safety impact (if present).
+
 * N/A
 
 ### Was model and dataset assessed for vulnerability for potential form of attack?
+
 * No
 
 ### Name applications for the model.
@@ -193,21 +238,27 @@
 *  Industrial Control System (ICS) Cyber Attack Detection
 
 ### Name use case restrictions for the model.
+
 * Different models need to be trained for different types of data
 
 ### Has this been verified to have met prescribed quality standards?
+
 * No
 
 ### Name target quality Key Performance Indicators (KPIs) for which this has been tested.  
+
 * N/A
 
 ### Technical robustness and model security validated?
+
 * No
 
 ### Is the model and dataset compliant with National Classification Management Society (NCMS)?
+
 * No
 
 ### Are there explicit model and dataset restrictions?
+
 * No
 
 ### Are there access restrictions to systems, model, and data?
@@ -243,7 +294,7 @@
 * N/A
 
 ### Scanned for malware?
-* N/A
+* No
 
 ### Are we able to identify and trace source of dataset?
 * N/A
