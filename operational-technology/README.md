@@ -281,7 +281,7 @@
 * N/A
 
 ### How often is dataset reviewed?
-* N/A
+* Unknown
 
 ### Is a mechanism in place to honor data subject right of access or deletion of personal data?
 
@@ -297,7 +297,7 @@
 * No
 
 ### Are we able to identify and trace source of dataset?
-* N/A
+* Yes
 
 ### Does data labeling (annotation, metadata) comply with privacy laws?
 * N/A
