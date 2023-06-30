@@ -16,9 +16,13 @@
 * Cho et al. 2014 https://arxiv.org/abs/1406.1078 <br> 
 
 ## Model Architecture: <br>
+
 **Architecture Type:** <br>
+
 * Recurrent Neural Network <br>
-**Network Architecture:**
+
+**Network Architecture:** <br>
+
 * GRU <br>
 
 ## Input: (Enter "None" As Needed) <br>
