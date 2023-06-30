@@ -294,7 +294,7 @@
 
 ### Scanned for malware?
 
-* N/A
+* No
 
 ### Are we able to identify and trace source of dataset?
 
