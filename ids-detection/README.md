@@ -25,6 +25,7 @@ The model is  a Lightweight Online Detector of Anomalies (Loda) anomaly detector
 
 ## Model Architecture:
 Loda (lightweight online detector of anomalies), an ensemble of 1-D fixed histograms, where each histogram are built using random projection of features. The model is an unsupervised anomaly detector where detection is scored using a negative log-likelihood score.
+
 **Architecture Type:** 
 * LODA <br>
 
@@ -97,6 +98,7 @@ variance = 0.99
 
 **Test Hardware:** <br>
 * Other <br>
+
 # Subcards
 ## Model Card ++ Bias Subcard
 
@@ -184,7 +186,7 @@ variance = 0.99
 ### Is the model and dataset compliant with National Classification Management Society (NCMS)?
 * Not Applicable
 
-##  Are there explicit model and dataset restrictions?
+###  Are there explicit model and dataset restrictions?
 * No
 
 ### Are there access restrictions to systems, model, and data?
@@ -208,7 +210,8 @@ variance = 0.99
 
 
 ### How often is dataset reviewed?
-* The dataset is initially reviewed upon addition, and subsequent reviews are conducted as needed or upon request for any changes.
+* Not applicable,  the dataset is fully hosted and maintained by external source, for more information refer to the source of the dataset at [CICIDS2017](https://www.unb.ca/cic/datasets/ids-2017.html)
+
 ### Is a mechanism in place to honor data
 * No (data is from external source)
 ### If PII collected for the development of this AI model, was it minimized to only what was required? 

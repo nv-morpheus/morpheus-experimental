@@ -86,7 +86,7 @@ Binary classifier output is assigned to each sequence log message in the input f
 * The dataset for the example used is from BlueGene/L Supercomputer System (BGL). BGL dataset contains 4,747,963 log messages from supercomputer system at Lawrence Livermore National Labs. The model is trained and evaluated using 1 million rows of preprocessed logs using [Drain](https://github.com/logpai/logparser) parser<br>
 
 **Dataset License:**  
-* Apache 2.0 <br>
+* [Apache 2.0](http://www.apache.org/licenses/LICENSE-2.0) <br>
 
 ## Evaluation Dataset:
 **Link:**  
@@ -96,7 +96,7 @@ Binary classifier output is assigned to each sequence log message in the input f
 * Processed 39K BGL log dataset. <br>
 
 **Dataset License:** 
-* Apache 2.0<br>
+* [Apache 2.0](http://www.apache.org/licenses/LICENSE-2.0) <br>
 
 ## Inference:
 **Engine:** 
@@ -158,7 +158,7 @@ Binary classifier output is assigned to each sequence log message in the input f
 ### Describe the model output.
 * This model outputs binary prediction of being anomaly or not.
 
-### List the steps explaining how this model works. (e.g., )  
+### List the steps explaining how this model works.
 * This model is an example of a sequence binary classifier. This model requires parsed log messages as input for training and inference. The model and Word2Vector embedding is trained as follows in the training notebook. During inference, the trained model is loaded from `model` directory, and input files in the form of parsed logs are expected to output prediction for sequences of log messages.<br>
 
 ### Name the adversely impacted groups (protected classes) this has been tested to deliver comparable outcomes regardless of:
@@ -215,7 +215,6 @@ Binary classifier output is assigned to each sequence log message in the input f
 ### Is there a digital signature?
 * No
 
-
 ## Model Card ++ Privacy Subcard
 
 ### Generatable or reverse engineerable personally-identifiable information (PII)?
@@ -230,7 +229,8 @@ Binary classifier output is assigned to each sequence log message in the input f
 * Not applicable
 
 ### How often is dataset reviewed?
-* The dataset is initially reviewed upon addition, and subsequent reviews are conducted as needed or upon request for any changes.
+* Not applicable, The dataset is fully hosted and maintained by external source of [Zenodo]((https://zenodo.org). Users can refer the main site dataset.
+
 ### Is a mechanism in place to honor data
 * Yes
 ### If PII collected for the development of this AI model, was it minimized to only what was required? 
