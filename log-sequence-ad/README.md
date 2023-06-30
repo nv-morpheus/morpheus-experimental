@@ -229,7 +229,7 @@ Binary classifier output is assigned to each sequence log message in the input f
 * Not applicable
 
 ### How often is dataset reviewed?
-* Not applicable, The dataset is fully hosted and maintained by external source of [Zenodo]((https://zenodo.org). Users can refer the main site dataset.
+* Not applicable. The dataset is fully hosted and maintained by external source of [Zenodo](https://zenodo.org). Users can refer the main site dataset.
 
 ### Is a mechanism in place to honor data
 * Yes
