@@ -29,7 +29,7 @@
 
 **Input Format:** 
 
-* Dataset features contain synchrophasor measurements and data logs from Snort, a simulated control panel, and relays.  <br>
+* Tabular format in which the dataset features contain synchrophasor measurements and data logs from Snort, a simulated control panel, and relays.  <br>
 
 **Input Parameters:**
 
@@ -64,6 +64,7 @@
 `apt install p7zip-full p7zip-rar`
 
 ## Software Integration:
+
 **Runtime(s):** 
 
 * Morpheus  <br>
@@ -175,15 +176,15 @@
 
 ### Name example applications and use cases for this model. 
 
-*  Natural Events, No Events and Attack Events can be detected in an Industrial Control System
+*  It's primarily for testing purposes Natural Events, No Events and Attack Events can be detected in an Industrial Control System
 
 ### Fill in the blank for the model technique.
 
-* This model is intended for developers who want to use XGBoost to detect different events in an Operational Technologies dataset.
+* This model is intended for developers who want to test the model that can detect different events in the example Operational Technologies dataset.
 
 ### Name who is intended to benefit from this model. 
 
-* This model is intended for users who want to differentiate Natural Events, No Events and Attack Events.
+* This model is intended for users who want to test with models that can differentiate Natural Events, No Events and Attack Events.
 
 ### Describe the model output. 
 
