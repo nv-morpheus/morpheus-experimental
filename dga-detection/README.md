@@ -28,56 +28,85 @@
 ## Input: (Enter "None" As Needed) <br>
 
 **Input Format:** <br>
+
 * CSV <br>
+
 **Input Parameters:** <br>
+
 * domain names <br>
+
 **Other Properties Related to Output:** <br>
+
 * N/A <br>
 
 ## Output: (Enter "None" As Needed) <br>
+
 **Output Format:** <br>
 * Binary Results, DGA or Benign <br>
-**Output Parameters:**
+
+**Output Parameters:** <br>
+
 * N/A <br>
+
 **Other Properties Related to Output:**
+
 * N/A <br> 
 
-## Software Integration:
-**Runtime(s):** 
+## Software Integration:<br>
+
+**Runtime(s):** <br>
+
 * Morpheus  <br>
 
 **Supported Hardware Platform(s):** <br>
+
 * Ampere/Turing <br>
 
 **Supported Operating System(s):** <br>
+
 * Linux <br>
 
 ## Model Version(s): 
-* [v1]  <br>
+* v1  <br>
 
 # Training & Evaluation: 
 
 ## Training Dataset:
 
-**Link:** 
+**Link:** <br>
+
 * https://github.com/nv-morpheus/morpheus-experimental/blob/branch-23.07/dga-detection/datasets/dga-training-data.csv  <br>
-**Properties (Quantity, Dataset Descriptions, Sensor(s)):**
-* Domain names <br>
-**Dataset License:**
-* N/A <br>
 
-## Evaluation Dataset:
-**Link:** 
+**Properties (Quantity, Dataset Descriptions, Sensor(s)):** <br>
+
+* Domain names <br>
+
+**Dataset License:** <br>
+
+* [Apache 2.0](http://www.apache.org/licenses/LICENSE-2.0) <br>
+
+## Evaluation Dataset: <br>
+
+**Link:** <br>
+
 * https://github.com/nv-morpheus/morpheus-experimental/blob/branch-23.07/dga-detection/datasets/dga-validation-data.csv <br>
-**Properties (Quantity, Dataset Descriptions, Sensor(s)):**
-* Domain names <br>
-**Dataset License:**
-* N/A <br>
 
-## Inference:
-**Engine:** 
+**Properties (Quantity, Dataset Descriptions, Sensor(s)):**
+
+* Domain names <br>
+
+**Dataset License:** <br>
+
+* [Apache 2.0](http://www.apache.org/licenses/LICENSE-2.0) <br>
+
+## Inference: <br>
+
+**Engine:** <br>
+
 * Triton <br>
+
 **Test Hardware:** <br>
+
 * Other  <br>
 
 # Subcards
@@ -98,7 +127,7 @@
 
 ### What is the language balance of the model validation data?
 
-* Not Applicable
+* Domain names could be in any language
 
 ### What is the geographic origin language balance of the model validation data?
 
@@ -135,6 +164,7 @@
 ## Model Card ++ Explainability Subcard
 
 ### Name example applications and use cases for this model. 
+
 * Domain names in DNS queries can be used as input to this model. 
 
 ### Fill in the blank for the model technique.
@@ -146,42 +176,54 @@
 * This model is intended for users who want to detect DGAs.
 
 ### Describe the model output. 
+
 * This model output can be used as a binary result, DGA or Benign 
 
-### List the steps explaining how this model works.  
+### List the steps explaining how this model works.
+
 * A GRU model gets trained with the dataset and in inference the model predicts one of the binary classes for each domain. DGA or Benign.
 
 ### Name the adversely impacted groups (protected classes) this has been tested to deliver comparable outcomes regardless of:
+
 * Not Applicable
 
 ### List the technical limitations of the model. 
+
 * Further training is needed for different DGA types.
 
 ### What performance metrics were used to affirm the model's performance?
+
 * Accuracy, Precision
 
 ### What are the potential known risks to users and stakeholders?
+
 * N/A
 
 ### What training is recommended for developers working with this model?
+
 * None
 
 ### Link the relevant end user license agreement 
+
 * [Apache 2.0](http://www.apache.org/licenses/LICENSE-2.0)<br>
 
 
 ## Model Card ++ Saftey & Security Subcard
 
 ### Link the location of the training dataset's repository.
+
 * https://github.com/nv-morpheus/morpheus-experimental/blob/branch-23.07/dga-detection/datasets/dga-training-data.csv
 
 ### Is the model used in an application with physical safety impact?
+
 * No
 
 ### Describe physical safety impact (if present).
+
 * N/A
 
 ### Was model and dataset assessed for vulnerability for potential form of attack?
+
 * No
 
 ### Name applications for the model.
@@ -189,25 +231,32 @@
 * DGA detection 
 
 ### Name use case restrictions for the model.
+
 * Different models need to be trained for different types of DGAs
 
 ### Has this been verified to have met prescribed quality standards?
+
 * No
 
 ### Name target quality Key Performance Indicators (KPIs) for which this has been tested.  
+
 * N/A
 
 ### Technical robustness and model security validated?
+
 * No
 
 ### Is the model and dataset compliant with National Classification Management Society (NCMS)?
+
 * No
 
 ### Are there explicit model and dataset restrictions?
+
 * No
 
 ### Are there access restrictions to systems, model, and data?
-* N/A
+
+* No
 
 ### Is there a digital signature?
 
@@ -215,37 +264,46 @@
 
 ## Model Card ++ Privacy Subcard
 
-
 ### Generatable or reverse engineerable personally-identifiable information (PII)?
+
 * Neither
 
 ### Was consent obtained for any PII used?
+
 * N/A
 
 ### Protected classes used to create this model? (The following were used in model the model's training:)
+
 * N/A
 
 ### How often is dataset reviewed?
-* N/A
+
+* The dataset is initially reviewed upon addition, and subsequent reviews are conducted as needed or upon request for any changes.
 
 ### Is a mechanism in place to honor data subject right of access or deletion of personal data?
 
 * N/A
 
 ### If PII collected for the development of this AI model, was it minimized to only what was required? 
+
 * N/A
 
 ### Is data in dataset traceable?
+
 * N/A
 
 ### Scanned for malware?
+
 * N/A
 
 ### Are we able to identify and trace source of dataset?
-* N/A
+
+* Yes
 
 ### Does data labeling (annotation, metadata) comply with privacy laws?
+
 * N/A
 
 ### Is data compliant with data subject requests for data correction or removal, if such a request was made?
+
 * N/A
