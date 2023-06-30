@@ -264,7 +264,8 @@
 * No
 
 ### Are there access restrictions to systems, model, and data?
-* N/A
+
+* No
 
 ### Is there a digital signature?
 
