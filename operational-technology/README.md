@@ -6,13 +6,19 @@
 * The model is a multi-class XGBoost classifier that predicts each event on a power system based on dataset features. <br>
 
 ## References(s):
+
 * https://sites.google.com/a/uah.edu/tommy-morris-uah/ics-data-sets <br>
+
 * http://www.ece.uah.edu/~thm0009/icsdatasets/PowerSystem_Dataset_README.pdf <br>
 
 ## Model Architecture: 
+
 **Architecture Type:** 
+
 * Gradient Boosting <br>
+
 **Network Architecture:**
+
 * XGBOOST <br>
 
 ## Input: (Enter "None" As Needed)
