@@ -22,15 +22,17 @@ on:
         description: 'Current version of the project'
         required: true
         type: string
+        default: '23.07'
       next_version:
         description: 'Next version of the project'
         required: true
         type: string
+        default: '23.11'
       create_codefreeze_pr:
         description: 'Creates/Updates the codefreeze PR'
         required: true
         type: boolean
-        default: false
+        default: true
       create_next_release_branch:
         description: 'Creates the next release branch and configures tags'
         required: true
@@ -79,7 +81,10 @@ jobs:
         run: |
           echo "Printing token"
           gh auth status
+          echo "Issues"
           gh issue list
+          echo "PRs"
+          gh pr list --state all
           cat ci/release/pr_code_freeze_template.md | envsubst | \
             gh pr create --base main --head branch-${VERSION} \
               --title "[RELEASE] ${REPO_NAME} v${VERSION}" \
