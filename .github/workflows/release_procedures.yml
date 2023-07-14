@@ -73,6 +73,8 @@ jobs:
           fetch-depth: 0
       - name: Create PR
         run: |
+          echo "Printing token"
+          gh auth token
           cat ci/release/pr_code_freeze_template.md | envsubst | \
             gh pr create --base main --head branch-${VERSION} \
               --title "[RELEASE] ${REPO_NAME} v${VERSION}" \
