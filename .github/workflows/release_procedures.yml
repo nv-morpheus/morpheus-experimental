@@ -52,6 +52,10 @@ on:
         type: boolean
         default: false
 
+permissions:
+  issues: write
+  pull-requests: write
+
 env:
   GITHUB_TOKEN: ${{ secrets.PROJECT_MANAGEMENT_PAT }}
   REPO_NAME: 'morpheus-experimental'
@@ -74,7 +78,8 @@ jobs:
       - name: Create PR
         run: |
           echo "Printing token"
-          gh auth token
+          gh auth status
+          gh issue list
           cat ci/release/pr_code_freeze_template.md | envsubst | \
             gh pr create --base main --head branch-${VERSION} \
               --title "[RELEASE] ${REPO_NAME} v${VERSION}" \
