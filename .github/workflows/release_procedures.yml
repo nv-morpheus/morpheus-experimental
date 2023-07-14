@@ -59,7 +59,7 @@ permissions:
   pull-requests: write
 
 env:
-  # GITHUB_TOKEN: ${{ secrets.PROJECT_MANAGEMENT_PAT }}
+  GITHUB_TOKEN: ${{ secrets.ACTIONS_PAT }}
   REPO_NAME: 'morpheus-experimental'
   VERSION: ${{ inputs.current_version }}
   FULL_VERSION: ${{ inputs.current_version }}.00
