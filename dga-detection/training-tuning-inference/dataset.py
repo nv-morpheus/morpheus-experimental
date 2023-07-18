@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: Copyright (c) 2022-2023 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2022-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,8 +13,23 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-blank_issues_enabled: true
-contact_links:
-  - name: Ask a Question
-    url: https://github.com/nv-morpheus/morpheus/discussions
-    about: Please ask any questions here.
+
+class Dataset(object):
+
+    def __init__(self, df):
+        self._df = df.reset_index(drop=True)
+        self._dataset_len = self._df.shape[0]
+
+    @property
+    def length(self):
+        """
+        Returns dataframe length
+        """
+        return self._dataset_len
+
+    @property
+    def data(self):
+        """
+        Retruns dataframe
+        """
+        return self._df
