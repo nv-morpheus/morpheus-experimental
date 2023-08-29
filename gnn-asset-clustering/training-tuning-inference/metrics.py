@@ -1,3 +1,18 @@
+# SPDX-FileCopyrightText: Copyright (c) 2023 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 from sklearn.metrics import f1_score
 from sklearn.metrics import roc_auc_score
 from sklearn.metrics import average_precision_score
@@ -5,7 +20,9 @@ from sklearn import metrics
 from munkres import Munkres, print_matrix
 import numpy as np
 
+
 class linkpred_metrics():
+
     def __init__(self, edges_pos, edges_neg):
         self.edges_pos = edges_pos
         self.edges_neg = edges_neg
@@ -38,10 +55,10 @@ class linkpred_metrics():
 
 
 class ClusteringMetrics:
+
     def __init__(self, true_label, predict_label):
         self.true_label = true_label
         self.pred_label = predict_label
-
 
     def clusteringAcc(self):
         # best mapping between true_label and predict label
@@ -93,9 +110,13 @@ class ClusteringMetrics:
         acc, f1_macro, precision_macro, recall_macro, f1_micro, precision_micro, recall_micro = self.clusteringAcc()
 
         if print_msg:
-            print('ACC=%f, f1_macro=%f, precision_macro=%f, recall_macro=%f, f1_micro=%f, precision_micro=%f, recall_micro=%f, NMI=%f, ADJ_RAND_SCORE=%f' % (acc, f1_macro, precision_macro, recall_macro, f1_micro, precision_micro, recall_micro, nmi, adjscore))
+            print(
+                'ACC=%f, f1_macro=%f, precision_macro=%f, recall_macro=%f, f1_micro=%f, precision_micro=%f, recall_micro=%f, NMI=%f, ADJ_RAND_SCORE=%f'
+                %
+                (acc, f1_macro, precision_macro, recall_macro, f1_micro, precision_micro, recall_micro, nmi, adjscore))
 
         return acc, nmi
+
 
 def cal_clustering_acc(true_label, pred_label):
     l1 = list(set(true_label))

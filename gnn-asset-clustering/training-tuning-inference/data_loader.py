@@ -1,3 +1,18 @@
+# SPDX-FileCopyrightText: Copyright (c) 2023 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 import numpy as np
 import scipy.sparse as sp
 import scipy.io as scio
@@ -25,13 +40,13 @@ def load_sflow(path="../dataset"):
     arista_df = pd.concat((pd.read_csv(f) for f in arista_csvs), ignore_index=True)
     cumulus_csvs = glob.glob(os.path.join(f'{path}/cumulus_sflow/', "*.csv"))
     cumulus_df = pd.concat((pd.read_csv(f) for f in cumulus_csvs), ignore_index=True)
-    
+
     # Read Armis device data
     armis_data_device = pd.read_csv(f'{path}/armis_enrichment_device_v3.csv')
     armis_data_device['mac_address'] = armis_data_device['mac_address'].str.lower()
     armis_data_device['mac_address'] = armis_data_device['mac_address'].str.replace(" ", "")
 
-    # Read Armis app data 
+    # Read Armis app data
     armis_data_app = pd.read_csv(f'{path}/armis_enrichment_app_v3.csv')
     armis_data_app['mac_address'] = armis_data_app['mac_address'].str.lower()
 
@@ -68,13 +83,12 @@ def load_sflow(path="../dataset"):
     print(sflow_raw.shape)
     #print(sflow_raw.head(5))
 
-
     # Unique mac addresses
     mac_set = set(sflow_raw.SRC_MAC)
     mac_set.update(sflow_raw.DST_MAC)
     unique_macs = list(mac_set)
     len(unique_macs)
-    
+
     # Create mac dict
     mac_dict = defaultdict(lambda: len(mac_dict))
     mac_list = [mac_dict[n] for n in unique_macs]
@@ -135,29 +149,29 @@ def load_sflow(path="../dataset"):
 
         dynamic_ports_df = mac_df[mac_df['SRC_PORT'].between(49152, 65535, inclusive='both')] if \
         mac_df[mac_df['SRC_PORT'].between(49152, 65535, inclusive='both')].shape[0] > 0 else pd.DataFrame()
-        count_host_no_of_dynamic_ports = dynamic_ports_df['SRC_PORT'].nunique() if dynamic_ports_df.shape[
-                                                                                       0] > 0 else np.nan
+        count_host_no_of_dynamic_ports = dynamic_ports_df['SRC_PORT'].nunique(
+        ) if dynamic_ports_df.shape[0] > 0 else np.nan
 
         other_sys_ports_df = mac_df[mac_df['DST_PORT'].between(0, 1023, inclusive='both')] if \
         mac_df[mac_df['DST_PORT'].between(0, 1023, inclusive='both')].shape[0] > 0 else pd.DataFrame()
-        count_other_no_of_sys_ports = other_sys_ports_df['DST_PORT'].nunique() if other_sys_ports_df.shape[
-                                                                                      0] > 0 else np.nan
+        count_other_no_of_sys_ports = other_sys_ports_df['DST_PORT'].nunique(
+        ) if other_sys_ports_df.shape[0] > 0 else np.nan
         # std_other_sys_port = other_sys_ports_df['DST_PORT'].std() if other_sys_ports_df.shape[0] > 0 else np.nan
         other_freq_sys_port = other_sys_ports_df['DST_PORT'].mode()[0] if other_sys_ports_df.shape[0] > 0 else np.nan
         # count_other_freq_sys_port = other_sys_ports_df['DST_PORT'].value_counts().values.tolist()[0] if other_sys_ports_df.shape[0] > 0 else np.nan
 
         other_user_ports_df = mac_df[mac_df['DST_PORT'].between(1024, 49151, inclusive='both')] if \
         mac_df[mac_df['DST_PORT'].between(1024, 49151, inclusive='both')].shape[0] > 0 else pd.DataFrame()
-        count_other_no_of_user_ports = other_user_ports_df['DST_PORT'].nunique() if other_user_ports_df.shape[
-                                                                                        0] > 0 else np.nan
+        count_other_no_of_user_ports = other_user_ports_df['DST_PORT'].nunique(
+        ) if other_user_ports_df.shape[0] > 0 else np.nan
         # std_other_user_port = other_user_ports_df['DST_PORT'].std() if other_user_ports_df.shape[0] > 0 else np.nan
         other_freq_user_port = other_user_ports_df['DST_PORT'].mode()[0] if other_user_ports_df.shape[0] > 0 else np.nan
         # count_other_freq_user_port = other_user_ports_df['DST_PORT'].value_counts().values.tolist()[0] if other_user_ports_df.shape[0] > 0 else np.nan
 
         other_dynamic_ports_df = mac_df[mac_df['DST_PORT'].between(49152, 65535, inclusive='both')] if \
         mac_df[mac_df['DST_PORT'].between(49152, 65535, inclusive='both')].shape[0] > 0 else pd.DataFrame()
-        count_other_no_of_dynamic_ports = other_dynamic_ports_df['DST_PORT'].nunique() if other_dynamic_ports_df.shape[
-                                                                                              0] > 0 else np.nan
+        count_other_no_of_dynamic_ports = other_dynamic_ports_df['DST_PORT'].nunique(
+        ) if other_dynamic_ports_df.shape[0] > 0 else np.nan
 
         count_host_port_smaller_other = mac_df.loc[mac_df.SRC_PORT < mac_df.DST_PORT].shape[0] if \
         mac_df.loc[mac_df.SRC_PORT < mac_df.DST_PORT].shape[0] > 0 else np.nan
@@ -168,23 +182,22 @@ def load_sflow(path="../dataset"):
         avg_packets_per_flow = mac_df.PACKETS.mean() if mac_df.shape[0] > 0 else np.nan
         max_packets_over_flows = mac_df.PACKETS.max() if mac_df.shape[0] > 0 else np.nan
 
-        count_tcp_flow = mac_df[mac_df.PROTOCOL == 'tcp'].shape[0] if mac_df[mac_df.PROTOCOL == 'tcp'].shape[
-                                                                          0] > 0 else np.nan
-        count_udp_flow = mac_df[mac_df.PROTOCOL == 'udp'].shape[0] if mac_df[mac_df.PROTOCOL == 'udp'].shape[
-                                                                          0] > 0 else np.nan
+        count_tcp_flow = mac_df[mac_df.PROTOCOL == 'tcp'].shape[0] if mac_df[mac_df.PROTOCOL ==
+                                                                             'tcp'].shape[0] > 0 else np.nan
+        count_udp_flow = mac_df[mac_df.PROTOCOL == 'udp'].shape[0] if mac_df[mac_df.PROTOCOL ==
+                                                                             'udp'].shape[0] > 0 else np.nan
         # count_igmp_flow = mac_df[mac_df.PROTOCOL=='igmp'].shape[0] if mac_df[mac_df.PROTOCOL=='igmp'].shape[0] > 0 else np.nan
-        count_icmp_flow = mac_df[mac_df.PROTOCOL == 'icmp'].shape[0] if mac_df[mac_df.PROTOCOL == 'icmp'].shape[
-                                                                            0] > 0 else np.nan
+        count_icmp_flow = mac_df[mac_df.PROTOCOL == 'icmp'].shape[0] if mac_df[mac_df.PROTOCOL ==
+                                                                               'icmp'].shape[0] > 0 else np.nan
         count_otherProto_flow = mac_df[~(mac_df.PROTOCOL.isin(['tcp', 'udp', 'igmp', 'icmp']))].shape[0] if \
         mac_df[~(mac_df.PROTOCOL.isin(['tcp', 'udp', 'igmp', 'icmp']))].shape[0] > 0 else np.nan
-
         '''
         mac_port_dict = {}
         for rowno, row in port_df.iterrows():
             mac_port_df = mac_df[(mac_df.SRC_PORT==row['PortNumber']) | (mac_df.DST_PORT==row['PortNumber'])]
             mac_port_dict[port_dict[str(row['PortNumber'])]] = mac_port_df.shape[0] if mac_port_df.shape[0] > 0 else np.nan
         '''
-        
+
         # Port features
         # oracle_db_port = mac_df[(mac_df.SRC_PORT.isin([2483, 2484])) | (mac_df.DST_PORT.isin([2483, 2484]))].shape[0] if mac_df[(mac_df.SRC_PORT.isin([2483, 2484])) | (mac_df.DST_PORT.isin([2483, 2484]))].shape[0] > 0 else np.nan
         ftp_ports = mac_df[(mac_df.SRC_PORT.isin([20, 21])) | (mac_df.DST_PORT.isin([20, 21]))].shape[0] if \
@@ -208,9 +221,9 @@ def load_sflow(path="../dataset"):
         ftps_ports = mac_df[(mac_df.SRC_PORT.isin([989, 990])) | (mac_df.DST_PORT.isin([989, 990]))].shape[0] if \
         mac_df[(mac_df.SRC_PORT.isin([989, 990])) | (mac_df.DST_PORT.isin([989, 990]))].shape[0] > 0 else np.nan
         sql_ports = mac_df[(mac_df.SRC_PORT.isin([1433, 1434, 2483, 2484, 3306, 5432, 5434])) | (
-            mac_df.DST_PORT.isin([1433, 1434, 2483, 2484, 3306, 5432, 5434]))].shape[0] if mac_df[(mac_df.SRC_PORT.isin(
-            [1433, 1434, 2483, 2484, 3306, 5432, 5434])) | (mac_df.DST_PORT.isin(
-            [1433, 1434, 2483, 2484, 3306, 5432, 5434]))].shape[0] > 0 else np.nan
+            mac_df.DST_PORT.isin([1433, 1434, 2483, 2484, 3306, 5432, 5434]))].shape[0] if mac_df[
+                (mac_df.SRC_PORT.isin([1433, 1434, 2483, 2484, 3306, 5432, 5434])) |
+                (mac_df.DST_PORT.isin([1433, 1434, 2483, 2484, 3306, 5432, 5434]))].shape[0] > 0 else np.nan
         # oracle_db_port = mac_df[(mac_df.SRC_PORT.isin([2483, 2484])) | (mac_df.DST_PORT.isin([2483, 2484]))].shape[0] if mac_df[(mac_df.SRC_PORT.isin([2483, 2484])) | (mac_df.DST_PORT.isin([2483, 2484]))].shape[0] > 0 else np.nan
         rdp_ports = mac_df[(mac_df.SRC_PORT.isin([3389])) | (mac_df.DST_PORT.isin([3389]))].shape[0] if \
         mac_df[(mac_df.SRC_PORT.isin([3389])) | (mac_df.DST_PORT.isin([3389]))].shape[0] > 0 else np.nan
@@ -226,8 +239,7 @@ def load_sflow(path="../dataset"):
                                                   (armis_data_device.mac_address_1 == raw_mac) |
                                                   (armis_data_device.mac_address_2 == raw_mac) |
                                                   (armis_data_device.mac_address_3 == raw_mac) |
-                                                  (armis_data_device.mac_address_4 == raw_mac)
-                                                  ]
+                                                  (armis_data_device.mac_address_4 == raw_mac)]
         device_category = device_armis_data.category.iloc[0] if device_armis_data.shape[0] > 0 else ''
         computers_device_category_armis = 1 if device_category == 'Computers' else np.nan
         networkequip_device_category_armis = 1 if device_category == 'Network Equipment' else np.nan
@@ -285,14 +297,10 @@ def load_sflow(path="../dataset"):
             'raw_mac': raw_mac,
             'mac_id': mac_id,
             'count_of_host_sflows': count_of_host_sflows,
-            'count_host_no_of_sys_ports': count_host_no_of_sys_ports,
-            # 'std_host_sys_port' : std_host_sys_port,
-            'host_freq_sys_port': host_freq_sys_port,
-            # 'count_host_freq_sys_port' : count_host_freq_sys_port,
-            'count_host_no_of_user_ports': count_host_no_of_user_ports,
-            # 'std_host_user_port': std_host_user_port,
-            'host_freq_user_port': host_freq_user_port,
-            # 'count_host_freq_user_port': count_host_freq_user_port,
+            'count_host_no_of_sys_ports': count_host_no_of_sys_ports,  # 'std_host_sys_port' : std_host_sys_port,
+            'host_freq_sys_port': host_freq_sys_port,  # 'count_host_freq_sys_port' : count_host_freq_sys_port,
+            'count_host_no_of_user_ports': count_host_no_of_user_ports,  # 'std_host_user_port': std_host_user_port,
+            'host_freq_user_port': host_freq_user_port,  # 'count_host_freq_user_port': count_host_freq_user_port,
             'count_host_no_of_dynamic_ports': count_host_no_of_dynamic_ports,
             # 'count_other_no_of_sys_ports': count_other_no_of_sys_ports,
             # 'std_other_sys_port': std_other_sys_port,
@@ -309,8 +317,7 @@ def load_sflow(path="../dataset"):
             'avg_packets_per_flow': avg_packets_per_flow,
             'max_packets_over_flows': max_packets_over_flows,
             'count_tcp_flow': count_tcp_flow,
-            'count_udp_flow': count_udp_flow,
-            # 'count_igmp_flow': count_igmp_flow,
+            'count_udp_flow': count_udp_flow,  # 'count_igmp_flow': count_igmp_flow,
             'count_icmp_flow': count_icmp_flow,
             'count_otherProto_flow': count_otherProto_flow,
             'ftp_ports': ftp_ports,
@@ -393,4 +400,3 @@ def load_data(name, data_path):
 
 #  if __name__ == '__main__':
 #         load_data('sflow')
-

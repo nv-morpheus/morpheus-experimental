@@ -1,3 +1,19 @@
+# SPDX-FileCopyrightText: Copyright (c) 2023 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# The model adopted from H. Zhang, P. Li, R. Zhang and X. Li, "Embedding Graph Auto-Encoder for Graph Clustering,"
+
 import torch
 import numpy as np
 from sklearn.cluster import KMeans
@@ -11,8 +27,17 @@ class EGAE(torch.nn.Module):
     X: n * d
     """
 
-    def __init__(self, X, A, n_clusters, alpha, layers=None, acts=None, max_epoch=10, max_iter=50,
-                 learning_rate=10 ** -2, coeff_reg=10 ** -3,
+    def __init__(self,
+                 X,
+                 A,
+                 n_clusters,
+                 alpha,
+                 layers=None,
+                 acts=None,
+                 max_epoch=10,
+                 max_iter=50,
+                 learning_rate=10**-2,
+                 coeff_reg=10**-3,
                  device=torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')):
         super(EGAE, self).__init__()
         self.device = device
@@ -61,7 +86,7 @@ class EGAE(torch.nn.Module):
             if self.acts[i] is None:
                 continue
             embedding = self.acts[i](embedding)
-        epsilon = torch.tensor(10 ** -7).to(self.device)
+        epsilon = torch.tensor(10**-7).to(self.device)
         self.embedding = embedding / embedding.norm(dim=1).reshape((self.data_size, -1)).max(epsilon)
 
         recons_A = self.embedding.matmul(self.embedding.t())
@@ -79,15 +104,15 @@ class EGAE(torch.nn.Module):
 
     def build_loss(self, recons_A):
         # diagonal elements
-        epsilon = torch.tensor(10 ** -7).to(self.device)
+        epsilon = torch.tensor(10**-7).to(self.device)
         recons_A = recons_A - recons_A.diag().diag()
         pos_weight = (self.data_size * self.data_size - self.adjacency.sum()) / self.adjacency.sum()
         loss_1 = pos_weight * self.adjacency.mul((1 / torch.max(recons_A, epsilon)).log()) + \
                  (1 - self.adjacency).mul((1 / torch.max((1 - recons_A), epsilon)).log())
-        loss_1 = loss_1.sum() / (self.data_size ** 2)
+        loss_1 = loss_1.sum() / (self.data_size**2)
 
         loss_2 = self.embedding.t() - self.embedding.t().matmul(self.indicator).matmul(self.indicator.t())
-        loss_2 = loss_2.norm() ** 2 / (loss_2.shape[0] * loss_2.shape[1])
+        loss_2 = loss_2.norm()**2 / (loss_2.shape[0] * loss_2.shape[1])
 
         loss_reg = self.build_loss_reg()
         loss = loss_1 + self.alpha * loss_2 + self.coeff_reg * loss_reg
@@ -133,7 +158,7 @@ class EGAE(torch.nn.Module):
         plt.show()
 
     def clustering(self, epoch):
-        epsilon = torch.tensor(10 ** -7).to(self.device)
+        epsilon = torch.tensor(10**-7).to(self.device)
         indicator = self.indicator / self.indicator.norm(dim=1).reshape((self.data_size, -1)).max(epsilon)
         indicator = indicator.detach().cpu().numpy()
 
@@ -172,7 +197,7 @@ class EGAE(torch.nn.Module):
         return np.array(objs), predictions, km, indicator
 
     def build_pretrain_loss(self, recons_A):
-        epsilon = torch.tensor(10 ** -7).to(self.device)
+        epsilon = torch.tensor(10**-7).to(self.device)
         recons_A = recons_A - recons_A.diag().diag()
         pos_weight = (self.data_size * self.data_size - self.adjacency.sum()) / self.adjacency.sum()
         loss = pos_weight * self.adjacency.mul((1 / torch.max(recons_A, epsilon)).log()) + \
@@ -202,8 +227,15 @@ class GAE(torch.nn.Module):
     X: n * d
     """
 
-    def __init__(self, X, A, labels, layers=None, acts=None, max_iter=200,
-                 learning_rate=10 ** -2, coeff_reg=10 ** -3,
+    def __init__(self,
+                 X,
+                 A,
+                 labels,
+                 layers=None,
+                 acts=None,
+                 max_iter=200,
+                 learning_rate=10**-2,
+                 coeff_reg=10**-3,
                  device=torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')):
         super(GAE, self).__init__()
         self.device = device
@@ -263,12 +295,12 @@ class GAE(torch.nn.Module):
 
     def build_loss(self, recons_A):
         # diagonal elements
-        epsilon = torch.tensor(10 ** -7).to(self.device)
+        epsilon = torch.tensor(10**-7).to(self.device)
         recons_A = recons_A - recons_A.diag().diag()
         pos_weight = (self.data_size * self.data_size - self.adjacency.sum()) / self.adjacency.sum()
         loss_1 = pos_weight * self.adjacency.mul((1 / torch.max(recons_A, epsilon)).log()) + \
                  (1 - self.adjacency).mul((1 / torch.max((1 - recons_A), epsilon)).log())
-        loss_1 = loss_1.sum() / (self.data_size ** 2)
+        loss_1 = loss_1.sum() / (self.data_size**2)
 
         loss_reg = self.build_loss_reg()
         loss = loss_1 + self.coeff_reg * loss_reg
@@ -292,8 +324,8 @@ class GAE(torch.nn.Module):
             optimizer.step()
             # print('loss: ', loss.item())
         acc, nmi, ari, f1 = self.clustering()
-        print('loss: %.4f, ACC: %.2f, NMI: %.2f, ARI: %.2f, F1: %.2f' % (
-        loss.item(), acc * 100, nmi * 100, ari * 100, f1 * 100))
+        print('loss: %.4f, ACC: %.2f, NMI: %.2f, ARI: %.2f, F1: %.2f' %
+              (loss.item(), acc * 100, nmi * 100, ari * 100, f1 * 100))
 
 
 def get_weight_initial(shape):

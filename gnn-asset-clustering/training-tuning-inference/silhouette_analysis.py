@@ -1,21 +1,35 @@
+# SPDX-FileCopyrightText: Copyright (c) 2023 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 from sklearn.metrics import silhouette_score, silhouette_samples
 import matplotlib.ticker as ticker
 import numpy as np
+
 
 def silhouette_plot(X, model, ax, colors):
     y_lower = 10
     y_tick_pos_ = []
     sh_samples = silhouette_samples(X, model.labels_)
     sh_score = silhouette_score(X, model.labels_)
-    
+
     for idx in range(model.n_clusters):
         values = sh_samples[model.labels_ == idx]
         values.sort()
         size = values.shape[0]
         y_upper = y_lower + size
-        ax.fill_betweenx(np.arange(y_lower, y_upper),0,values,
-                         facecolor=colors[idx],edgecolor=colors[idx]
-        )
+        ax.fill_betweenx(np.arange(y_lower, y_upper), 0, values, facecolor=colors[idx], edgecolor=colors[idx])
         y_tick_pos_.append(y_lower + 0.5 * size)
         y_lower = y_upper + 10
 
@@ -32,6 +46,7 @@ def silhouette_plot(X, model, ax, colors):
     ax.xaxis.set_major_locator(ticker.MultipleLocator(0.1))
     ax.legend(loc="best")
     return ax
+
 
 '''
 # Plot for multiple ks
