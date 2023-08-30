@@ -13,12 +13,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from sklearn.metrics import f1_score
 from sklearn.metrics import roc_auc_score
 from sklearn.metrics import average_precision_score
 from sklearn import metrics
-from munkres import Munkres, print_matrix
+from munkres import Munkres
 import numpy as np
+from sklearn.metrics import silhouette_score, silhouette_samples
+import matplotlib.ticker as ticker
 
 
 class linkpred_metrics():
@@ -162,3 +163,33 @@ def cal_clustering_metric(truth, prediction):
     ari = metrics.adjusted_rand_score(truth, prediction)
     f1 = metrics.f1_score(truth, prediction, average='macro')
     return acc, nmi, ari, f1
+
+
+def silhouette_plot(X, model, ax, colors):
+    y_lower = 10
+    y_tick_pos_ = []
+    sh_samples = silhouette_samples(X, model.labels_)
+    sh_score = silhouette_score(X, model.labels_)
+
+    for idx in range(model.n_clusters):
+        values = sh_samples[model.labels_ == idx]
+        values.sort()
+        size = values.shape[0]
+        y_upper = y_lower + size
+        ax.fill_betweenx(np.arange(y_lower, y_upper), 0, values, facecolor=colors[idx], edgecolor=colors[idx])
+        y_tick_pos_.append(y_lower + 0.5 * size)
+        y_lower = y_upper + 10
+
+    ax.axvline(x=sh_score, color="red", linestyle="--", label="Avg Silhouette Score")
+    ax.set_title("Silhouette Plot for {} clusters".format(model.n_clusters))
+    l_xlim = max(-1, min(-0.1, round(min(sh_samples) - 0.1, 1)))
+    u_xlim = min(1, round(max(sh_samples) + 0.1, 1))
+    ax.set_xlim([l_xlim, u_xlim])
+    ax.set_ylim([0, X.shape[0] + (model.n_clusters + 1) * 10])
+    ax.set_xlabel("silhouette coefficient values")
+    ax.set_ylabel("cluster label")
+    ax.set_yticks(y_tick_pos_)
+    ax.set_yticklabels(str(idx) for idx in range(model.n_clusters))
+    ax.xaxis.set_major_locator(ticker.MultipleLocator(0.1))
+    ax.legend(loc="best")
+    return ax

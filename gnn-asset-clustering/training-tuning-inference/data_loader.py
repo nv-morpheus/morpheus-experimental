@@ -21,9 +21,7 @@ import glob
 from collections import defaultdict
 import networkx as nx
 import os
-import numpy as np
 from itertools import islice
-from scipy import sparse
 
 
 def take(n, iterable):
@@ -33,8 +31,7 @@ def take(n, iterable):
 
 def load_sflow(path="../dataset"):
     '''Ingests the sflow data, enrich with Armis data and returns features, adjacency matrix, graph object'''
-    #path = '../dataset'
-    data_name = 'sflow'
+
     print('Loading from raw data file...')
     arista_csvs = glob.glob(os.path.join(f'{path}/arista_sflow/', "*.csv"))
     arista_df = pd.concat((pd.read_csv(f) for f in arista_csvs), ignore_index=True)
@@ -396,7 +393,3 @@ def load_data(name, data_path):
     data = scio.loadmat(path)
     adj = data['W']
     return data['X'], adj
-
-
-#  if __name__ == '__main__':
-#         load_data('sflow')

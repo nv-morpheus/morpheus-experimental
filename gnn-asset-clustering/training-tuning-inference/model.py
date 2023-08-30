@@ -17,8 +17,7 @@
 import torch
 import numpy as np
 from sklearn.cluster import KMeans
-from metrics import cal_clustering_metric
-from silhouette_analysis import silhouette_plot
+from metrics import cal_clustering_metric, silhouette_plot
 import matplotlib.pyplot as plt
 
 
