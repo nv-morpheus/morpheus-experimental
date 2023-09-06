@@ -87,6 +87,9 @@ def load_sflow(path="../dataset"):
 
     # Create mac dict
     mac_dict = defaultdict(lambda: len(mac_dict))
+    mac_list = [mac_dict[n] for n in unique_macs]
+    assert len(mac_list) > 0
+
     print('unique source mac : {}'.format(sflow_raw.SRC_MAC.nunique()))
     print('unique dest mac : {}'.format(sflow_raw.DST_MAC.nunique()))
 
@@ -141,6 +144,12 @@ def load_sflow(path="../dataset"):
             mac_df[mac_df['SRC_PORT'].between(49152, 65535, inclusive='both')].shape[0] > 0 else pd.DataFrame()
         count_host_no_of_dynamic_ports = dynamic_ports_df['SRC_PORT'].nunique(
         ) if dynamic_ports_df.shape[0] > 0 else np.nan
+
+        avg_bytes_per_flow = mac_df.BYTES.mean() if mac_df.shape[0] > 0 else np.nan
+        max_bytes_over_flows = mac_df.BYTES.max() if mac_df.shape[0] > 0 else np.nan
+
+        avg_packets_per_flow = mac_df.PACKETS.mean() if mac_df.shape[0] > 0 else np.nan
+        max_packets_over_flows = mac_df.PACKETS.max() if mac_df.shape[0] > 0 else np.nan
 
         avg_bytes_per_flow = mac_df.BYTES.mean() if mac_df.shape[0] > 0 else np.nan
         max_bytes_over_flows = mac_df.BYTES.max() if mac_df.shape[0] > 0 else np.nan
@@ -322,7 +331,7 @@ def load_sflow(path="../dataset"):
             'vmware_app_device_armis': vmware_app_device_armis
         }
 
-    rows.append(feat_dict)
+        rows.append(feat_dict)
     feat_df = pd.DataFrame(rows)
     # remove null columns and columns with 1 unique values
     feat_df = feat_df.loc[:, ~(feat_df.isna().all())]
@@ -340,3 +349,7 @@ def load_data(name, data_path):
     data = scio.loadmat(path)
     adj = data['W']
     return data['X'], adj
+
+
+# if __name__ == "__main__":
+#     df_feat = load_data("sflow", "./dataset")
