@@ -22,7 +22,7 @@ from sklearn.metrics import silhouette_score, silhouette_samples
 import matplotlib.ticker as ticker
 
 
-class linkpred_metrics():
+class LinkPredMetrics():
 
     def __init__(self, edges_pos, edges_neg):
         self.edges_pos = edges_pos
@@ -61,7 +61,7 @@ class ClusteringMetrics:
         self.true_label = true_label
         self.pred_label = predict_label
 
-    def clusteringAcc(self):
+    def clustering_acc(self):
         # best mapping between true_label and predict label
         l1 = list(set(self.true_label))
         numclass1 = len(l1)
@@ -105,10 +105,10 @@ class ClusteringMetrics:
         recall_micro = metrics.recall_score(self.true_label, new_predict, average='micro')
         return acc, f1_macro, precision_macro, recall_macro, f1_micro, precision_micro, recall_micro
 
-    def evaluationClusterModelFromLabel(self, print_msg=True):
+    def evaluation_cluster_model_from_label(self, print_msg=True):
         nmi = metrics.normalized_mutual_info_score(self.true_label, self.pred_label)
         adjscore = metrics.adjusted_rand_score(self.true_label, self.pred_label)
-        acc, f1_macro, precision_macro, recall_macro, f1_micro, precision_micro, recall_micro = self.clusteringAcc()
+        acc, f1_macro, precision_macro, recall_macro, f1_micro, precision_micro, recall_micro = self.clustering_acc()
 
         if print_msg:
             print(

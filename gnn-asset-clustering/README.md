@@ -79,7 +79,7 @@ Armis device and application data<br>
 * [Sflow](dataset/)<br>
 
 **Properties (Quantity, Dataset Descriptions, Sensor(s)):** 
-* The dataset is an Sflow data to come up with a graph representation where each node in the graph is an asset. Since sflow data is directional, we use 'source' as the target asset. The feature matrix for this asset is created using derived and aggregated features from sflow data and armis data. The adjacency matrix is derived using the graph representation of the devices from sflow data. Each row in the resulting dataset is an asset and can be uniquely identified by the mac address. All information in the Sflow is obfuscated to remove any private information<br>
+* The dataset uses Sflow data to come up with a graph representation where each node in the graph is an asset. Since sflow data is directional, we use 'source' as the target asset. The feature matrix for this asset is created using derived and aggregated features from sflow data and armis data. The adjacency matrix is derived using the graph representation of the devices from sflow data. Each row in the resulting dataset is an asset and can be uniquely identified by the mac address. All information in the Sflow is obfuscated to remove any private information<br>
 
 **Dataset License:** 
 * [Apache 2.0](http://www.apache.org/licenses/LICENSE-2.0)<br>
@@ -88,7 +88,7 @@ Armis device and application data<br>
 * [Sflow](dataset/)<br>  <br>
 
 **Properties (Quantity, Dataset Descriptions, Sensor(s)):** 
-* Subset of the simulated and obfsicated Sflow <br>
+* Subset of the simulated and obfuscated Sflow <br>
 
 **Dataset License:** 
 * [Apache 2.0](http://www.apache.org/licenses/LICENSE-2.0)<br>
@@ -164,7 +164,7 @@ Armis device and application data<br>
 ## Model Card ++ Saftey & Security Subcard
 
 ### Link the location of the training dataset's repository (if able to share).
-* [Dataset](../dataset)
+* [Dataset](./dataset)
 
 ### Is the model used in an application with physical safety impact?
 * No
@@ -225,7 +225,7 @@ Armis device and application data<br>
 ### Scanned for malware?
 * No
 ### Are we able to identify and trace source of dataset?
-* Yes at ([Dataset](dataset))
+* Yes at ([Dataset](./dataset))
 ### Does data labeling (annotation, metadata) comply with privacy laws?
 * Not applicable
 ### Is data compliant with data subject requests for data correction or removal, if such a request was made?
