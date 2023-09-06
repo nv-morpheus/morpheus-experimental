@@ -350,6 +350,3 @@ def load_data(name, data_path):
     adj = data['W']
     return data['X'], adj
 
-
-# if __name__ == "__main__":
-#     df_feat = load_data("sflow", "./dataset")
