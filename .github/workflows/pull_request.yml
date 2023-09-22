@@ -39,7 +39,7 @@ jobs:
     runs-on: linux-amd64-cpu4
     timeout-minutes: 60
     container:
-      image: rapidsai/ci-conda:cuda11.5.1-ubuntu20.04-py3.8
+      image: rapidsai/ci-conda:latest
     strategy:
       fail-fast: true
 
