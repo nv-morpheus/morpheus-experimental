@@ -2,6 +2,3 @@ numpy
 pandas
 scikit-learn
 click
-cupy-cuda11x
-#cuml-cu11
-#cudf-cu11
