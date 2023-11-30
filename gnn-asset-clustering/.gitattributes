@@ -1,0 +1,5 @@
+dataset/ports.txt filter=lfs diff=lfs merge=lfs -text
+dataset/arista_sflow/arista_sample_ob.csv filter=lfs diff=lfs merge=lfs -text
+dataset/cumulus_sflow/cumulus_sample_ob.csv filter=lfs diff=lfs merge=lfs -text
+dataset/armis_enrichment_app_v3.csv filter=lfs diff=lfs merge=lfs -text
+dataset/armis_enrichment_device_v3.csv filter=lfs diff=lfs merge=lfs -text
