@@ -53,23 +53,14 @@ RUN --mount=type=cache,id=apt,target=/var/cache/apt \
     apt-get install --no-install-recommends -y \
         bc \
         build-essential \
-        cuda-compiler-${CUDA_MAJOR_VER}-${CUDA_MINOR_VER} \
-        cuda-cudart-${CUDA_MAJOR_VER}-${CUDA_MINOR_VER} \
-        cuda-cupti-${CUDA_MAJOR_VER}-${CUDA_MINOR_VER} \
-        cuda-gdb-${CUDA_MAJOR_VER}-${CUDA_MINOR_VER} \
         curl \
+        git-lfs \
         jq \
-        libcublas-${CUDA_MAJOR_VER}-${CUDA_MINOR_VER} \
-        libcufft-${CUDA_MAJOR_VER}-${CUDA_MINOR_VER} \
-        libcurand-${CUDA_MAJOR_VER}-${CUDA_MINOR_VER} \
-        libcusolver-${CUDA_MAJOR_VER}-${CUDA_MINOR_VER} \
-        libnuma1 \
-        openjdk-11-jre-headless \
+        nodejs \
         openssh-client \
         pkg-config \
         tar \
         unzip \
-        wget \
         zip \
     && rm -rf /var/lib/apt/lists/*
 
@@ -109,7 +100,7 @@ RUN --mount=type=cache,id=conda_pkgs,target=/opt/conda/pkgs,sharing=locked \
     conda init bash && \
     echo "conda activate mor_exp" >> ~/.bashrc
 
-# Set the permenant conda channes to use for morpheus
+# Set the permenant conda channels to use for morpheus-experimental
 RUN source activate mor_exp &&\
     conda config --env --add channels conda-forge &&\
     conda config --env --add channels nvidia &&\
