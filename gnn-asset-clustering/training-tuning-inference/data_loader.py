@@ -349,4 +349,3 @@ def load_data(name, data_path):
     data = scio.loadmat(path)
     adj = data['W']
     return data['X'], adj
-
