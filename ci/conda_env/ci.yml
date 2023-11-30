@@ -19,7 +19,7 @@ channels:
     - conda-forge
 dependencies:
     - pip
-    - python=3.8
+    - python=3.10
     - pip:
       - flake8==5.0
       - isort==5.10
