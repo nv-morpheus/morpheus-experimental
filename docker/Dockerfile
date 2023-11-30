@@ -17,50 +17,82 @@
 
 
 # Args used in FROM commands must come first
-ARG FROM_IMAGE="gpuci/miniforge-cuda"
-ARG CUDA_VER=11.8
+ARG FROM_IMAGE="nvidia/cuda"
+ARG CUDA_MAJOR_VER=11
+ARG CUDA_MINOR_VER=8
+ARG CUDA_REV_VER=0
 ARG LINUX_DISTRO=ubuntu
-ARG LINUX_VER=20.04
+ARG LINUX_VER=22.04
+
+# =====Global Options=====
+ARG PYTHON_VER=3.10
+# Allows running the docker build from a different directory than MORPHEUS_ROOT. Needed for using Morpheus in a
+# submodule
+
+# Supply a channel alias to use for conda. This is needed if the conda channels go down
+ARG CONDA_CHANNEL_ALIAS="https://conda.anaconda.org"
 
 # ============ Stage: base ============
 # Configure the base conda environment
-FROM ${FROM_IMAGE}:${CUDA_VER}-devel-${LINUX_DISTRO}${LINUX_VER} AS base
+FROM ${FROM_IMAGE}:${CUDA_MAJOR_VER}.${CUDA_MINOR_VER}.${CUDA_REV_VER}-base-${LINUX_DISTRO}${LINUX_VER} AS base
 
-# Required arguments
-ARG IMAGE_TYPE=base
-ARG RAPIDS_CHANNEL=rapidsai-nightly
-ARG RAPIDS_VER=23.02
-ARG PYTHON_VER=3.10
-ARG CONDA_CHANNEL=rapidsai
+ARG CUDA_MAJOR_VER
+ARG CUDA_MINOR_VER
+ARG PYTHON_VER
 
-# Temp option to set conda channel_alias property during build
-ARG CONDA_CHANNEL_ALIAS
+ENV DEBIAN_FRONTEND=noninteractive
 
-# Capture argument used for FROM
-ARG CUDA_VER
+# Remove the file which breaks apt caching since we will handle it ourselves. See
+# https://vsupalov.com/buildkit-cache-mount-dockerfile/
+RUN rm -f /etc/apt/apt.conf.d/docker-clean
 
 # Install dependencies to build
-RUN apt-get update &&\
+RUN --mount=type=cache,id=apt,target=/var/cache/apt \
+    apt-get update &&\
     apt-get upgrade -y &&\
-    curl -sL https://deb.nodesource.com/setup_16.x | bash - &&\
     apt-get install --no-install-recommends -y \
-        build-essential pkg-config curl unzip tar zip openssh-client bc jq nodejs git-lfs \
+        bc \
+        build-essential \
+        cuda-compiler-${CUDA_MAJOR_VER}-${CUDA_MINOR_VER} \
+        cuda-cudart-${CUDA_MAJOR_VER}-${CUDA_MINOR_VER} \
+        cuda-cupti-${CUDA_MAJOR_VER}-${CUDA_MINOR_VER} \
+        cuda-gdb-${CUDA_MAJOR_VER}-${CUDA_MINOR_VER} \
+        curl \
+        jq \
+        libcublas-${CUDA_MAJOR_VER}-${CUDA_MINOR_VER} \
+        libcufft-${CUDA_MAJOR_VER}-${CUDA_MINOR_VER} \
+        libcurand-${CUDA_MAJOR_VER}-${CUDA_MINOR_VER} \
+        libcusolver-${CUDA_MAJOR_VER}-${CUDA_MINOR_VER} \
+        libnuma1 \
+        openjdk-11-jre-headless \
+        openssh-client \
+        pkg-config \
+        tar \
+        unzip \
+        wget \
+        zip \
     && rm -rf /var/lib/apt/lists/*
 
 # Enables "source activate conda"
 SHELL ["/bin/bash", "-c"]
 
+ENV CUDA_PATH=/usr/local/cuda
+
 # All code will be under /workspace
-WORKDIR /workspace
+ENV MORPHEUS_ROOT=/workspace
+WORKDIR ${MORPHEUS_ROOT}
+
+COPY --from=condaforge/mambaforge:latest /opt/conda /opt/conda
+
+ENV PATH="${PATH}:/opt/conda/bin"
 
 # Install mamba to speed the solve up
-RUN conda config --set ssl_verify false &&\
+RUN --mount=type=cache,id=conda_pkgs,target=/opt/conda/pkgs,sharing=locked \
+    conda config --set ssl_verify false &&\
     conda config --add pkgs_dirs /opt/conda/pkgs &&\
-    conda config --env --add channels conda-forge &&\
     # Install mamba, boa and git here. Conda build breaks with other git installs
-    /opt/conda/bin/conda install -y -n base -c conda-forge "mamba >=0.22" "boa >=0.10" "git >=2.35.3" "git-lfs" "python=${PYTHON_VER}" &&\
-    source activate base &&\
-    git lfs install
+    /opt/conda/bin/mamba install -y -n base -c conda-forge "boa" "git >=2.35.3" "python=${PYTHON_VER}" "tini=0.19" &&\
+    source activate base
     # conda clean -afy
 
 # ============ Stage: conda_env ============
@@ -70,13 +102,14 @@ FROM base as runtime
 # Create a base environment
 RUN --mount=type=cache,id=conda_pkgs,target=/opt/conda/pkgs,sharing=locked \
     # Create the environment and install as little dependencies as possible
-    CONDA_ALWAYS_YES=true /opt/conda/bin/mamba create -n mor_exp -c rapidsai -c conda-forge -c nvidia \
-    rapids=${RAPIDS_VER} python=${PYTHON_VER} cudatoolkit=${CUDA_VER} &&\
+    CONDA_ALWAYS_YES=true /opt/conda/bin/mamba create -n mor_exp -c conda-forge  \
+      python=${PYTHON_VER} && \
     # Clean and activate
     # conda clean -afy && \
-    sed -i 's/conda activate base/conda activate mor_exp/g' ~/.bashrc
+    conda init bash && \
+    echo "conda activate mor_exp" >> ~/.bashrc
 
-# Set the permenant conda channels to use for morpheus experimental
+# Set the permenant conda channes to use for morpheus
 RUN source activate mor_exp &&\
     conda config --env --add channels conda-forge &&\
     conda config --env --add channels nvidia &&\
@@ -90,11 +123,11 @@ ENTRYPOINT [ "/workspace/docker/entrypoint.sh" ]
 SHELL ["/bin/bash", "-c"]
 
 COPY docker/conda/environments/requirements.txt ./docker/conda/environments/
-COPY docker/conda/environments/cuda${CUDA_VER}_runtime.yml ./docker/conda/environments/
+COPY docker/conda/environments/cuda${CUDA_MAJOR_VER}.${CUDA_MINOR_VER}_runtime.yml ./docker/conda/environments/
 
 RUN --mount=type=cache,id=conda_pkgs,target=/opt/conda/pkgs,sharing=locked
 RUN source activate mor_exp
-RUN CONDA_ALWAYS_YES=true /opt/conda/bin/mamba env update -n mor_exp --file ./docker/conda/environments/cuda${CUDA_VER}_runtime.yml
+RUN CONDA_ALWAYS_YES=true /opt/conda/bin/mamba env update -n mor_exp --file ./docker/conda/environments/cuda${CUDA_MAJOR_VER}.${CUDA_MINOR_VER}_runtime.yml
 RUN conda clean -afy
 
 # Only copy specific files/folders over that are necessary for runtime
