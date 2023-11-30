@@ -1,3 +1,15 @@
+# morpheus-experimental 23.11.00 (29 Nov 2023)
+
+## 🚀 New Features
+
+- GNN asset clustering ([#60](https://github.com/nv-morpheus/morpheus-experimental/pull/60)) [@tzemicheal](https://github.com/tzemicheal)
+
+## 🛠️ Improvements
+
+- update rapidsai/ci to rapidsai/ci-conda ([#62](https://github.com/nv-morpheus/morpheus-experimental/pull/62)) [@AyodeAwe](https://github.com/AyodeAwe)
+- Use `copy-pr-bot` ([#61](https://github.com/nv-morpheus/morpheus-experimental/pull/61)) [@ajschmidt8](https://github.com/ajschmidt8)
+- Update Versions for v23.11.00 ([#57](https://github.com/nv-morpheus/morpheus-experimental/pull/57)) [@mdemoret-nv](https://github.com/mdemoret-nv)
+
 # morpheus-experimental 23.07.00 (18 Jul 2023)
 
 ## 📖 Documentation
