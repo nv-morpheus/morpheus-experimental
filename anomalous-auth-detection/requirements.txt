@@ -1,7 +1,4 @@
+--find-links https://download.pytorch.org/whl/cu118
+
 dgl==0.9.1
-matplotlib==3.6.2
-numpy==1.19.2
-pandas==1.2.1
-scikit_learn==1.1.3
-torch==1.7.1
-xgboost==1.7.1
+torch==2.0.1

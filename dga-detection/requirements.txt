@@ -1,1 +1,3 @@
-torch==1.13.1
+--find-links https://download.pytorch.org/whl/cu118
+
+torch==2.0.1

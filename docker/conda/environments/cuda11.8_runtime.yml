@@ -20,11 +20,13 @@ channels:
     - rapidsai-nightly
     - conda-forge
 dependencies:
+    - cudatoolkit=11.8
     - dask
     - dill
     - matplotlib
     - nb_conda_kernels
     - pip
+    - rapids=23.06
     ####### Morpheus Pip Dependencies (keep sorted!) #######
     - pip:
         # Ensure all runtime requirements are installed using the requirements file
