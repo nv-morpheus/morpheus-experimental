@@ -1,6 +1,0 @@
-cuml==0.6.1.post1
-cupy==11.6.0
-cupy_cuda11x==11.5.0
-matplotlib==3.6.2
-numpy==1.19.2
-scikit_learn==1.2.2
