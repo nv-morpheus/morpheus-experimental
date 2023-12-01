@@ -15,6 +15,12 @@ See the License for the specific language governing permissions and
 limitations under the License.
 -->
 
+# morpheus-experimental 23.11.01 (30 Nov 2023)
+
+## 🛠️ Improvements
+
+- Update Dockerfile to match current Morpheus Dockerfile ([#65](https://github.com/nv-morpheus/morpheus-experimental/pull/65)) [@efajardo-nv](https://github.com/efajardo-nv)
+
 # morpheus-experimental 23.11.00 (29 Nov 2023)
 
 ## 🚀 New Features
