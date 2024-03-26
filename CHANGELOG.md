@@ -15,6 +15,12 @@ See the License for the specific language governing permissions and
 limitations under the License.
 -->
 
+# morpheus-experimental 24.03.00 (27 Mar 2024)
+
+## 🛠️ Improvements
+
+- Update ops-bot.yaml ([#71](https://github.com/nv-morpheus/morpheus-experimental/pull/71)) [@AyodeAwe](https://github.com/AyodeAwe)
+
 # morpheus-experimental 23.11.01 (30 Nov 2023)
 
 ## 🛠️ Improvements
