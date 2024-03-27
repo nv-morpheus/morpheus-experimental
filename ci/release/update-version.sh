@@ -68,5 +68,6 @@ function sed_runner() {
 sed_runner "s|blob/branch-${CURRENT_SHORT_TAG}|blob/branch-${NEXT_SHORT_TAG}|g" \
    anomalous-auth-detection/README.md \
    dga-detection/README.md \
+   gnn-asset-clustering/README.md \
    ids-detection/README.md \
    log-sequence-ad/README.md
