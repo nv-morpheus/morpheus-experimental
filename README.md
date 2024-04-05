@@ -9,7 +9,7 @@ Prototype contributions from the community are welcome. A prototype should inclu
 We recommend building morpheus experimental from source in an environment with a modern GPU with at least 16GB of memory.
 
 ### General Requirements
-- Pascal architecture 16GB GPU or better
+- Volta architecture GPU or better
 - [Git LFS](https://git-lfs.github.com/)
 - [Jupyter](https://jupyter.org/install)
 
