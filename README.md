@@ -82,6 +82,8 @@ This model is an XGBoost classifier that predicts each event on a power system b
 ## [Intrusion Detection System using LODA algorithm](/ids-detection)
 The model is a Loda anomaly detector for detecting an intrusion attack in the form of bots in a network using a netflow dataset. 
 
+## [Cyber Foundation Models](/cyber-foundation)
+This model is a GPT that generates realistic synthetic raw Azure AD logs.
 
 # Repo Structure
 Each prototype has its own directory that contains everything belonging to the specific prototype. Directories can include the following subfolders and documentation:
