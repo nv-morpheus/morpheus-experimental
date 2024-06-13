@@ -65,11 +65,13 @@ itos = {i: ch for i, ch in enumerate(chars)}
 
 
 def encode(s):
-    return [stoi[c] for c in s]  # encoder: take a string, output a list of integers
+    # encoder: take a string, output a list of integers
+    return [stoi[c] for c in s]
 
 
 def decode(sequence):
-    return ''.join([itos[i] for i in sequence])  # decoder: take a list of integers, output a string
+    # decoder: take a list of integers, output a string
+    return ''.join([itos[i] for i in sequence])
 
 
 # create the train and test splits
