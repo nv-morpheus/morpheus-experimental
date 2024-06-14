@@ -12,3 +12,4 @@ This is a synthetic dataset of Azure AD logs with activities of 20 accounts (85 
     - 5 light volume (~10) users
 
 - [./azure-ad-logs-sample-training-data.json](./azure-ad-logs-sample-training-data.json)
+- [Original location of the training data](https://github.com/nv-morpheus/Morpheus/blob/main/models/datasets/training-data/azure/azure-ad-logs-sample-training-data.json)

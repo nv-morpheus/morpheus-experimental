@@ -197,7 +197,7 @@ limitations under the License.
 
 ### Describe the model output. 
 
-* This model output can be used as a binary result, DGA or Benign 
+* This model output is synthetic Azure AD logs. 
 
 ### List the steps explaining how this model works.
 
