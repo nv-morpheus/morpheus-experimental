@@ -19,14 +19,46 @@
 
 import random
 import warnings
+from collections import deque
+from itertools import islice
 
 import numpy as np
 import pandas as pd
 import torch
 from gensim.models import Word2Vec
-from nltk.util import bigrams
 
 warnings.filterwarnings("ignore")
+
+
+def ngrams(sequence, n, **kwargs):
+    """compute ngram. This method is based on nltk.util.ngrams implementation.
+
+    Parameters
+    ----------
+    sequence : list
+        List of strings
+    n : int
+        ngram param. set n=2 for bigram
+
+    Yields
+    ------
+    _type_
+        _description_
+    """
+
+    # sliding_window('ABCDEFG', 4) --> ABCD BCDE CDEF DEFG
+    # https://docs.python.org/3/library/itertools.html?highlight=sliding_window#itertools-recipes
+    it = iter(sequence)
+    window = deque(islice(it, n), maxlen=n)
+    if len(window) == n:
+        yield tuple(window)
+    for x in it:
+        window.append(x)
+        yield tuple(window)
+
+
+def bigrams(sequence, **kwargs):
+    yield from ngrams(sequence, 2, **kwargs)
 
 
 def preprocess(df, window_size=100, step_size=20):
