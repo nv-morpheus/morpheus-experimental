@@ -15,6 +15,15 @@ See the License for the specific language governing permissions and
 limitations under the License.
 -->
 
+# morpheus-experimental 24.06.00 (02 Jul 2024)
+## 🚀 New Features
+
+- [REVIEW] cyber foundation notebook and scripts ([#77](https://github.com/nv-morpheus/morpheus-experimental/pull/77)) [@gbatmaz](https://github.com/gbatmaz)
+
+## 🛠️ Improvements
+
+- Fix nltk.bigrams &amp; remove nltk dependency alert ([#80](https://github.com/nv-morpheus/morpheus-experimental/pull/80)) [@tzemicheal](https://github.com/tzemicheal)
+
 # morpheus-experimental 24.03.00 (27 Mar 2024)
 
 ## 🛠️ Improvements
