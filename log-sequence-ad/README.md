@@ -175,7 +175,7 @@ Binary classifier output is assigned to each sequence log message in the input f
 ### What training is recommended for developers working with this model?  If none, please state "none."
 * None
 ### Link the relevant end user license agreement 
-* [Apache 2.0](https://github.com/nv-morpheus/Morpheus/blob/branch-24.06/LICENSE)
+* [Apache 2.0](https://github.com/nv-morpheus/Morpheus/blob/branch-24.10/LICENSE)
 
 ## Model Card ++ Saftey & Security Subcard
 
