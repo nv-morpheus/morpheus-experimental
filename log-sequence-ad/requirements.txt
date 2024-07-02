@@ -1,5 +1,4 @@
 --find-links https://download.pytorch.org/whl/cu118
 
 gensim==3.8.0
-nltk==3.8
 torch==2.0.1
