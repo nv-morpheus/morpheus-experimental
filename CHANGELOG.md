@@ -1,5 +1,5 @@
 <!--
-SPDX-FileCopyrightText: Copyright (c) 2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+SPDX-FileCopyrightText: Copyright (c) 2023-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 SPDX-License-Identifier: Apache-2.0
 
 Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,6 +14,12 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 -->
+
+# morpheus-experimental 24.03.00 (27 Mar 2024)
+
+## 🛠️ Improvements
+
+- Update ops-bot.yaml ([#71](https://github.com/nv-morpheus/morpheus-experimental/pull/71)) [@AyodeAwe](https://github.com/AyodeAwe)
 
 # morpheus-experimental 23.11.01 (30 Nov 2023)
 
