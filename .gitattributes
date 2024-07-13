@@ -6,3 +6,5 @@ phishing-url-detection/datasets/pipeline/models/** filter=lfs diff=lfs merge=lfs
 appshield-dga-detection/datasets/pipeline/models/** filter=lfs diff=lfs merge=lfs -text
 dga-detection/datasets/** filter=lfs diff=lfs merge=lfs -text
 dga-detection/models/** filter=lfs diff=lfs merge=lfs -text
+cyber-foundation/dataset/prefixed_azure_ad_logs.txt filter=lfs diff=lfs merge=lfs -text
+cyber-foundation/model/cyber-foundation-model-prefix.pt filter=lfs diff=lfs merge=lfs -text
