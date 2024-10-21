@@ -53,8 +53,6 @@ from torch.distributed import destroy_process_group
 from torch.distributed import init_process_group
 from torch.nn.parallel import DistributedDataParallel as DDP
 
-
-
 out_dir = '../model/'
 eval_interval = 100
 log_interval = 1
