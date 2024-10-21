@@ -1,5 +1,5 @@
 <!--
-SPDX-FileCopyrightText: Copyright (c) 2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+SPDX-FileCopyrightText: Copyright (c) 2023-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 SPDX-License-Identifier: Apache-2.0
 
 Licensed under the Apache License, Version 2.0 (the "License");
@@ -95,7 +95,7 @@ limitations under the License.
 
 **Link:** <br>
 
-* https://github.com/nv-morpheus/morpheus-experimental/blob/branch-24.06/dga-detection/datasets/dga-training-data.csv  <br>
+* https://github.com/nv-morpheus/morpheus-experimental/blob/branch-24.10/dga-detection/datasets/dga-training-data.csv  <br>
 
 **Properties (Quantity, Dataset Descriptions, Sensor(s)):** <br>
 
@@ -109,7 +109,7 @@ limitations under the License.
 
 **Link:** <br>
 
-* https://github.com/nv-morpheus/morpheus-experimental/blob/branch-24.06/dga-detection/datasets/dga-validation-data.csv <br>
+* https://github.com/nv-morpheus/morpheus-experimental/blob/branch-24.10/dga-detection/datasets/dga-validation-data.csv <br>
 
 **Properties (Quantity, Dataset Descriptions, Sensor(s)):**
 
@@ -232,7 +232,7 @@ limitations under the License.
 
 ### Link the location of the training dataset's repository.
 
-* https://github.com/nv-morpheus/morpheus-experimental/blob/branch-24.06/dga-detection/datasets/dga-training-data.csv
+* https://github.com/nv-morpheus/morpheus-experimental/blob/branch-24.10/dga-detection/datasets/dga-training-data.csv
 
 ### Is the model used in an application with physical safety impact?
 
