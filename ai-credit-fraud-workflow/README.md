@@ -1,4 +1,4 @@
-# <p style="text-align: center;">Graph Neural Network Based Model Building<br>for Credit Card Fraud Dectection</p>
+# <p style="text-align: center;">Graph Neural Network Based Model Building<br>for Credit Card Fraud Detection</p>
 <p align="center">
   <img src="./img/Splash.jpg" width="50%"/>
 </p>
