@@ -1,0 +1,2 @@
+matplotlib==3.9.2
+category-encoders==2.6.4
