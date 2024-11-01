@@ -1,5 +1,5 @@
 <!--
-SPDX-FileCopyrightText: Copyright (c) 2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+SPDX-FileCopyrightText: Copyright (c) 2023-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 SPDX-License-Identifier: Apache-2.0
 
 Licensed under the Apache License, Version 2.0 (the "License");
@@ -157,7 +157,7 @@ variance = 0.99
 * None 
 
 ### Link the relevant end user license agreement 
-* [Apache 2.0](https://github.com/nv-morpheus/Morpheus/blob/branch-24.06/LICENSE)
+* [Apache 2.0](https://github.com/nv-morpheus/Morpheus/blob/branch-24.10/LICENSE)
 
 ## Model Card ++ Saftey & Security Subcard
 
