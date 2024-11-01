@@ -15,7 +15,27 @@ See the License for the specific language governing permissions and
 limitations under the License.
 -->
 
+# morpheus-experimental 24.10.00 (01 Nov 2024)
+
+## 🐛 Bug Fixes
+
+- Fix various linting and formatting errors ([#89](https://github.com/nv-morpheus/morpheus-experimental/pull/89)) [@dagardner-nv](https://github.com/dagardner-nv)
+
+## 📖 Documentation
+
+- Placeholder for fraud workflow ([#85](https://github.com/nv-morpheus/morpheus-experimental/pull/85)) [@BradReesWork](https://github.com/BradReesWork)
+
+## 🚀 New Features
+
+- Back-port of Credit fraud workflow to 24.10 ([#91](https://github.com/nv-morpheus/morpheus-experimental/pull/91)) [@dagardner-nv](https://github.com/dagardner-nv)
+
+## 🛠️ Improvements
+
+- Update copyright heaers ([#88](https://github.com/nv-morpheus/morpheus-experimental/pull/88)) [@dagardner-nv](https://github.com/dagardner-nv)
+- notebook improvements ([#84](https://github.com/nv-morpheus/morpheus-experimental/pull/84)) [@gbatmaz](https://github.com/gbatmaz)
+
 # morpheus-experimental 24.06.00 (02 Jul 2024)
+
 ## 🚀 New Features
 
 - [REVIEW] cyber foundation notebook and scripts ([#77](https://github.com/nv-morpheus/morpheus-experimental/pull/77)) [@gbatmaz](https://github.com/gbatmaz)
