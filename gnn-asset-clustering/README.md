@@ -159,7 +159,7 @@ Armis device and application data<br>
 * None 
 
 ### Link the relevant end user license agreement 
-* [Apache 2.0](https://github.com/nv-morpheus/Morpheus/blob/branch-25.02/LICENSE)
+* [Apache 2.0](https://github.com/nv-morpheus/Morpheus/blob/branch-25.06/LICENSE)
 
 ## Model Card ++ Saftey & Security Subcard
 
