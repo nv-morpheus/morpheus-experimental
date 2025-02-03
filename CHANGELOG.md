@@ -15,6 +15,12 @@ See the License for the specific language governing permissions and
 limitations under the License.
 -->
 
+# morpheus-experimental 25.02.00 (03 Feb 2025)
+
+## 🚀 New Features
+
+- Credit fraud workflow ([#90](https://github.com/nv-morpheus/morpheus-experimental/pull/90)) [@naimnv](https://github.com/naimnv)
+
 # morpheus-experimental 24.10.00 (01 Nov 2024)
 
 ## 🐛 Bug Fixes
