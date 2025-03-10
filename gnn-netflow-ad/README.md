@@ -20,12 +20,12 @@ Modern network environments generate large volumes of Netflow records that descr
 The repository is organized as follows:
 
 ```
-gnn-netflow-anomaly-detection/
-   ├── inference-pipeline.py         # Example Morpheus inference pipeline script
-   ├── training-tuning.ipynb         # Jupyter notebook for training and tuning the model
+gnn-netflow-ad/
+   ├── morpheus_inference_pipeline.py # Example Morpheus inference pipeline script
+   ├── training-tuning.ipynb          # Jupyter notebook for training and tuning the model
    └── src/
-       ├── preprocess.py             # Converts raw Netflow into graph data
-       ├── guided_gae_model.py      # GAE model architecture
+       ├── preprocess.py              # Converts raw Netflow into graph data
+       ├── guided_gae_model.py        # GAE model architecture
        └── stages/
            ├── connection_source_stage.py
            ├── graph_construction_stage.py
