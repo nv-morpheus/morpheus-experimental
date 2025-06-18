@@ -8,3 +8,10 @@ dga-detection/datasets/** filter=lfs diff=lfs merge=lfs -text
 dga-detection/models/** filter=lfs diff=lfs merge=lfs -text
 cyber-foundation/dataset/prefixed_azure_ad_logs.txt filter=lfs diff=lfs merge=lfs -text
 cyber-foundation/model/cyber-foundation-model-prefix.pt filter=lfs diff=lfs merge=lfs -text
+spear-phishing/datasets/train/** filter=lfs diff=lfs merge=lfs -text
+spear-phishing/datasets/test/** filter=lfs diff=lfs merge=lfs -text
+spear-phishing/models/intent_models/personalv2_checkpoint-2167/** filter=lfs diff=lfs merge=lfs -text
+spear-phishing/models/intent_models/crypto_checkpoint-2362/** filter=lfs diff=lfs merge=lfs -text
+spear-phishing/models/intent_models/moneyv2_checkpoint-2167/** filter=lfs diff=lfs merge=lfs -text
+spear-phishing/models/phishing_model/** filter=lfs diff=lfs merge=lfs -text
+spear-phishing/sender_sketches/** filter=lfs diff=lfs merge=lfs -text
