@@ -49,6 +49,16 @@ def _dictorize_email(body):
 
 
 def update_sender_sketch(parsed_email):
+    """
+    Adds or updates sketch information for senders. Looks at the sender for the provided email and
+    checks for sketch data. If it exists, the sketch is updated with the new email body, intents,
+    and metadata. If no sketch exists, a new one is created based on the email and saved.
+
+    Parameters
+    ----------
+    parsed_email: dict[str, Any]
+        The email from the sender to be added or updated to the sketch.
+    """
     sender = parsed_email.get('sender', None)
     if sender:
         base_file = hashlib.sha256(sender.encode('utf8')).hexdigest()
@@ -105,6 +115,15 @@ def update_sender_sketch(parsed_email):
   
 
 def clean_up_syntax(sender):
+    """
+    For pre-existing sketches, load in the syntax counts and aggregate the new tokens with any
+    already seen tokens.
+
+    Parameters
+    ----------
+    sender: str
+        The sender syntax file to update.
+    """
     if isinstance(sender, dict):
         sender = sender['sender']
     if isinstance(sender, str):

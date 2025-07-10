@@ -28,9 +28,6 @@ SKETCHES = os.path.abspath('../sender_sketches')
 USER_HASH_KEY = 23
 _HRS_PER_WEEK = 24 * 7
 
-# def _infer_intents(body):
-#     #Pass the body of the text through the pre-defined intent models, returning a dictionary of {intent type: inference result}
-#     pass
 
 def _compare_syntax(body, syntax_sketch):
     sketch = dict(pd.read_csv(syntax_sketch).to_dict('tight')['data'])
@@ -65,6 +62,20 @@ def _compare_time(date, time_sketch):
 
 
 def process_email(parsed_email):
+    """
+    Processes a dictionary of the email, it's intents, and it's metadata. It checks the sender files for a corresponding
+    data store and loads in any sender sketches found.
+
+    Parameters
+    ----------
+    parsed_email: dict[str, Any]
+        A dictionary of the the email with intents and metadata.
+
+    Returns
+    -------
+    dict[str, Any]: 
+        A dictionary of the original parsed email along with any appropriate temporal and sender sketch data.
+    """
     body = parsed_email['body']
     sender = parsed_email['sender']
     date = parsed_email['arrival_time']

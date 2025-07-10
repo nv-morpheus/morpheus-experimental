@@ -24,8 +24,22 @@ _INTENT_MODELS = [{'intent': 'money', 'path': os.path.join(BASEDIR, 'intent_mode
                   {'intent': 'crypto', 'path': os.path.join(BASEDIR, 'intent_models/crypto_checkpoint-2362')}
                   ]
 
-#Returns {intent_class: {'label': label, 'id': int id, 'score': float score}}
+
 def infer_intents(body):
+    """
+    Runs the text through all of the defined intent models.
+
+    Parameters
+    ----------
+    body: str
+        The full body text of the email to run through the intent models.
+
+    Returns
+    -------
+    dict[str, dict[str, Any]]
+        returns dictionary with the following form --
+        {intent_class: {'label': label, 'id': int id, 'score': float score}}
+    """
     results = dict()
     for model_dict in _INTENT_MODELS:
         classifier = pipeline('text-classification', model=model_dict['path'], truncation=True, max_length=512)
