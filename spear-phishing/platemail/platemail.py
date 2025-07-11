@@ -25,11 +25,28 @@ from .intent_inferencing import _INTENT_MODELS
 
 os.chdir(os.path.dirname(os.path.realpath(__file__)))
 SKETCHES = os.path.abspath('../sender_sketches')
+#Random number key to standardize hashing using mmh
 USER_HASH_KEY = 23
 _HRS_PER_WEEK = 24 * 7
 
 
 def _compare_syntax(body, syntax_sketch):
+    """
+    Generates the cosine similarity for a given email body from a fixed sender with that sender's
+    historical syntax usage.
+
+    Parameters
+    ----------
+    body: str
+        Email body
+    syntax_sketch: str
+        File path to the sender's sketch data.
+
+    Returns
+    -------
+    float:
+        The cosine similarity between the email body and the sender syntax sketch.
+    """
     sketch = dict(pd.read_csv(syntax_sketch).to_dict('tight')['data'])
     incoming = dict()
     stripped_body = re.sub(r'([^a-zA-Z\s]+?)', '', body)
@@ -47,10 +64,34 @@ def _compare_syntax(body, syntax_sketch):
         cos_sim = dot / (s_norm * inc_norm)
     return cos_sim
 
-#I've binned the timestamps into the nearest hour and then taken that mod the number of hours in a week. This maps all the stamps to the corresponding hour of the week that the email was sent.
-#For the actual feature, we're just looking at the empirical probability that the incoming email was sent during that particular hour. In the future, we may be able to do something with a little more granularity using
-# kernel density estimators, but this was a simpler and faster statistical approach to what this feature was trying to capture.
 def _compare_time(date, time_sketch):
+    """
+    Looks at a sender's historical timing for sent emails. If less than 20 observed emails,
+    -1 is returned to indicate that there's not enough history to make a call. If there are
+    enough, the number of observed emails received at the same time as the current email under
+    scrutiny is computed to create a ratio to all time bins that have been observed.
+
+    Note:
+    I've binned the timestamps into the nearest hour and then taken that mod the number of hours
+    in a week. This maps all the stamps to the corresponding hour of the week that the email was sent.
+    For the actual feature, we're just looking at the empirical probability that the incoming email was
+    sent during that particular hour. In the future, we may be able to do something with a little more
+    granularity using kernel density estimators, but this was a simpler and faster statistical approach
+    to what this feature was trying to capture.
+
+    Parameters
+    ----------
+    date: datetime
+        The time of receipt for the email being analyzed
+    time_sketch:
+        File path to the sender's sketch data.
+
+    Returns
+    -------
+    float:
+        A ratio of the number of emails seen received in the same bin as the email being analyzed
+        over all time bins observed.
+    """
     times = pd.read_csv(time_sketch)['time'].values.tolist()
     if len(times) < 20:
         return -1

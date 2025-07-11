@@ -31,6 +31,20 @@ USER_HASH_KEY = 23
 
 
 def _vectorize_email(body):
+    """
+    Strips down the syntax of the email body and hashes the tokens (for anonymity) and increments
+    the count for each observed token.
+
+    Parameters
+    ----------
+    body: str
+        Email body
+
+    Returns
+    -------
+    dict[str: int]
+        A dictionary of each observed token hash and associated count for the provided body
+    """
     stripped_body = re.sub(r'([^a-zA-Z\s]+?)', '', body)
     vector = dict()
     for token in stripped_body.split():

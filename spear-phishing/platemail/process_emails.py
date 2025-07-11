@@ -43,6 +43,19 @@ _INTENT_MODELS = [{'intent': 'money', 'path': os.path.abspath('../models/intent_
 
 
 def _vectorize(parsed_data):
+    """
+    Creates a numpy matrix of the features that will be used to classify the email.
+
+    Parameters
+    ----------
+    parsed_data: list[dict[str: Any]]
+        A list of dictionaries containing the features of all emails to be analyzed
+
+    Returns
+    -------
+    list[numpy.array]:
+        An matrix of floats representing the classifier features for the emails.
+    """
     X = []
     for entry in parsed_data:
         vector = []
@@ -56,6 +69,9 @@ def _vectorize(parsed_data):
 
 
 class ProcessPlatemail:
+    """
+    This class is used to process parsed email data from the command line.
+    """
 
     def __init__(self, emails_path, phishing_model, body_col='body', time_col='arrival_time', sender_col='sender'):
         self._path = emails_path
@@ -65,6 +81,10 @@ class ProcessPlatemail:
         self._sender_col = sender_col
 
     def run(self):
+        """
+        Takes a path to a csv containing the body, arrival time, and sender for emails and
+        adds the intent features and then classifies the emails.
+        """
         print("Running Platemail...")
         emails = pd.read_csv(self._path)
         emails.rename(columns={self._body_col: 'body', self._time_col: 'arrival_time', self._sender_col: 'sender'}, inplace=True)
@@ -77,7 +97,7 @@ class ProcessPlatemail:
                 id = label_map[out['label']]
                 inferences.append({'intent': model_dict['intent'], 'label': out['label'], 'id': id, 'score': out['score']})
             for p, i in zip(parsed_emails, inferences):
-                intent_dict = {i['intent']: {'label': i['label'], 'id': i['id'], 'score':i['score']}}
+                intent_dict = {i['intent']: {'label': i['label'], 'id': i['id'], 'score': i['score']}}
                 if 'intents' in p:
                     if isinstance(p['intents'], dict):
                         p['intents'].update(intent_dict)
@@ -95,7 +115,9 @@ class ProcessPlatemail:
         sess = ort.InferenceSession(self._phishing_model, providers=["CPUExecutionProvider"])
         input_name = sess.get_inputs()[0].name
         label_name = sess.get_outputs()[0].name
+        output_value = sess.get_outputs()[1].name
         preds = sess.run([label_name], {input_name: tensor})[0]
+        scores = sess.run([output_value], {input_name: tensor})[0]
 
         for entry, pred, score in tqdm(zip(parsed_emails, list(preds), list(scores)), total=len(parsed_emails)):
             entry['prediction'] = pred
@@ -105,6 +127,9 @@ class ProcessPlatemail:
 
 
 def main():
+    """
+    Parses args from the CLI and runs the classification workflow.
+    """
     opt = parser.parse_args()
     platemail = ProcessPlatemail(emails_path=opt.emails_path, phishing_model=opt.phishing_model, body_col=opt.body_col, time_col=opt.time_col, sender_col=opt.sender_col)
     equip_platemail = platemail.run()
