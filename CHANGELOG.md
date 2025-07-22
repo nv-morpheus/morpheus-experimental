@@ -17,6 +17,8 @@ limitations under the License.
 
 # morpheus-experimental 25.06.00 (22 Jul 2025)
 
+## 🚀 New Features
+
 - Added spear phishing detection example ([#97](https://github.com/nv-morpheus/morpheus-experimental/pull/97)) [@shawn-davis](https://github.com/shawn-davis)
 - Adding the GNN netflow anomaly detection project to Morpheus experimental repo ([#96](https://github.com/nv-morpheus/morpheus-experimental/pull/96)) [@fhschina](https://github.com/fhschina)
 
