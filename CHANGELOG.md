@@ -1,5 +1,5 @@
 <!--
-SPDX-FileCopyrightText: Copyright (c) 2023-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+SPDX-FileCopyrightText: Copyright (c) 2023-2025, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 SPDX-License-Identifier: Apache-2.0
 
 Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,6 +14,11 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 -->
+
+# morpheus-experimental 25.06.00 (22 Jul 2025)
+
+- Added spear phishing detection example ([#97](https://github.com/nv-morpheus/morpheus-experimental/pull/97)) [@shawn-davis](https://github.com/shawn-davis)
+- Adding the GNN netflow anomaly detection project to Morpheus experimental repo ([#96](https://github.com/nv-morpheus/morpheus-experimental/pull/96)) [@fhschina](https://github.com/fhschina)
 
 # morpheus-experimental 25.02.00 (03 Feb 2025)
 
